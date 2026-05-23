@@ -1,0 +1,74 @@
+import 'dart:io';
+
+import 'package:frun/src/app/app_state.dart';
+import 'package:frun/src/app/commands/clear_command.dart';
+import 'package:frun/src/app/commands/command_registry.dart';
+import 'package:frun/src/app/commands/config_command.dart';
+import 'package:frun/src/app/commands/help_command.dart';
+import 'package:frun/src/app/commands/quit_command.dart';
+import 'package:frun/src/app/transcript.dart';
+import 'package:frun/src/config/config.dart';
+import 'package:frun/src/config/config_store.dart';
+import 'package:frun/src/project/project_detector.dart';
+import 'package:path/path.dart' as p;
+import 'package:test/test.dart';
+
+void main() {
+  late Directory temp;
+  late ConfigStore store;
+  late AppState state;
+
+  setUp(() {
+    temp = Directory.systemTemp.createTempSync('frun_cmd_');
+    store = ConfigStore(overridePath: p.join(temp.path, 'cfg.yaml'));
+    state = AppState(
+      project: FlutterProject(
+        root: temp.path,
+        name: 'demo',
+        workspaceRoot: temp.path,
+        hasVsCodeFolder: false,
+        hasZedFolder: false,
+      ),
+      config: FrunConfig(),
+    );
+  });
+
+  tearDown(() => temp.deleteSync(recursive: true));
+
+  test('CommandRegistry suggestion matches by prefix', () {
+    final reg = CommandRegistry()
+      ..register(QuitCommand())
+      ..register(ClearCommand())
+      ..register(ConfigCommand(store));
+    reg.register(HelpCommand(reg));
+    expect(reg.suggestions('c').map((c) => c.name), containsAll(['clear', 'config']));
+    expect(reg.lookup('q'), isA<QuitCommand>());
+    expect(reg.lookup('h'), isA<HelpCommand>());
+  });
+
+  test('/quit sets shouldQuit', () async {
+    final res = await QuitCommand().run(const [], state);
+    expect(res.shouldQuit, isTrue);
+  });
+
+  test('/clear empties the transcript', () async {
+    state.transcript.info('a');
+    state.transcript.info('b');
+    await ClearCommand().run(const [], state);
+    expect(state.transcript.lines, isEmpty);
+  });
+
+  test('/config set persists changes', () async {
+    await ConfigCommand(store).run(['set', 'ide', 'zed'], state);
+    expect(state.config.ide, FrunIde.zed);
+    expect(store.load().ide, FrunIde.zed);
+  });
+
+  test('/config set with unknown key warns', () async {
+    await ConfigCommand(store).run(['set', 'nope', 'val'], state);
+    final warns = state.transcript.lines
+        .where((l) => l.level == TranscriptLevel.warn)
+        .toList();
+    expect(warns, isNotEmpty);
+  });
+}
