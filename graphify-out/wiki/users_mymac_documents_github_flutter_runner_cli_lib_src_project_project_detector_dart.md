@@ -3,7 +3,7 @@
 - **ID:** `users_mymac_documents_github_flutter_runner_cli_lib_src_project_project_detector_dart`
 - **Type:** File
 - **File:** `/Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/project/project_detector.dart`
-- **Community:** 17 (p())
+- **Community:** 15 (p())
 
 ## Relationships
 

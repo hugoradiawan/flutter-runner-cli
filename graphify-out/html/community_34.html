@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>command.dart — Community 34</title>
+<title>_byName() — Community 34</title>
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,7 +25,7 @@ body { background: #0f0f1a; color: #e0e0e0; font-family: 'Segoe UI', system-ui, 
 <body>
 <div id="sidebar">
     <div>
-        <h2>command.dart</h2>
+        <h2>_byName()</h2>
         <p style="font-size:12px;color:#666;">3 nodes · Community 34</p>
     </div>
     <input id="search" type="text" placeholder="Search nodes…" />
@@ -41,8 +41,8 @@ body { background: #0f0f1a; color: #e0e0e0; font-family: 'Segoe UI', system-ui, 
 <div id="graph-container"></div>
 <script>
 (function() {
-    var nodesData = [{id:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart",label:"quit_command",title:"quit_command\nType: File\nFile: /Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/app/commands/quit_command.dart\nDegree: 2",color:"#59A14F",size:13.7},{id:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart_import_app_state_dart",label:"../app_state.dart",title:"../app_state.dart\nType: Module\nFile: /Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/app/commands/quit_command.dart\nDegree: 1",color:"#59A14F",size:12.0},{id:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart_import_command_dart",label:"command.dart",title:"command.dart\nType: Module\nFile: /Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/app/commands/quit_command.dart\nDegree: 1",color:"#59A14F",size:12.0}];
-    var edgesData = [{from:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart",to:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart_import_app_state_dart",label:"imports",dashes:false,title:"imports: users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart_import_app_state_dart\nConfidence: Extracted"},{from:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart",to:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart_import_command_dart",label:"imports",dashes:false,title:"imports: users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart_import_command_dart\nConfidence: Extracted"}];
+    var nodesData = [{id:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_command_registry_dart",label:"command_registry",title:"command_registry\nType: File\nFile: /Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/app/commands/command_registry.dart\nDegree: 2",color:"#59A14F",size:13.7},{id:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_command_registry_dart_import_command_dart",label:"command.dart",title:"command.dart\nType: Module\nFile: /Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/app/commands/command_registry.dart\nDegree: 1",color:"#59A14F",size:12.0},{id:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_command_registry_dart_byname",label:"_byName()",title:"_byName()\nType: Function\nFile: /Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/app/commands/command_registry.dart\nDegree: 1",color:"#59A14F",size:12.0}];
+    var edgesData = [{from:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_command_registry_dart",to:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_command_registry_dart_import_command_dart",label:"imports",dashes:false,title:"imports: users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_command_registry_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_command_registry_dart_import_command_dart\nConfidence: Extracted"},{from:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_command_registry_dart",to:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_command_registry_dart_byname",label:"defines",dashes:false,title:"defines: users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_command_registry_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_command_registry_dart_byname\nConfidence: Extracted"}];
     var container = document.getElementById('graph-container');
     var nodes = new vis.DataSet(nodesData);
     var edges = new vis.DataSet(edgesData);

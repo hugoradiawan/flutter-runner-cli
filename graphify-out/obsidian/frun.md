@@ -1,7 +1,7 @@
 ---
-id: users_mymac_documents_github_flutter_runner_cli_lib_frun_dart
+id: lib_frun_dart
 type: File
-source: /Users/mymac/Documents/GitHub/flutter-runner-cli/lib/frun.dart
+source: lib/frun.dart
 community: 0
 community_label: runFrun()
 ---
@@ -10,7 +10,7 @@ community_label: runFrun()
 
 - [[dart_async]] (imports)
 - [[dart_io]] (imports)
-- [[package_utopia_tui_utopia_tui_dart]] (imports)
+- [[package_dart_tui_dart_tui_dart]] (imports)
 - [[src_app_app_state_dart]] (imports)
 - [[src_app_commands_clear_command_dart]] (imports)
 - [[src_app_commands_command_registry_dart]] (imports)
@@ -33,4 +33,3 @@ community_label: runFrun()
 - [[src_version_dart]] (imports)
 - [[runFrun__]] (defines)
 - [[_bootDaemon__]] (defines)
-- [[_restoreTerminalAndExit__]] (defines)

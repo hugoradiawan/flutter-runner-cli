@@ -1,21 +1,21 @@
 # 📊 Graph Analysis Report
 
-**Root:** `/Users/mymac/Documents/GitHub/flutter-runner-cli/lib`
+**Root:** `lib`
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Nodes | 234 |
-| Edges | 196 |
-| Communities | 38 |
+| Nodes | 249 |
+| Edges | 208 |
+| Communities | 41 |
 | Hyperedges | 0 |
 
 ### Confidence Breakdown
 
 | Level | Count | Percentage |
 |-------|-------|------------|
-| EXTRACTED | 196 | 100.0% |
+| EXTRACTED | 208 | 100.0% |
 | INFERRED | 0 | 0.0% |
 | AMBIGUOUS | 0 | 0.0% |
 
@@ -23,16 +23,16 @@
 
 | Node | Degree | Community |
 |------|--------|-----------|
-| frun | 26 | 0 |
-| frun_app | 12 | 1 |
-| run_controller | 10 | 2 |
-| app_state | 9 | 4 |
+| frun | 25 | 0 |
+| frun_app | 18 | 1 |
+| run_controller | 12 | 2 |
 | input_controller | 9 | 3 |
-| isolate_manager | 8 | 5 |
+| app_state | 9 | 4 |
 | app_session | 8 | 7 |
+| isolate_manager | 8 | 5 |
 | flutter_daemon | 7 | 8 |
 | run_command | 7 | 9 |
-| run_tab | 6 | 10 |
+| isolates_command | 6 | 10 |
 
 ## 🔮 Surprising Connections
 
@@ -40,13 +40,13 @@ _No surprising connections found._
 
 ## 🏘️ Communities
 
-### Community 0 — runFrun() (27 nodes, cohesion: 0.07)
+### Community 0 — runFrun() (26 nodes, cohesion: 0.08)
 
 - frun
 - _bootDaemon()
 - dart:async
 - dart:io
-- package:utopia_tui/utopia_tui.dart
+- package:dart_tui/dart_tui.dart
 - src/app/app_state.dart
 - src/app/commands/clear_command.dart
 - src/app/commands/command_registry.dart
@@ -62,29 +62,37 @@ _No surprising connections found._
 - src/app/commands/run_command.dart
 - src/app/commands/status_command.dart
 - src/config/config_store.dart
-- _…and 7 more_
+- _…and 6 more_
 
-### Community 1 — ../version.dart (13 nodes, cohesion: 0.15)
+### Community 1 — _ModSetExt (19 nodes, cohesion: 0.11)
 
 - frun_app
 - ../app/app_state.dart
 - ../app/commands/command.dart
 - ../app/commands/command_registry.dart
 - ../app/link_extractor.dart
+- ../app/run_tab.dart
 - ../app/transcript.dart
+- clipboard.dart
 - ../config/config.dart
+- dart:async
 - dart:math'
+- hit_regions.dart
 - ../ide/source_location.dart
 - input_controller.dart
-- package:utopia_tui/utopia_tui.dart
+- package:dart_tui/dart_tui.dart
 - theme.dart
+- transcript_cursor.dart
 - ../version.dart
+- _ModSetExt
 
-### Community 2 — tabs() (11 nodes, cohesion: 0.18)
+### Community 2 — tabs() (13 nodes, cohesion: 0.15)
 
 - run_controller
 - _activeIndex()
 - activeTab()
+- hotReloadTab()
+- hotRestartTab()
 - app_state.dart
 - ../daemon/app_session.dart
 - ../daemon/daemon_messages.dart
@@ -100,7 +108,7 @@ _No surprising connections found._
 - _cursor()
 - _editorMode()
 - ../config/config.dart
-- package:utopia_tui/utopia_tui.dart
+- package:dart_tui/dart_tui.dart
 - InputAction
 - _mode()
 - RegExp()
@@ -167,7 +175,7 @@ _No surprising connections found._
 - dart:io
 - _stderrLines()
 
-### Community 9 — ../run_controller.dart (9) (8 nodes, cohesion: 0.25)
+### Community 9 — ../run_controller.dart (8 nodes, cohesion: 0.25)
 
 - run_command
 - ../app_state.dart
@@ -178,17 +186,7 @@ _No surprising connections found._
 - ../../project/main_scanner.dart
 - ../run_controller.dart
 
-### Community 10 — transcript.dart (7 nodes, cohesion: 0.29)
-
-- run_tab
-- ../daemon/app_session.dart
-- ../daemon/daemon_messages.dart
-- dart:async
-- package:path/path.dart'
-- ../project/launch_config.dart
-- transcript.dart
-
-### Community 11 — ../../vm/isolate_manager.dart (7 nodes, cohesion: 0.29)
+### Community 10 — ../../vm/isolate_manager.dart (7 nodes, cohesion: 0.29)
 
 - isolates_command
 - ../app_state.dart
@@ -197,6 +195,16 @@ _No surprising connections found._
 - ../../ide/source_location.dart
 - package:vm_service/vm_service.dart'
 - ../../vm/isolate_manager.dart
+
+### Community 11 — transcript.dart (7 nodes, cohesion: 0.29)
+
+- run_tab
+- ../daemon/app_session.dart
+- ../daemon/daemon_messages.dart
+- dart:async
+- package:path/path.dart'
+- ../project/launch_config.dart
+- transcript.dart
 
 ### Community 12 — _commandFor() (6 nodes, cohesion: 0.33)
 
@@ -207,16 +215,7 @@ _No surprising connections found._
 - dart:io
 - source_location.dart
 
-### Community 13 — _revision() (6 nodes, cohesion: 0.33)
-
-- transcript
-- _add()
-- dart:collection
-- List()
-- _revision()
-- TranscriptLevel
-
-### Community 14 — package:vm_service/vm_service.dart' (6 nodes, cohesion: 0.33)
+### Community 13 — package:vm_service/vm_service.dart' (6 nodes, cohesion: 0.33)
 
 - inspect_command
 - ../app_state.dart
@@ -225,23 +224,16 @@ _No surprising connections found._
 - ../../ide/source_location.dart
 - package:vm_service/vm_service.dart'
 
-### Community 15 — dart:io (5 nodes, cohesion: 0.40)
+### Community 14 — _revision() (6 nodes, cohesion: 0.33)
 
-- devtools_command
-- ../app_state.dart
-- command.dart
-- ../../config/config.dart
-- dart:io
+- transcript
+- _add()
+- dart:collection
+- List()
+- _revision()
+- TranscriptLevel
 
-### Community 16 — ../../devices/emulator_manager.dart (5 nodes, cohesion: 0.40)
-
-- emulators_command
-- ../app_state.dart
-- command.dart
-- ../../config/config_store.dart
-- ../../devices/emulator_manager.dart
-
-### Community 17 — p() (5 nodes, cohesion: 0.40)
+### Community 15 — p() (5 nodes, cohesion: 0.40)
 
 - project_detector
 - dart:io
@@ -249,15 +241,15 @@ _No surprising connections found._
 - package:yaml/yaml.dart
 - p()
 
-### Community 18 — _changes() (5 nodes, cohesion: 0.40)
+### Community 16 — dart:io (5 nodes, cohesion: 0.40)
 
-- device_manager
-- _changes()
-- ../daemon/daemon_messages.dart
-- ../daemon/flutter_daemon.dart
-- dart:async
+- devtools_command
+- ../app_state.dart
+- command.dart
+- ../../config/config.dart
+- dart:io
 
-### Community 19 — _onChange() (5 nodes, cohesion: 0.40)
+### Community 17 — _onChange() (5 nodes, cohesion: 0.40)
 
 - dart_file_watcher
 - dart:async
@@ -265,23 +257,15 @@ _No surprising connections found._
 - package:watcher/watcher.dart
 - _onChange()
 
-### Community 20 — _daemon() (5 nodes, cohesion: 0.40)
+### Community 18 — FrunTheme() (5 nodes, cohesion: 0.40)
 
-- emulator_manager
-- _daemon()
-- ../daemon/daemon_messages.dart
-- ../daemon/flutter_daemon.dart
-- dart:async
+- theme
+- FrunTheme()
+- ../app/transcript.dart
+- ../config/config.dart
+- package:dart_tui/dart_tui.dart
 
-### Community 21 — package:yaml/yaml.dart (5 nodes, cohesion: 0.40)
-
-- config_store
-- config.dart
-- dart:io
-- package:path/path.dart'
-- package:yaml/yaml.dart
-
-### Community 22 — ../../config/config_store.dart (22) (5 nodes, cohesion: 0.40)
+### Community 19 — ../../config/config_store.dart (19) (5 nodes, cohesion: 0.40)
 
 - config_command
 - ../app_state.dart
@@ -289,19 +273,44 @@ _No surprising connections found._
 - ../../config/config.dart
 - ../../config/config_store.dart
 
-### Community 23 — ../run_controller.dart (4 nodes, cohesion: 0.50)
+### Community 20 — package:yaml/yaml.dart (5 nodes, cohesion: 0.40)
 
-- reload_command
-- ../app_state.dart
-- command.dart
-- ../run_controller.dart
-
-### Community 24 — package:path/path.dart' (4 nodes, cohesion: 0.50)
-
-- source_location
-- dart:convert
+- config_store
+- config.dart
 - dart:io
 - package:path/path.dart'
+- package:yaml/yaml.dart
+
+### Community 21 — ../../devices/emulator_manager.dart (5 nodes, cohesion: 0.40)
+
+- emulators_command
+- ../app_state.dart
+- command.dart
+- ../../config/config_store.dart
+- ../../devices/emulator_manager.dart
+
+### Community 22 — _changes() (5 nodes, cohesion: 0.40)
+
+- device_manager
+- _changes()
+- ../daemon/daemon_messages.dart
+- ../daemon/flutter_daemon.dart
+- dart:async
+
+### Community 23 — _daemon() (5 nodes, cohesion: 0.40)
+
+- emulator_manager
+- _daemon()
+- ../daemon/daemon_messages.dart
+- ../daemon/flutter_daemon.dart
+- dart:async
+
+### Community 24 — command_registry.dart (4 nodes, cohesion: 0.50)
+
+- help_command
+- ../app_state.dart
+- command.dart
+- command_registry.dart
 
 ### Community 25 — LaunchEntrySource (4 nodes, cohesion: 0.50)
 
@@ -310,85 +319,102 @@ _No surprising connections found._
 - dart:io
 - LaunchEntrySource
 
-### Community 26 — ../../config/config_store.dart (4 nodes, cohesion: 0.50)
-
-- devices_command
-- ../app_state.dart
-- command.dart
-- ../../config/config_store.dart
-
-### Community 27 — command_registry.dart (4 nodes, cohesion: 0.50)
-
-- help_command
-- ../app_state.dart
-- command.dart
-- command_registry.dart
-
-### Community 28 — package:path/path.dart' (28) (4 nodes, cohesion: 0.50)
+### Community 26 — package:path/path.dart' (4 nodes, cohesion: 0.50)
 
 - main_scanner
 - dart:io
 - launch_config.dart
 - package:path/path.dart'
 
-### Community 29 — package:utopia_tui/utopia_tui.dart (4 nodes, cohesion: 0.50)
+### Community 27 — package:path/path.dart' (27) (4 nodes, cohesion: 0.50)
 
-- theme
-- ../app/transcript.dart
-- ../config/config.dart
-- package:utopia_tui/utopia_tui.dart
+- source_location
+- dart:convert
+- dart:io
+- package:path/path.dart'
 
-### Community 30 — command.dart (30) (3 nodes, cohesion: 0.67)
+### Community 28 — ../../config/config_store.dart (4 nodes, cohesion: 0.50)
 
-- clear_command
+- devices_command
 - ../app_state.dart
 - command.dart
+- ../../config/config_store.dart
 
-### Community 31 — FlutterEmulator() (3 nodes, cohesion: 0.67)
+### Community 29 — ../run_controller.dart (29) (4 nodes, cohesion: 0.50)
 
-- daemon_messages
-- FlutterDevice()
-- FlutterEmulator()
+- reload_command
+- ../app_state.dart
+- command.dart
+- ../run_controller.dart
 
-### Community 32 — run() (3 nodes, cohesion: 0.67)
+### Community 30 — run() (3 nodes, cohesion: 0.67)
 
 - command
 - ../app_state.dart
 - run()
 
-### Community 33 — _byName() (3 nodes, cohesion: 0.67)
+### Community 31 — copyToClipboard() (3 nodes, cohesion: 0.67)
 
-- command_registry
-- _byName()
-- command.dart
+- clipboard
+- copyToClipboard()
+- dart:io
 
-### Community 34 — command.dart (3 nodes, cohesion: 0.67)
-
-- quit_command
-- ../app_state.dart
-- command.dart
-
-### Community 35 — command.dart (35) (3 nodes, cohesion: 0.67)
+### Community 32 — command.dart (3 nodes, cohesion: 0.67)
 
 - status_command
 - ../app_state.dart
 - command.dart
 
-### Community 36 — link_extractor (1 nodes, cohesion: 1.00)
+### Community 33 — FlutterEmulator() (3 nodes, cohesion: 0.67)
+
+- daemon_messages
+- FlutterDevice()
+- FlutterEmulator()
+
+### Community 34 — _byName() (3 nodes, cohesion: 0.67)
+
+- command_registry
+- _byName()
+- command.dart
+
+### Community 35 — _regions() (3 nodes, cohesion: 0.67)
+
+- hit_regions
+- package:dart_tui/dart_tui.dart
+- _regions()
+
+### Community 36 — command.dart (36) (3 nodes, cohesion: 0.67)
+
+- quit_command
+- ../app_state.dart
+- command.dart
+
+### Community 37 — command.dart (37) (3 nodes, cohesion: 0.67)
+
+- clear_command
+- ../app_state.dart
+- command.dart
+
+### Community 38 — transcript_cursor (1 nodes, cohesion: 1.00)
+
+- transcript_cursor
+
+### Community 39 — link_extractor (1 nodes, cohesion: 1.00)
 
 - link_extractor
 
-### Community 37 — version (1 nodes, cohesion: 1.00)
+### Community 40 — version (1 nodes, cohesion: 1.00)
 
 - version
 
 ## 🕳️ Knowledge Gaps
 
-**Isolated nodes** (2):
+**Isolated nodes** (3):
 - link_extractor
+- transcript_cursor
 - version
 
-**Thin communities** (< 3 nodes): 2 communities
+**Thin communities** (< 3 nodes): 3 communities
 
 ## 💰 Token Cost
 
@@ -400,13 +426,13 @@ _No surprising connections found._
 
 ## ❓ Suggested Questions
 
-1. What role does 'version' play? It has no connections in the graph.
+1. What role does 'transcript_cursor' play? It has no connections in the graph.
 1. What role does 'link_extractor' play? It has no connections in the graph.
-1. Why is 'transcript.dart' (7 nodes) loosely connected (cohesion 0.29)? Should it be split?
-1. Why is 'tabs()' (11 nodes) loosely connected (cohesion 0.18)? Should it be split?
+1. What role does 'version' play? It has no connections in the graph.
 1. Why is '_service()' (9 nodes) loosely connected (cohesion 0.22)? Should it be split?
+1. Why is 'transcript.dart' (7 nodes) loosely connected (cohesion 0.29)? Should it be split?
+1. Why is 'tabs()' (13 nodes) loosely connected (cohesion 0.15)? Should it be split?
 1. Why is '_process()' (9 nodes) loosely connected (cohesion 0.22)? Should it be split?
-1. Why is '_text()' (10 nodes) loosely connected (cohesion 0.20)? Should it be split?
 
 ---
 _Generated by graphify-rs_

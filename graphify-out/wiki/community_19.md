@@ -1,19 +1,19 @@
-# Community 19: _onChange()
+# Community 19: ../../config/config_store.dart (19)
 
 **Members:** 5
 
 ## Nodes
 
-- **dart_file_watcher** (`users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart`, File, degree: 4)
-- **dart:async** (`users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart_import_dart_async`, Module, degree: 1)
-- **package:path/path.dart'** (`users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart_import_package_path_path_dart`, Module, degree: 1)
-- **package:watcher/watcher.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart_import_package_watcher_watcher_dart`, Module, degree: 1)
-- **_onChange()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart_onchange`, Function, degree: 1)
+- **config_command** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart`, File, degree: 4)
+- **../app_state.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart_import_app_state_dart`, Module, degree: 1)
+- **command.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart_import_command_dart`, Module, degree: 1)
+- **../../config/config.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart_import_config_config_dart`, Module, degree: 1)
+- **../../config/config_store.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart_import_config_config_store_dart`, Module, degree: 1)
 
 ## Relationships
 
-- users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart_import_dart_async (imports)
-- users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart_import_package_path_path_dart (imports)
-- users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart_import_package_watcher_watcher_dart (imports)
-- users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart_onchange (defines)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart_import_config_config_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart_import_config_config_store_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart_import_app_state_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart_import_command_dart (imports)
 

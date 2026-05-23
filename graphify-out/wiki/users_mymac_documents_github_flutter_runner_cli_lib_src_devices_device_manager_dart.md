@@ -3,7 +3,7 @@
 - **ID:** `users_mymac_documents_github_flutter_runner_cli_lib_src_devices_device_manager_dart`
 - **Type:** File
 - **File:** `/Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/devices/device_manager.dart`
-- **Community:** 18 (_changes())
+- **Community:** 22 (_changes())
 
 ## Relationships
 

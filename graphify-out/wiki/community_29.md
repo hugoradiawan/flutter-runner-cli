@@ -1,17 +1,17 @@
-# Community 29: package:utopia_tui/utopia_tui.dart
+# Community 29: ../run_controller.dart (29)
 
 **Members:** 4
 
 ## Nodes
 
-- **theme** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_theme_dart`, File, degree: 3)
-- **../app/transcript.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_theme_dart_import_app_transcript_dart`, Module, degree: 1)
-- **../config/config.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_theme_dart_import_config_config_dart`, Module, degree: 1)
-- **package:utopia_tui/utopia_tui.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_theme_dart_import_package_utopia_tui_utopia_tui_dart`, Module, degree: 1)
+- **reload_command** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart`, File, degree: 3)
+- **../app_state.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart_import_app_state_dart`, Module, degree: 1)
+- **command.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart_import_command_dart`, Module, degree: 1)
+- **../run_controller.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart_import_run_controller_dart`, Module, degree: 1)
 
 ## Relationships
 
-- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_theme_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_theme_dart_import_package_utopia_tui_utopia_tui_dart (imports)
-- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_theme_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_theme_dart_import_app_transcript_dart (imports)
-- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_theme_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_theme_dart_import_config_config_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart_import_app_state_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart_import_run_controller_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart_import_command_dart (imports)
 

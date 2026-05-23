@@ -1,15 +1,15 @@
-# Community 31: FlutterEmulator()
+# Community 31: copyToClipboard()
 
 **Members:** 3
 
 ## Nodes
 
-- **daemon_messages** (`users_mymac_documents_github_flutter_runner_cli_lib_src_daemon_daemon_messages_dart`, File, degree: 2)
-- **FlutterDevice()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_daemon_daemon_messages_dart_flutterdevice`, Function, degree: 1)
-- **FlutterEmulator()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_daemon_daemon_messages_dart_flutteremulator`, Function, degree: 1)
+- **clipboard** (`lib_src_tui_clipboard_dart`, File, degree: 2)
+- **copyToClipboard()** (`lib_src_tui_clipboard_dart_copytoclipboard`, Function, degree: 1)
+- **dart:io** (`lib_src_tui_clipboard_dart_import_dart_io`, Module, degree: 1)
 
 ## Relationships
 
-- users_mymac_documents_github_flutter_runner_cli_lib_src_daemon_daemon_messages_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_daemon_daemon_messages_dart_flutterdevice (defines)
-- users_mymac_documents_github_flutter_runner_cli_lib_src_daemon_daemon_messages_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_daemon_daemon_messages_dart_flutteremulator (defines)
+- lib_src_tui_clipboard_dart → lib_src_tui_clipboard_dart_import_dart_io (imports)
+- lib_src_tui_clipboard_dart → lib_src_tui_clipboard_dart_copytoclipboard (defines)
 

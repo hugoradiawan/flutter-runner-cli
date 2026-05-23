@@ -13,7 +13,7 @@ class ClearCommand extends SlashCommand {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    state.transcript.clear();
+    state.visibleTranscript.clear();
     return CommandResult.ok;
   }
 }

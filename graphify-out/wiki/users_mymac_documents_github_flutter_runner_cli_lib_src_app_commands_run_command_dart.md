@@ -3,7 +3,7 @@
 - **ID:** `users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_run_command_dart`
 - **Type:** File
 - **File:** `/Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/app/commands/run_command.dart`
-- **Community:** 9 (../run_controller.dart (9))
+- **Community:** 9 (../run_controller.dart)
 
 ## Relationships
 

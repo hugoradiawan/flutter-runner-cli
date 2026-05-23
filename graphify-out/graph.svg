@@ -1,433 +1,460 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
 <rect width="100%" height="100%" fill="#0f0f1a"/>
-<line x1="600.0" y1="60.0" x2="610.5" y2="60.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="620.9" y2="60.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="631.4" y2="61.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="641.8" y2="62.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="652.2" y2="63.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="662.6" y2="65.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="672.9" y2="66.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="683.1" y2="69.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="693.3" y2="71.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="703.5" y2="74.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="713.5" y2="76.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="723.5" y2="80.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="733.4" y2="83.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="743.2" y2="87.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="752.9" y2="91.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="762.4" y2="95.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="771.9" y2="99.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="781.2" y2="104.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="790.4" y2="109.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="799.5" y2="114.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="808.4" y2="120.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="817.2" y2="126.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="825.8" y2="132.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="834.3" y2="138.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="842.6" y2="144.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="600.0" y1="60.0" x2="850.7" y2="151.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="858.6" y1="158.1" x2="866.4" y2="165.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="858.6" y1="158.1" x2="873.9" y2="172.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="858.6" y1="158.1" x2="881.3" y2="179.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="888.4" y1="187.5" x2="895.4" y2="195.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="888.4" y1="187.5" x2="902.1" y2="203.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="888.4" y1="187.5" x2="908.6" y2="211.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="888.4" y1="187.5" x2="914.9" y2="219.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="888.4" y1="187.5" x2="921.0" y2="228.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="926.8" y1="237.2" x2="932.4" y2="246.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="926.8" y1="237.2" x2="937.7" y2="255.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="926.8" y1="237.2" x2="942.9" y2="264.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="926.8" y1="237.2" x2="947.7" y2="273.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="926.8" y1="237.2" x2="952.3" y2="282.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="926.8" y1="237.2" x2="956.7" y2="292.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="960.8" y1="302.0" x2="964.7" y2="311.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="960.8" y1="302.0" x2="968.2" y2="321.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="960.8" y1="302.0" x2="971.6" y2="331.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="960.8" y1="302.0" x2="974.6" y2="341.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="960.8" y1="302.0" x2="977.4" y2="351.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="979.9" y1="361.8" x2="982.1" y2="372.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="979.9" y1="361.8" x2="984.1" y2="382.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="979.9" y1="361.8" x2="985.8" y2="392.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="979.9" y1="361.8" x2="987.2" y2="403.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="979.9" y1="361.8" x2="988.3" y2="413.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="979.9" y1="361.8" x2="989.1" y2="423.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="979.9" y1="361.8" x2="989.7" y2="434.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="979.9" y1="361.8" x2="990.0" y2="444.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="979.9" y1="361.8" x2="990.0" y2="455.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="989.7" y1="465.7" x2="989.1" y2="476.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="989.7" y1="465.7" x2="988.3" y2="486.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="989.7" y1="465.7" x2="987.2" y2="497.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="989.7" y1="465.7" x2="985.8" y2="507.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="989.7" y1="465.7" x2="984.1" y2="517.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="989.7" y1="465.7" x2="982.1" y2="528.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="989.7" y1="465.7" x2="979.9" y2="538.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="989.7" y1="465.7" x2="977.4" y2="548.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="989.7" y1="465.7" x2="974.6" y2="558.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="989.7" y1="465.7" x2="971.6" y2="568.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="964.7" y1="588.3" x2="960.8" y2="598.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="964.7" y1="588.3" x2="956.7" y2="607.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="964.7" y1="588.3" x2="952.3" y2="617.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="964.7" y1="588.3" x2="947.7" y2="626.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="942.9" y1="635.9" x2="937.7" y2="645.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="942.9" y1="635.9" x2="932.4" y2="654.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="926.8" y1="662.8" x2="921.0" y2="671.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="926.8" y1="662.8" x2="914.9" y2="680.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="926.8" y1="662.8" x2="908.6" y2="688.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="902.1" y1="696.7" x2="895.4" y2="704.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="902.1" y1="696.7" x2="888.4" y2="712.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="881.3" y1="720.2" x2="873.9" y2="727.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="881.3" y1="720.2" x2="866.4" y2="734.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="881.3" y1="720.2" x2="858.6" y2="741.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="850.7" y1="748.8" x2="842.6" y2="755.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="850.7" y1="748.8" x2="834.3" y2="761.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="825.8" y1="768.0" x2="817.2" y2="773.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="825.8" y1="768.0" x2="808.4" y2="779.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="799.5" y1="785.1" x2="790.4" y2="790.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="799.5" y1="785.1" x2="781.2" y2="795.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="799.5" y1="785.1" x2="771.9" y2="800.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="762.4" y1="804.6" x2="752.9" y2="808.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="762.4" y1="804.6" x2="743.2" y2="812.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="762.4" y1="804.6" x2="733.4" y2="816.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="762.4" y1="804.6" x2="723.5" y2="819.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="713.5" y1="823.1" x2="703.5" y2="826.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="713.5" y1="823.1" x2="693.3" y2="828.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="713.5" y1="823.1" x2="683.1" y2="831.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="713.5" y1="823.1" x2="672.9" y2="833.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="713.5" y1="823.1" x2="662.6" y2="834.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="713.5" y1="823.1" x2="652.2" y2="836.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="713.5" y1="823.1" x2="641.8" y2="837.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="631.4" y1="838.7" x2="620.9" y2="839.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="631.4" y1="838.7" x2="610.5" y2="839.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="631.4" y1="838.7" x2="600.0" y2="840.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="631.4" y1="838.7" x2="589.5" y2="839.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="579.1" y1="839.4" x2="568.6" y2="838.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="579.1" y1="839.4" x2="558.2" y2="837.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="579.1" y1="839.4" x2="547.8" y2="836.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="579.1" y1="839.4" x2="537.4" y2="834.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="579.1" y1="839.4" x2="527.1" y2="833.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="579.1" y1="839.4" x2="516.9" y2="831.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="506.7" y1="828.7" x2="496.5" y2="826.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="506.7" y1="828.7" x2="486.5" y2="823.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="476.5" y1="819.9" x2="466.6" y2="816.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="476.5" y1="819.9" x2="456.8" y2="812.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="476.5" y1="819.9" x2="447.1" y2="808.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="476.5" y1="819.9" x2="437.6" y2="804.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="476.5" y1="819.9" x2="428.1" y2="800.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="418.8" y1="795.3" x2="409.6" y2="790.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="418.8" y1="795.3" x2="400.5" y2="785.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="418.8" y1="795.3" x2="391.6" y2="779.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="418.8" y1="795.3" x2="382.8" y2="773.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="374.2" y1="768.0" x2="365.7" y2="761.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="374.2" y1="768.0" x2="357.4" y2="755.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="374.2" y1="768.0" x2="349.3" y2="748.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="374.2" y1="768.0" x2="341.4" y2="741.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="333.6" y1="734.9" x2="326.1" y2="727.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="326.1" y1="727.6" x2="318.7" y2="720.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="333.6" y1="734.9" x2="311.6" y2="712.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="311.6" y1="712.5" x2="304.6" y2="704.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="333.6" y1="734.9" x2="297.9" y2="696.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="297.9" y1="696.7" x2="291.4" y2="688.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="333.6" y1="734.9" x2="285.1" y2="680.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="285.1" y1="680.1" x2="279.0" y2="671.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="273.2" y1="662.8" x2="267.6" y2="654.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="273.2" y1="662.8" x2="262.3" y2="645.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="273.2" y1="662.8" x2="257.1" y2="635.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="273.2" y1="662.8" x2="252.3" y2="626.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="273.2" y1="662.8" x2="247.7" y2="617.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="273.2" y1="662.8" x2="243.3" y2="607.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="273.2" y1="662.8" x2="239.2" y2="598.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="273.2" y1="662.8" x2="235.3" y2="588.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="273.2" y1="662.8" x2="231.8" y2="578.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="273.2" y1="662.8" x2="228.4" y2="568.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="273.2" y1="662.8" x2="225.4" y2="558.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="273.2" y1="662.8" x2="222.6" y2="548.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="220.1" y1="538.2" x2="217.9" y2="528.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="220.1" y1="538.2" x2="215.9" y2="517.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="220.1" y1="538.2" x2="214.2" y2="507.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="220.1" y1="538.2" x2="212.8" y2="497.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="220.1" y1="538.2" x2="211.7" y2="486.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="220.1" y1="538.2" x2="210.9" y2="476.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="220.1" y1="538.2" x2="210.3" y2="465.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="220.1" y1="538.2" x2="210.0" y2="455.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="220.1" y1="538.2" x2="210.0" y2="444.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="210.3" y1="434.3" x2="210.9" y2="423.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="210.3" y1="434.3" x2="211.7" y2="413.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="210.3" y1="434.3" x2="212.8" y2="403.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="214.2" y1="392.6" x2="215.9" y2="382.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="214.2" y1="392.6" x2="217.9" y2="372.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="214.2" y1="392.6" x2="220.1" y2="361.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="222.6" y1="351.6" x2="225.4" y2="341.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="222.6" y1="351.6" x2="228.4" y2="331.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="222.6" y1="351.6" x2="231.8" y2="321.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="222.6" y1="351.6" x2="235.3" y2="311.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="239.2" y1="302.0" x2="243.3" y2="292.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="239.2" y1="302.0" x2="247.7" y2="282.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="239.2" y1="302.0" x2="252.3" y2="273.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="257.1" y1="264.1" x2="262.3" y2="255.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="257.1" y1="264.1" x2="267.6" y2="246.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="257.1" y1="264.1" x2="273.2" y2="237.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="257.1" y1="264.1" x2="279.0" y2="228.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="257.1" y1="264.1" x2="285.1" y2="219.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="257.1" y1="264.1" x2="291.4" y2="211.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="257.1" y1="264.1" x2="297.9" y2="203.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="257.1" y1="264.1" x2="304.6" y2="195.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="311.6" y1="187.5" x2="318.7" y2="179.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="311.6" y1="187.5" x2="326.1" y2="172.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="311.6" y1="187.5" x2="333.6" y2="165.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="311.6" y1="187.5" x2="341.4" y2="158.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="311.6" y1="187.5" x2="349.3" y2="151.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="311.6" y1="187.5" x2="357.4" y2="144.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="311.6" y1="187.5" x2="365.7" y2="138.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="374.2" y1="132.0" x2="382.8" y2="126.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="374.2" y1="132.0" x2="391.6" y2="120.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="400.5" y1="114.9" x2="409.6" y2="109.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="400.5" y1="114.9" x2="418.8" y2="104.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="400.5" y1="114.9" x2="428.1" y2="99.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="400.5" y1="114.9" x2="437.6" y2="95.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="400.5" y1="114.9" x2="447.1" y2="91.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="400.5" y1="114.9" x2="456.8" y2="87.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="400.5" y1="114.9" x2="466.6" y2="83.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="400.5" y1="114.9" x2="476.5" y2="80.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="496.5" y1="74.0" x2="506.7" y2="71.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="496.5" y1="74.0" x2="516.9" y2="69.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="496.5" y1="74.0" x2="527.1" y2="66.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="496.5" y1="74.0" x2="537.4" y2="65.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="547.8" y1="63.5" x2="558.2" y2="62.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="547.8" y1="63.5" x2="568.6" y2="61.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="547.8" y1="63.5" x2="579.1" y2="60.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
-<line x1="547.8" y1="63.5" x2="589.5" y2="60.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="609.8" y2="60.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="619.7" y2="60.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="629.5" y2="61.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="639.3" y2="62.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="649.1" y2="63.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="658.8" y2="64.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="668.5" y2="66.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="678.2" y2="67.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="687.8" y2="70.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="697.4" y2="72.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="706.9" y2="74.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="716.3" y2="77.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="725.7" y2="80.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="734.9" y2="84.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="744.1" y2="87.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="753.2" y2="91.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="762.2" y2="95.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="771.1" y2="99.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="779.9" y2="104.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="788.6" y2="108.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="797.1" y2="113.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="805.6" y2="118.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="813.9" y2="123.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="822.0" y2="129.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="600.0" y1="60.0" x2="830.0" y2="135.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="837.9" y1="141.0" x2="845.6" y2="147.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="837.9" y1="141.0" x2="853.2" y2="153.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="837.9" y1="141.0" x2="860.6" y2="159.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="867.8" y1="166.5" x2="874.9" y2="173.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="867.8" y1="166.5" x2="881.8" y2="180.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="867.8" y1="166.5" x2="888.5" y2="187.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="867.8" y1="166.5" x2="895.0" y2="194.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="867.8" y1="166.5" x2="901.4" y2="202.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="907.5" y1="210.2" x2="913.5" y2="218.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="907.5" y1="210.2" x2="919.2" y2="226.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="907.5" y1="210.2" x2="924.8" y2="234.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="907.5" y1="210.2" x2="930.1" y2="242.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="907.5" y1="210.2" x2="935.3" y2="250.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="907.5" y1="210.2" x2="940.2" y2="259.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="944.9" y1="267.9" x2="949.4" y2="276.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="944.9" y1="267.9" x2="953.6" y2="285.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="944.9" y1="267.9" x2="957.7" y2="294.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="944.9" y1="267.9" x2="961.5" y2="303.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="944.9" y1="267.9" x2="965.1" y2="312.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="968.4" y1="322.0" x2="971.5" y2="331.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="968.4" y1="322.0" x2="974.4" y2="340.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="968.4" y1="322.0" x2="977.0" y2="350.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="968.4" y1="322.0" x2="979.4" y2="359.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="968.4" y1="322.0" x2="981.6" y2="369.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="968.4" y1="322.0" x2="983.5" y2="379.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="968.4" y1="322.0" x2="985.2" y2="388.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="968.4" y1="322.0" x2="986.6" y2="398.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="968.4" y1="322.0" x2="987.8" y2="408.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="988.7" y1="418.1" x2="989.4" y2="427.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="988.7" y1="418.1" x2="989.8" y2="437.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="988.7" y1="418.1" x2="990.0" y2="447.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="988.7" y1="418.1" x2="989.9" y2="457.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="988.7" y1="418.1" x2="989.6" y2="467.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="988.7" y1="418.1" x2="989.1" y2="477.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="988.7" y1="418.1" x2="988.3" y2="486.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="988.7" y1="418.1" x2="987.2" y2="496.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="988.7" y1="418.1" x2="985.9" y2="506.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="988.7" y1="418.1" x2="984.4" y2="516.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="988.7" y1="418.1" x2="982.6" y2="525.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="988.7" y1="418.1" x2="980.5" y2="535.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="975.7" y1="554.5" x2="973.0" y2="563.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="975.7" y1="554.5" x2="970.0" y2="573.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="975.7" y1="554.5" x2="966.8" y2="582.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="975.7" y1="554.5" x2="963.3" y2="591.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="959.6" y1="600.9" x2="955.7" y2="610.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="959.6" y1="600.9" x2="951.5" y2="618.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="947.2" y1="627.7" x2="942.6" y2="636.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="947.2" y1="627.7" x2="937.7" y2="645.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="947.2" y1="627.7" x2="932.7" y2="653.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="927.5" y1="661.8" x2="922.0" y2="670.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="927.5" y1="661.8" x2="916.4" y2="678.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="910.5" y1="686.0" x2="904.5" y2="693.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="910.5" y1="686.0" x2="898.2" y2="701.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="910.5" y1="686.0" x2="891.8" y2="708.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="885.2" y1="716.0" x2="878.4" y2="723.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="885.2" y1="716.0" x2="871.4" y2="730.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="864.2" y1="736.8" x2="856.9" y2="743.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="864.2" y1="736.8" x2="849.4" y2="749.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="841.8" y1="756.0" x2="834.0" y2="762.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="841.8" y1="756.0" x2="826.0" y2="767.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="841.8" y1="756.0" x2="817.9" y2="773.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="809.7" y1="778.8" x2="801.4" y2="784.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="809.7" y1="778.8" x2="792.9" y2="789.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="809.7" y1="778.8" x2="784.3" y2="793.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="809.7" y1="778.8" x2="775.5" y2="798.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="766.7" y1="802.6" x2="757.7" y2="806.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="766.7" y1="802.6" x2="748.7" y2="810.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="766.7" y1="802.6" x2="739.5" y2="814.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="766.7" y1="802.6" x2="730.3" y2="817.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="766.7" y1="802.6" x2="721.0" y2="820.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="766.7" y1="802.6" x2="711.6" y2="823.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="766.7" y1="802.6" x2="702.1" y2="826.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="692.6" y1="828.8" x2="683.0" y2="831.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="692.6" y1="828.8" x2="673.4" y2="833.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="692.6" y1="828.8" x2="663.7" y2="834.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="692.6" y1="828.8" x2="654.0" y2="836.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="644.2" y1="837.5" x2="634.4" y2="838.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="644.2" y1="837.5" x2="624.6" y2="839.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="644.2" y1="837.5" x2="614.8" y2="839.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="644.2" y1="837.5" x2="604.9" y2="840.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="644.2" y1="837.5" x2="595.1" y2="840.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="644.2" y1="837.5" x2="585.2" y2="839.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="575.4" y1="839.2" x2="565.6" y2="838.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="575.4" y1="839.2" x2="555.8" y2="837.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="546.0" y1="836.3" x2="536.3" y2="834.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="546.0" y1="836.3" x2="526.6" y2="833.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="546.0" y1="836.3" x2="517.0" y2="831.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="546.0" y1="836.3" x2="507.4" y2="828.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="546.0" y1="836.3" x2="497.9" y2="826.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="488.4" y1="823.7" x2="479.0" y2="820.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="488.4" y1="823.7" x2="469.7" y2="817.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="488.4" y1="823.7" x2="460.5" y2="814.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="488.4" y1="823.7" x2="451.3" y2="810.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="442.3" y1="806.7" x2="433.3" y2="802.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="442.3" y1="806.7" x2="424.5" y2="798.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="442.3" y1="806.7" x2="415.7" y2="793.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="442.3" y1="806.7" x2="407.1" y2="789.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="398.6" y1="784.0" x2="390.3" y2="778.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="390.3" y1="778.8" x2="382.1" y2="773.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="398.6" y1="784.0" x2="374.0" y2="767.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="374.0" y1="767.8" x2="366.0" y2="762.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="398.6" y1="784.0" x2="358.2" y2="756.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="358.2" y1="756.0" x2="350.6" y2="749.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="398.6" y1="784.0" x2="343.1" y2="743.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="343.1" y1="743.4" x2="335.8" y2="736.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="328.6" y1="730.1" x2="321.6" y2="723.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="328.6" y1="730.1" x2="314.8" y2="716.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="308.2" y1="708.8" x2="301.8" y2="701.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="308.2" y1="708.8" x2="295.5" y2="693.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="283.6" y2="678.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="278.0" y2="670.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="272.5" y2="661.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="267.3" y2="653.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="262.3" y2="645.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="257.4" y2="636.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="252.8" y2="627.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="248.5" y2="618.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="244.3" y2="610.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="240.4" y2="600.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="236.7" y2="591.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="233.2" y2="582.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="230.0" y2="573.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="227.0" y2="563.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="224.3" y2="554.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="221.7" y2="545.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="219.5" y2="535.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="289.5" y1="686.0" x2="217.4" y2="525.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.1" y1="506.4" x2="212.8" y2="496.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.1" y1="506.4" x2="211.7" y2="486.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.1" y1="506.4" x2="210.9" y2="477.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.1" y1="506.4" x2="210.4" y2="467.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.1" y1="506.4" x2="210.1" y2="457.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.1" y1="506.4" x2="210.0" y2="447.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.1" y1="506.4" x2="210.2" y2="437.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.1" y1="506.4" x2="210.6" y2="427.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="214.1" y1="506.4" x2="211.3" y2="418.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="212.2" y1="408.3" x2="213.4" y2="398.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="212.2" y1="408.3" x2="214.8" y2="388.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="212.2" y1="408.3" x2="216.5" y2="379.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="212.2" y1="408.3" x2="218.4" y2="369.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="220.6" y1="359.8" x2="223.0" y2="350.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="220.6" y1="359.8" x2="225.6" y2="340.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="220.6" y1="359.8" x2="228.5" y2="331.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.6" y1="322.0" x2="234.9" y2="312.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.6" y1="322.0" x2="238.5" y2="303.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.6" y1="322.0" x2="242.3" y2="294.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="231.6" y1="322.0" x2="246.4" y2="285.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="250.6" y1="276.7" x2="255.1" y2="267.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="250.6" y1="276.7" x2="259.8" y2="259.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="250.6" y1="276.7" x2="264.7" y2="250.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="269.9" y1="242.4" x2="275.2" y2="234.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="269.9" y1="242.4" x2="280.8" y2="226.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="269.9" y1="242.4" x2="286.5" y2="218.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="269.9" y1="242.4" x2="292.5" y2="210.2" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="269.9" y1="242.4" x2="298.6" y2="202.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="269.9" y1="242.4" x2="305.0" y2="194.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="269.9" y1="242.4" x2="311.5" y2="187.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="269.9" y1="242.4" x2="318.2" y2="180.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="325.1" y1="173.4" x2="332.2" y2="166.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="325.1" y1="173.4" x2="339.4" y2="159.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="325.1" y1="173.4" x2="346.8" y2="153.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="325.1" y1="173.4" x2="354.4" y2="147.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="325.1" y1="173.4" x2="362.1" y2="141.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="325.1" y1="173.4" x2="370.0" y2="135.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="325.1" y1="173.4" x2="378.0" y2="129.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="386.1" y1="123.9" x2="394.4" y2="118.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="386.1" y1="123.9" x2="402.9" y2="113.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="411.4" y1="108.6" x2="420.1" y2="104.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="411.4" y1="108.6" x2="428.9" y2="99.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="411.4" y1="108.6" x2="437.8" y2="95.3" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="411.4" y1="108.6" x2="446.8" y2="91.4" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="411.4" y1="108.6" x2="455.9" y2="87.6" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="411.4" y1="108.6" x2="465.1" y2="84.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="411.4" y1="108.6" x2="474.3" y2="80.8" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="411.4" y1="108.6" x2="483.7" y2="77.7" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="502.6" y1="72.4" x2="512.2" y2="70.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="502.6" y1="72.4" x2="521.8" y2="67.9" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="502.6" y1="72.4" x2="531.5" y2="66.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="502.6" y1="72.4" x2="541.2" y2="64.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="550.9" y1="63.1" x2="560.7" y2="62.0" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="550.9" y1="63.1" x2="570.5" y2="61.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="550.9" y1="63.1" x2="580.3" y2="60.5" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
+<line x1="550.9" y1="63.1" x2="590.2" y2="60.1" stroke="#3a3a5a" stroke-width="0.5" stroke-opacity="0.6"/>
 <circle cx="600.0" cy="60.0" r="6" fill="#4E79A7" opacity="0.85"><title>frun</title></circle>
-<circle cx="610.5" cy="60.1" r="6" fill="#4E79A7" opacity="0.85"><title>dart:async</title></circle>
-<circle cx="620.9" cy="60.6" r="6" fill="#4E79A7" opacity="0.85"><title>dart:io</title></circle>
-<circle cx="631.4" cy="61.3" r="6" fill="#4E79A7" opacity="0.85"><title>package:utopia_tui/utopia_tui.dart</title></circle>
-<circle cx="641.8" cy="62.2" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/app_state.dart</title></circle>
-<circle cx="652.2" cy="63.5" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/clear_command.dart</title></circle>
-<circle cx="662.6" cy="65.1" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/command_registry.dart</title></circle>
-<circle cx="672.9" cy="66.9" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/config_command.dart</title></circle>
-<circle cx="683.1" cy="69.0" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/devices_command.dart</title></circle>
-<circle cx="693.3" cy="71.3" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/devtools_command.dart</title></circle>
-<circle cx="703.5" cy="74.0" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/emulators_command.dart</title></circle>
-<circle cx="713.5" cy="76.9" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/help_command.dart</title></circle>
-<circle cx="723.5" cy="80.1" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/inspect_command.dart</title></circle>
-<circle cx="733.4" cy="83.5" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/isolates_command.dart</title></circle>
-<circle cx="743.2" cy="87.2" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/quit_command.dart</title></circle>
-<circle cx="752.9" cy="91.2" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/reload_command.dart</title></circle>
-<circle cx="762.4" cy="95.4" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/run_command.dart</title></circle>
-<circle cx="771.9" cy="99.9" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/status_command.dart</title></circle>
-<circle cx="781.2" cy="104.7" r="6" fill="#4E79A7" opacity="0.85"><title>src/config/config_store.dart</title></circle>
-<circle cx="790.4" cy="109.7" r="6" fill="#4E79A7" opacity="0.85"><title>src/daemon/flutter_daemon.dart</title></circle>
-<circle cx="799.5" cy="114.9" r="6" fill="#4E79A7" opacity="0.85"><title>src/devices/device_manager.dart</title></circle>
-<circle cx="808.4" cy="120.4" r="6" fill="#4E79A7" opacity="0.85"><title>src/project/project_detector.dart</title></circle>
-<circle cx="817.2" cy="126.1" r="6" fill="#4E79A7" opacity="0.85"><title>src/tui/frun_app.dart</title></circle>
-<circle cx="825.8" cy="132.0" r="6" fill="#4E79A7" opacity="0.85"><title>src/version.dart</title></circle>
-<circle cx="834.3" cy="138.2" r="6" fill="#4E79A7" opacity="0.85"><title>runFrun()</title></circle>
-<circle cx="842.6" cy="144.6" r="6" fill="#4E79A7" opacity="0.85"><title>_bootDaemon()</title></circle>
-<circle cx="850.7" cy="151.2" r="6" fill="#4E79A7" opacity="0.85"><title>_restoreTerminalAndExit()</title></circle>
-<circle cx="858.6" cy="158.1" r="6" fill="#59A14F" opacity="0.85"><title>source_location</title></circle>
-<circle cx="866.4" cy="165.1" r="6" fill="#59A14F" opacity="0.85"><title>dart:convert</title></circle>
-<circle cx="873.9" cy="172.4" r="6" fill="#59A14F" opacity="0.85"><title>dart:io</title></circle>
-<circle cx="881.3" cy="179.8" r="6" fill="#59A14F" opacity="0.85"><title>package:path/path.dart'</title></circle>
-<circle cx="888.4" cy="187.5" r="6" fill="#E15759" opacity="0.85"><title>ide_launcher</title></circle>
-<circle cx="895.4" cy="195.3" r="6" fill="#E15759" opacity="0.85"><title>dart:io</title></circle>
-<circle cx="902.1" cy="203.3" r="6" fill="#E15759" opacity="0.85"><title>../app/app_state.dart</title></circle>
-<circle cx="908.6" cy="211.5" r="6" fill="#E15759" opacity="0.85"><title>../config/config.dart</title></circle>
-<circle cx="914.9" cy="219.9" r="6" fill="#E15759" opacity="0.85"><title>source_location.dart</title></circle>
-<circle cx="921.0" cy="228.5" r="6" fill="#E15759" opacity="0.85"><title>_commandFor()</title></circle>
-<circle cx="926.8" cy="237.2" r="6" fill="#4E79A7" opacity="0.85"><title>run_tab</title></circle>
-<circle cx="932.4" cy="246.0" r="6" fill="#4E79A7" opacity="0.85"><title>dart:async</title></circle>
-<circle cx="937.7" cy="255.0" r="6" fill="#4E79A7" opacity="0.85"><title>package:path/path.dart'</title></circle>
-<circle cx="942.9" cy="264.1" r="6" fill="#4E79A7" opacity="0.85"><title>../daemon/app_session.dart</title></circle>
-<circle cx="947.7" cy="273.4" r="6" fill="#4E79A7" opacity="0.85"><title>../daemon/daemon_messages.dart</title></circle>
-<circle cx="952.3" cy="282.8" r="6" fill="#4E79A7" opacity="0.85"><title>../project/launch_config.dart</title></circle>
-<circle cx="956.7" cy="292.3" r="6" fill="#4E79A7" opacity="0.85"><title>transcript.dart</title></circle>
-<circle cx="960.8" cy="302.0" r="6" fill="#76B7B2" opacity="0.85"><title>transcript</title></circle>
-<circle cx="964.7" cy="311.7" r="6" fill="#76B7B2" opacity="0.85"><title>dart:collection</title></circle>
-<circle cx="968.2" cy="321.5" r="6" fill="#76B7B2" opacity="0.85"><title>TranscriptLevel</title></circle>
-<circle cx="971.6" cy="331.5" r="6" fill="#76B7B2" opacity="0.85"><title>_revision()</title></circle>
-<circle cx="974.6" cy="341.5" r="6" fill="#76B7B2" opacity="0.85"><title>List()</title></circle>
-<circle cx="977.4" cy="351.6" r="6" fill="#76B7B2" opacity="0.85"><title>_add()</title></circle>
-<circle cx="979.9" cy="361.8" r="6" fill="#59A14F" opacity="0.85"><title>app_state</title></circle>
-<circle cx="982.1" cy="372.0" r="6" fill="#59A14F" opacity="0.85"><title>../config/config.dart</title></circle>
-<circle cx="984.1" cy="382.3" r="6" fill="#59A14F" opacity="0.85"><title>../daemon/flutter_daemon.dart</title></circle>
-<circle cx="985.8" cy="392.6" r="6" fill="#59A14F" opacity="0.85"><title>../devices/device_manager.dart</title></circle>
-<circle cx="987.2" cy="403.0" r="6" fill="#59A14F" opacity="0.85"><title>../ide/ide_launcher.dart</title></circle>
-<circle cx="988.3" cy="413.4" r="6" fill="#59A14F" opacity="0.85"><title>../project/project_detector.dart</title></circle>
-<circle cx="989.1" cy="423.8" r="6" fill="#59A14F" opacity="0.85"><title>../vm/isolate_manager.dart</title></circle>
-<circle cx="989.7" cy="434.3" r="6" fill="#59A14F" opacity="0.85"><title>run_controller.dart</title></circle>
-<circle cx="990.0" cy="444.8" r="6" fill="#59A14F" opacity="0.85"><title>transcript.dart</title></circle>
-<circle cx="990.0" cy="455.2" r="6" fill="#59A14F" opacity="0.85"><title>_config()</title></circle>
-<circle cx="989.7" cy="465.7" r="6" fill="#E15759" opacity="0.85"><title>run_controller</title></circle>
-<circle cx="989.1" cy="476.2" r="6" fill="#E15759" opacity="0.85"><title>dart:async</title></circle>
-<circle cx="988.3" cy="486.6" r="6" fill="#E15759" opacity="0.85"><title>../daemon/app_session.dart</title></circle>
-<circle cx="987.2" cy="497.0" r="6" fill="#E15759" opacity="0.85"><title>../daemon/daemon_messages.dart</title></circle>
-<circle cx="985.8" cy="507.4" r="6" fill="#E15759" opacity="0.85"><title>../project/launch_config.dart</title></circle>
-<circle cx="984.1" cy="517.7" r="6" fill="#E15759" opacity="0.85"><title>../watcher/dart_file_watcher.dart</title></circle>
-<circle cx="982.1" cy="528.0" r="6" fill="#E15759" opacity="0.85"><title>app_state.dart</title></circle>
-<circle cx="979.9" cy="538.2" r="6" fill="#E15759" opacity="0.85"><title>run_tab.dart</title></circle>
-<circle cx="977.4" cy="548.4" r="6" fill="#E15759" opacity="0.85"><title>_activeIndex()</title></circle>
-<circle cx="974.6" cy="558.5" r="6" fill="#E15759" opacity="0.85"><title>tabs()</title></circle>
-<circle cx="971.6" cy="568.5" r="6" fill="#E15759" opacity="0.85"><title>activeTab()</title></circle>
-<circle cx="968.2" cy="578.5" r="6" fill="#B07AA1" opacity="0.85"><title>link_extractor</title></circle>
-<circle cx="964.7" cy="588.3" r="6" fill="#E15759" opacity="0.85"><title>config_command</title></circle>
-<circle cx="960.8" cy="598.0" r="6" fill="#E15759" opacity="0.85"><title>../../config/config.dart</title></circle>
-<circle cx="956.7" cy="607.7" r="6" fill="#E15759" opacity="0.85"><title>../../config/config_store.dart</title></circle>
-<circle cx="952.3" cy="617.2" r="6" fill="#E15759" opacity="0.85"><title>../app_state.dart</title></circle>
-<circle cx="947.7" cy="626.6" r="6" fill="#E15759" opacity="0.85"><title>command.dart</title></circle>
-<circle cx="942.9" cy="635.9" r="6" fill="#4E79A7" opacity="0.85"><title>clear_command</title></circle>
-<circle cx="937.7" cy="645.0" r="6" fill="#4E79A7" opacity="0.85"><title>../app_state.dart</title></circle>
-<circle cx="932.4" cy="654.0" r="6" fill="#4E79A7" opacity="0.85"><title>command.dart</title></circle>
-<circle cx="926.8" cy="662.8" r="6" fill="#FF9DA7" opacity="0.85"><title>help_command</title></circle>
-<circle cx="921.0" cy="671.5" r="6" fill="#FF9DA7" opacity="0.85"><title>../app_state.dart</title></circle>
-<circle cx="914.9" cy="680.1" r="6" fill="#FF9DA7" opacity="0.85"><title>command.dart</title></circle>
-<circle cx="908.6" cy="688.5" r="6" fill="#FF9DA7" opacity="0.85"><title>command_registry.dart</title></circle>
-<circle cx="902.1" cy="696.7" r="6" fill="#59A14F" opacity="0.85"><title>quit_command</title></circle>
-<circle cx="895.4" cy="704.7" r="6" fill="#59A14F" opacity="0.85"><title>../app_state.dart</title></circle>
-<circle cx="888.4" cy="712.5" r="6" fill="#59A14F" opacity="0.85"><title>command.dart</title></circle>
-<circle cx="881.3" cy="720.2" r="6" fill="#76B7B2" opacity="0.85"><title>reload_command</title></circle>
-<circle cx="873.9" cy="727.6" r="6" fill="#76B7B2" opacity="0.85"><title>../app_state.dart</title></circle>
-<circle cx="866.4" cy="734.9" r="6" fill="#76B7B2" opacity="0.85"><title>../run_controller.dart</title></circle>
-<circle cx="858.6" cy="741.9" r="6" fill="#76B7B2" opacity="0.85"><title>command.dart</title></circle>
-<circle cx="850.7" cy="748.8" r="6" fill="#E15759" opacity="0.85"><title>command</title></circle>
-<circle cx="842.6" cy="755.4" r="6" fill="#E15759" opacity="0.85"><title>../app_state.dart</title></circle>
-<circle cx="834.3" cy="761.8" r="6" fill="#E15759" opacity="0.85"><title>run()</title></circle>
-<circle cx="825.8" cy="768.0" r="6" fill="#EDC948" opacity="0.85"><title>status_command</title></circle>
-<circle cx="817.2" cy="773.9" r="6" fill="#EDC948" opacity="0.85"><title>../app_state.dart</title></circle>
-<circle cx="808.4" cy="779.6" r="6" fill="#EDC948" opacity="0.85"><title>command.dart</title></circle>
-<circle cx="799.5" cy="785.1" r="6" fill="#B07AA1" opacity="0.85"><title>devices_command</title></circle>
-<circle cx="790.4" cy="790.3" r="6" fill="#B07AA1" opacity="0.85"><title>../../config/config_store.dart</title></circle>
-<circle cx="781.2" cy="795.3" r="6" fill="#B07AA1" opacity="0.85"><title>../app_state.dart</title></circle>
-<circle cx="771.9" cy="800.1" r="6" fill="#B07AA1" opacity="0.85"><title>command.dart</title></circle>
-<circle cx="762.4" cy="804.6" r="6" fill="#B07AA1" opacity="0.85"><title>emulators_command</title></circle>
-<circle cx="752.9" cy="808.8" r="6" fill="#B07AA1" opacity="0.85"><title>../../config/config_store.dart</title></circle>
-<circle cx="743.2" cy="812.8" r="6" fill="#B07AA1" opacity="0.85"><title>../../devices/emulator_manager.dart</title></circle>
-<circle cx="733.4" cy="816.5" r="6" fill="#B07AA1" opacity="0.85"><title>../app_state.dart</title></circle>
-<circle cx="723.5" cy="819.9" r="6" fill="#B07AA1" opacity="0.85"><title>command.dart</title></circle>
-<circle cx="713.5" cy="823.1" r="6" fill="#BAB0AC" opacity="0.85"><title>run_command</title></circle>
-<circle cx="703.5" cy="826.0" r="6" fill="#BAB0AC" opacity="0.85"><title>dart:io</title></circle>
-<circle cx="693.3" cy="828.7" r="6" fill="#BAB0AC" opacity="0.85"><title>package:path/path.dart'</title></circle>
-<circle cx="683.1" cy="831.0" r="6" fill="#BAB0AC" opacity="0.85"><title>../../project/launch_config.dart</title></circle>
-<circle cx="672.9" cy="833.1" r="6" fill="#BAB0AC" opacity="0.85"><title>../../project/main_scanner.dart</title></circle>
-<circle cx="662.6" cy="834.9" r="6" fill="#BAB0AC" opacity="0.85"><title>../app_state.dart</title></circle>
-<circle cx="652.2" cy="836.5" r="6" fill="#BAB0AC" opacity="0.85"><title>../run_controller.dart</title></circle>
-<circle cx="641.8" cy="837.8" r="6" fill="#BAB0AC" opacity="0.85"><title>command.dart</title></circle>
-<circle cx="631.4" cy="838.7" r="6" fill="#EDC948" opacity="0.85"><title>devtools_command</title></circle>
-<circle cx="620.9" cy="839.4" r="6" fill="#EDC948" opacity="0.85"><title>dart:io</title></circle>
-<circle cx="610.5" cy="839.9" r="6" fill="#EDC948" opacity="0.85"><title>../../config/config.dart</title></circle>
-<circle cx="600.0" cy="840.0" r="6" fill="#EDC948" opacity="0.85"><title>../app_state.dart</title></circle>
-<circle cx="589.5" cy="839.9" r="6" fill="#EDC948" opacity="0.85"><title>command.dart</title></circle>
-<circle cx="579.1" cy="839.4" r="6" fill="#F28E2B" opacity="0.85"><title>isolates_command</title></circle>
-<circle cx="568.6" cy="838.7" r="6" fill="#F28E2B" opacity="0.85"><title>package:vm_service/vm_service.dart'</title></circle>
-<circle cx="558.2" cy="837.8" r="6" fill="#F28E2B" opacity="0.85"><title>../../ide/ide_launcher.dart</title></circle>
-<circle cx="547.8" cy="836.5" r="6" fill="#F28E2B" opacity="0.85"><title>../../ide/source_location.dart</title></circle>
-<circle cx="537.4" cy="834.9" r="6" fill="#F28E2B" opacity="0.85"><title>../../vm/isolate_manager.dart</title></circle>
-<circle cx="527.1" cy="833.1" r="6" fill="#F28E2B" opacity="0.85"><title>../app_state.dart</title></circle>
-<circle cx="516.9" cy="831.0" r="6" fill="#F28E2B" opacity="0.85"><title>command.dart</title></circle>
-<circle cx="506.7" cy="828.7" r="6" fill="#76B7B2" opacity="0.85"><title>command_registry</title></circle>
-<circle cx="496.5" cy="826.0" r="6" fill="#76B7B2" opacity="0.85"><title>command.dart</title></circle>
-<circle cx="486.5" cy="823.1" r="6" fill="#76B7B2" opacity="0.85"><title>_byName()</title></circle>
-<circle cx="476.5" cy="819.9" r="6" fill="#59A14F" opacity="0.85"><title>inspect_command</title></circle>
-<circle cx="466.6" cy="816.5" r="6" fill="#59A14F" opacity="0.85"><title>dart:async</title></circle>
-<circle cx="456.8" cy="812.8" r="6" fill="#59A14F" opacity="0.85"><title>package:vm_service/vm_service.dart'</title></circle>
-<circle cx="447.1" cy="808.8" r="6" fill="#59A14F" opacity="0.85"><title>../../ide/source_location.dart</title></circle>
-<circle cx="437.6" cy="804.6" r="6" fill="#59A14F" opacity="0.85"><title>../app_state.dart</title></circle>
-<circle cx="428.1" cy="800.1" r="6" fill="#59A14F" opacity="0.85"><title>command.dart</title></circle>
-<circle cx="418.8" cy="795.3" r="6" fill="#BAB0AC" opacity="0.85"><title>dart_file_watcher</title></circle>
-<circle cx="409.6" cy="790.3" r="6" fill="#BAB0AC" opacity="0.85"><title>dart:async</title></circle>
-<circle cx="400.5" cy="785.1" r="6" fill="#BAB0AC" opacity="0.85"><title>package:path/path.dart'</title></circle>
-<circle cx="391.6" cy="779.6" r="6" fill="#BAB0AC" opacity="0.85"><title>package:watcher/watcher.dart</title></circle>
-<circle cx="382.8" cy="773.9" r="6" fill="#BAB0AC" opacity="0.85"><title>_onChange()</title></circle>
-<circle cx="374.2" cy="768.0" r="6" fill="#F28E2B" opacity="0.85"><title>config_store</title></circle>
-<circle cx="365.7" cy="761.8" r="6" fill="#F28E2B" opacity="0.85"><title>dart:io</title></circle>
-<circle cx="357.4" cy="755.4" r="6" fill="#F28E2B" opacity="0.85"><title>package:path/path.dart'</title></circle>
-<circle cx="349.3" cy="748.8" r="6" fill="#F28E2B" opacity="0.85"><title>package:yaml/yaml.dart</title></circle>
-<circle cx="341.4" cy="741.9" r="6" fill="#F28E2B" opacity="0.85"><title>config.dart</title></circle>
-<circle cx="333.6" cy="734.9" r="6" fill="#B07AA1" opacity="0.85"><title>config</title></circle>
-<circle cx="326.1" cy="727.6" r="6" fill="#B07AA1" opacity="0.85"><title>FrunIde</title></circle>
-<circle cx="318.7" cy="720.2" r="6" fill="#B07AA1" opacity="0.85"><title>.name()</title></circle>
-<circle cx="311.6" cy="712.5" r="6" fill="#B07AA1" opacity="0.85"><title>FrunEditorMode</title></circle>
-<circle cx="304.6" cy="704.7" r="6" fill="#B07AA1" opacity="0.85"><title>.name()</title></circle>
-<circle cx="297.9" cy="696.7" r="6" fill="#B07AA1" opacity="0.85"><title>FrunDevToolsAutoOpen</title></circle>
-<circle cx="291.4" cy="688.5" r="6" fill="#B07AA1" opacity="0.85"><title>.name()</title></circle>
-<circle cx="285.1" cy="680.1" r="6" fill="#B07AA1" opacity="0.85"><title>FrunThemeMode</title></circle>
-<circle cx="279.0" cy="671.5" r="6" fill="#B07AA1" opacity="0.85"><title>.name()</title></circle>
-<circle cx="273.2" cy="662.8" r="6" fill="#F28E2B" opacity="0.85"><title>frun_app</title></circle>
-<circle cx="267.6" cy="654.0" r="6" fill="#F28E2B" opacity="0.85"><title>dart:math'</title></circle>
-<circle cx="262.3" cy="645.0" r="6" fill="#F28E2B" opacity="0.85"><title>package:utopia_tui/utopia_tui.dart</title></circle>
-<circle cx="257.1" cy="635.9" r="6" fill="#F28E2B" opacity="0.85"><title>../app/app_state.dart</title></circle>
-<circle cx="252.3" cy="626.6" r="6" fill="#F28E2B" opacity="0.85"><title>../app/commands/command.dart</title></circle>
-<circle cx="247.7" cy="617.2" r="6" fill="#F28E2B" opacity="0.85"><title>../app/commands/command_registry.dart</title></circle>
-<circle cx="243.3" cy="607.7" r="6" fill="#F28E2B" opacity="0.85"><title>../app/link_extractor.dart</title></circle>
-<circle cx="239.2" cy="598.0" r="6" fill="#F28E2B" opacity="0.85"><title>../app/transcript.dart</title></circle>
-<circle cx="235.3" cy="588.3" r="6" fill="#F28E2B" opacity="0.85"><title>../config/config.dart</title></circle>
-<circle cx="231.8" cy="578.5" r="6" fill="#F28E2B" opacity="0.85"><title>../ide/source_location.dart</title></circle>
-<circle cx="228.4" cy="568.5" r="6" fill="#F28E2B" opacity="0.85"><title>../version.dart</title></circle>
-<circle cx="225.4" cy="558.5" r="6" fill="#F28E2B" opacity="0.85"><title>input_controller.dart</title></circle>
-<circle cx="222.6" cy="548.4" r="6" fill="#F28E2B" opacity="0.85"><title>theme.dart</title></circle>
-<circle cx="220.1" cy="538.2" r="6" fill="#76B7B2" opacity="0.85"><title>input_controller</title></circle>
-<circle cx="217.9" cy="528.0" r="6" fill="#76B7B2" opacity="0.85"><title>package:utopia_tui/utopia_tui.dart</title></circle>
-<circle cx="215.9" cy="517.7" r="6" fill="#76B7B2" opacity="0.85"><title>../config/config.dart</title></circle>
-<circle cx="214.2" cy="507.4" r="6" fill="#76B7B2" opacity="0.85"><title>VimMode</title></circle>
-<circle cx="212.8" cy="497.0" r="6" fill="#76B7B2" opacity="0.85"><title>InputAction</title></circle>
-<circle cx="211.7" cy="486.6" r="6" fill="#76B7B2" opacity="0.85"><title>_text()</title></circle>
-<circle cx="210.9" cy="476.2" r="6" fill="#76B7B2" opacity="0.85"><title>_cursor()</title></circle>
-<circle cx="210.3" cy="465.7" r="6" fill="#76B7B2" opacity="0.85"><title>_mode()</title></circle>
-<circle cx="210.0" cy="455.2" r="6" fill="#76B7B2" opacity="0.85"><title>_editorMode()</title></circle>
-<circle cx="210.0" cy="444.8" r="6" fill="#76B7B2" opacity="0.85"><title>RegExp()</title></circle>
-<circle cx="210.3" cy="434.3" r="6" fill="#BAB0AC" opacity="0.85"><title>theme</title></circle>
-<circle cx="210.9" cy="423.8" r="6" fill="#BAB0AC" opacity="0.85"><title>package:utopia_tui/utopia_tui.dart</title></circle>
-<circle cx="211.7" cy="413.4" r="6" fill="#BAB0AC" opacity="0.85"><title>../app/transcript.dart</title></circle>
-<circle cx="212.8" cy="403.0" r="6" fill="#BAB0AC" opacity="0.85"><title>../config/config.dart</title></circle>
-<circle cx="214.2" cy="392.6" r="6" fill="#9C755F" opacity="0.85"><title>main_scanner</title></circle>
-<circle cx="215.9" cy="382.3" r="6" fill="#9C755F" opacity="0.85"><title>dart:io</title></circle>
-<circle cx="217.9" cy="372.0" r="6" fill="#9C755F" opacity="0.85"><title>package:path/path.dart'</title></circle>
-<circle cx="220.1" cy="361.8" r="6" fill="#9C755F" opacity="0.85"><title>launch_config.dart</title></circle>
-<circle cx="222.6" cy="351.6" r="6" fill="#FF9DA7" opacity="0.85"><title>project_detector</title></circle>
-<circle cx="225.4" cy="341.5" r="6" fill="#FF9DA7" opacity="0.85"><title>dart:io</title></circle>
-<circle cx="228.4" cy="331.5" r="6" fill="#FF9DA7" opacity="0.85"><title>package:path/path.dart'</title></circle>
-<circle cx="231.8" cy="321.5" r="6" fill="#FF9DA7" opacity="0.85"><title>package:yaml/yaml.dart</title></circle>
-<circle cx="235.3" cy="311.7" r="6" fill="#FF9DA7" opacity="0.85"><title>p()</title></circle>
-<circle cx="239.2" cy="302.0" r="6" fill="#EDC948" opacity="0.85"><title>launch_config</title></circle>
-<circle cx="243.3" cy="292.3" r="6" fill="#EDC948" opacity="0.85"><title>dart:convert</title></circle>
-<circle cx="247.7" cy="282.8" r="6" fill="#EDC948" opacity="0.85"><title>dart:io</title></circle>
-<circle cx="252.3" cy="273.4" r="6" fill="#EDC948" opacity="0.85"><title>LaunchEntrySource</title></circle>
-<circle cx="257.1" cy="264.1" r="6" fill="#EDC948" opacity="0.85"><title>isolate_manager</title></circle>
-<circle cx="262.3" cy="255.0" r="6" fill="#EDC948" opacity="0.85"><title>dart:async</title></circle>
-<circle cx="267.6" cy="246.0" r="6" fill="#EDC948" opacity="0.85"><title>package:vm_service/vm_service.dart'</title></circle>
-<circle cx="273.2" cy="237.2" r="6" fill="#EDC948" opacity="0.85"><title>package:vm_service/vm_service_io.dart</title></circle>
-<circle cx="279.0" cy="228.5" r="6" fill="#EDC948" opacity="0.85"><title>IsolateStatus</title></circle>
-<circle cx="285.1" cy="219.9" r="6" fill="#EDC948" opacity="0.85"><title>_service()</title></circle>
-<circle cx="291.4" cy="211.5" r="6" fill="#EDC948" opacity="0.85"><title>_changes()</title></circle>
-<circle cx="297.9" cy="203.3" r="6" fill="#EDC948" opacity="0.85"><title>_extensionStream()</title></circle>
-<circle cx="304.6" cy="195.3" r="6" fill="#EDC948" opacity="0.85"><title>_isolates()</title></circle>
-<circle cx="311.6" cy="187.5" r="6" fill="#9C755F" opacity="0.85"><title>flutter_daemon</title></circle>
-<circle cx="318.7" cy="179.8" r="6" fill="#9C755F" opacity="0.85"><title>dart:async</title></circle>
-<circle cx="326.1" cy="172.4" r="6" fill="#9C755F" opacity="0.85"><title>dart:convert</title></circle>
-<circle cx="333.6" cy="165.1" r="6" fill="#9C755F" opacity="0.85"><title>dart:io</title></circle>
-<circle cx="341.4" cy="158.1" r="6" fill="#9C755F" opacity="0.85"><title>daemon_messages.dart</title></circle>
-<circle cx="349.3" cy="151.2" r="6" fill="#9C755F" opacity="0.85"><title>_executable()</title></circle>
-<circle cx="357.4" cy="144.6" r="6" fill="#9C755F" opacity="0.85"><title>_events()</title></circle>
-<circle cx="365.7" cy="138.2" r="6" fill="#9C755F" opacity="0.85"><title>_stderrLines()</title></circle>
-<circle cx="374.2" cy="132.0" r="6" fill="#F28E2B" opacity="0.85"><title>daemon_messages</title></circle>
-<circle cx="382.8" cy="126.1" r="6" fill="#F28E2B" opacity="0.85"><title>FlutterDevice()</title></circle>
-<circle cx="391.6" cy="120.4" r="6" fill="#F28E2B" opacity="0.85"><title>FlutterEmulator()</title></circle>
-<circle cx="400.5" cy="114.9" r="6" fill="#FF9DA7" opacity="0.85"><title>app_session</title></circle>
-<circle cx="409.6" cy="109.7" r="6" fill="#FF9DA7" opacity="0.85"><title>dart:async</title></circle>
-<circle cx="418.8" cy="104.7" r="6" fill="#FF9DA7" opacity="0.85"><title>dart:convert</title></circle>
-<circle cx="428.1" cy="99.9" r="6" fill="#FF9DA7" opacity="0.85"><title>dart:io</title></circle>
-<circle cx="437.6" cy="95.4" r="6" fill="#FF9DA7" opacity="0.85"><title>package:path/path.dart'</title></circle>
-<circle cx="447.1" cy="91.2" r="6" fill="#FF9DA7" opacity="0.85"><title>../project/launch_config.dart</title></circle>
-<circle cx="456.8" cy="87.2" r="6" fill="#FF9DA7" opacity="0.85"><title>daemon_messages.dart</title></circle>
-<circle cx="466.6" cy="83.5" r="6" fill="#FF9DA7" opacity="0.85"><title>_events()</title></circle>
-<circle cx="476.5" cy="80.1" r="6" fill="#FF9DA7" opacity="0.85"><title>_process()</title></circle>
-<circle cx="486.5" cy="76.9" r="6" fill="#FF9DA7" opacity="0.85"><title>version</title></circle>
-<circle cx="496.5" cy="74.0" r="6" fill="#9C755F" opacity="0.85"><title>device_manager</title></circle>
-<circle cx="506.7" cy="71.3" r="6" fill="#9C755F" opacity="0.85"><title>dart:async</title></circle>
-<circle cx="516.9" cy="69.0" r="6" fill="#9C755F" opacity="0.85"><title>../daemon/daemon_messages.dart</title></circle>
-<circle cx="527.1" cy="66.9" r="6" fill="#9C755F" opacity="0.85"><title>../daemon/flutter_daemon.dart</title></circle>
-<circle cx="537.4" cy="65.1" r="6" fill="#9C755F" opacity="0.85"><title>_changes()</title></circle>
-<circle cx="547.8" cy="63.5" r="6" fill="#4E79A7" opacity="0.85"><title>emulator_manager</title></circle>
-<circle cx="558.2" cy="62.2" r="6" fill="#4E79A7" opacity="0.85"><title>dart:async</title></circle>
-<circle cx="568.6" cy="61.3" r="6" fill="#4E79A7" opacity="0.85"><title>../daemon/daemon_messages.dart</title></circle>
-<circle cx="579.1" cy="60.6" r="6" fill="#4E79A7" opacity="0.85"><title>../daemon/flutter_daemon.dart</title></circle>
-<circle cx="589.5" cy="60.1" r="6" fill="#4E79A7" opacity="0.85"><title>_daemon()</title></circle>
+<circle cx="609.8" cy="60.1" r="6" fill="#4E79A7" opacity="0.85"><title>dart:async</title></circle>
+<circle cx="619.7" cy="60.5" r="6" fill="#4E79A7" opacity="0.85"><title>dart:io</title></circle>
+<circle cx="629.5" cy="61.1" r="6" fill="#4E79A7" opacity="0.85"><title>package:dart_tui/dart_tui.dart</title></circle>
+<circle cx="639.3" cy="62.0" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/app_state.dart</title></circle>
+<circle cx="649.1" cy="63.1" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/clear_command.dart</title></circle>
+<circle cx="658.8" cy="64.5" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/command_registry.dart</title></circle>
+<circle cx="668.5" cy="66.1" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/config_command.dart</title></circle>
+<circle cx="678.2" cy="67.9" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/devices_command.dart</title></circle>
+<circle cx="687.8" cy="70.0" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/devtools_command.dart</title></circle>
+<circle cx="697.4" cy="72.4" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/emulators_command.dart</title></circle>
+<circle cx="706.9" cy="74.9" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/help_command.dart</title></circle>
+<circle cx="716.3" cy="77.7" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/inspect_command.dart</title></circle>
+<circle cx="725.7" cy="80.8" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/isolates_command.dart</title></circle>
+<circle cx="734.9" cy="84.1" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/quit_command.dart</title></circle>
+<circle cx="744.1" cy="87.6" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/reload_command.dart</title></circle>
+<circle cx="753.2" cy="91.4" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/run_command.dart</title></circle>
+<circle cx="762.2" cy="95.3" r="6" fill="#4E79A7" opacity="0.85"><title>src/app/commands/status_command.dart</title></circle>
+<circle cx="771.1" cy="99.5" r="6" fill="#4E79A7" opacity="0.85"><title>src/config/config_store.dart</title></circle>
+<circle cx="779.9" cy="104.0" r="6" fill="#4E79A7" opacity="0.85"><title>src/daemon/flutter_daemon.dart</title></circle>
+<circle cx="788.6" cy="108.6" r="6" fill="#4E79A7" opacity="0.85"><title>src/devices/device_manager.dart</title></circle>
+<circle cx="797.1" cy="113.5" r="6" fill="#4E79A7" opacity="0.85"><title>src/project/project_detector.dart</title></circle>
+<circle cx="805.6" cy="118.6" r="6" fill="#4E79A7" opacity="0.85"><title>src/tui/frun_app.dart</title></circle>
+<circle cx="813.9" cy="123.9" r="6" fill="#4E79A7" opacity="0.85"><title>src/version.dart</title></circle>
+<circle cx="822.0" cy="129.4" r="6" fill="#4E79A7" opacity="0.85"><title>runFrun()</title></circle>
+<circle cx="830.0" cy="135.1" r="6" fill="#4E79A7" opacity="0.85"><title>_bootDaemon()</title></circle>
+<circle cx="837.9" cy="141.0" r="6" fill="#FF9DA7" opacity="0.85"><title>source_location</title></circle>
+<circle cx="845.6" cy="147.1" r="6" fill="#FF9DA7" opacity="0.85"><title>dart:convert</title></circle>
+<circle cx="853.2" cy="153.4" r="6" fill="#FF9DA7" opacity="0.85"><title>dart:io</title></circle>
+<circle cx="860.6" cy="159.8" r="6" fill="#FF9DA7" opacity="0.85"><title>package:path/path.dart'</title></circle>
+<circle cx="867.8" cy="166.5" r="6" fill="#E15759" opacity="0.85"><title>ide_launcher</title></circle>
+<circle cx="874.9" cy="173.4" r="6" fill="#E15759" opacity="0.85"><title>dart:io</title></circle>
+<circle cx="881.8" cy="180.4" r="6" fill="#E15759" opacity="0.85"><title>../app/app_state.dart</title></circle>
+<circle cx="888.5" cy="187.6" r="6" fill="#E15759" opacity="0.85"><title>../config/config.dart</title></circle>
+<circle cx="895.0" cy="194.9" r="6" fill="#E15759" opacity="0.85"><title>source_location.dart</title></circle>
+<circle cx="901.4" cy="202.5" r="6" fill="#E15759" opacity="0.85"><title>_commandFor()</title></circle>
+<circle cx="907.5" cy="210.2" r="6" fill="#F28E2B" opacity="0.85"><title>run_tab</title></circle>
+<circle cx="913.5" cy="218.0" r="6" fill="#F28E2B" opacity="0.85"><title>dart:async</title></circle>
+<circle cx="919.2" cy="226.0" r="6" fill="#F28E2B" opacity="0.85"><title>package:path/path.dart'</title></circle>
+<circle cx="924.8" cy="234.1" r="6" fill="#F28E2B" opacity="0.85"><title>../daemon/app_session.dart</title></circle>
+<circle cx="930.1" cy="242.4" r="6" fill="#F28E2B" opacity="0.85"><title>../daemon/daemon_messages.dart</title></circle>
+<circle cx="935.3" cy="250.8" r="6" fill="#F28E2B" opacity="0.85"><title>../project/launch_config.dart</title></circle>
+<circle cx="940.2" cy="259.3" r="6" fill="#F28E2B" opacity="0.85"><title>transcript.dart</title></circle>
+<circle cx="944.9" cy="267.9" r="6" fill="#59A14F" opacity="0.85"><title>transcript</title></circle>
+<circle cx="949.4" cy="276.7" r="6" fill="#59A14F" opacity="0.85"><title>dart:collection</title></circle>
+<circle cx="953.6" cy="285.6" r="6" fill="#59A14F" opacity="0.85"><title>TranscriptLevel</title></circle>
+<circle cx="957.7" cy="294.5" r="6" fill="#59A14F" opacity="0.85"><title>_revision()</title></circle>
+<circle cx="961.5" cy="303.6" r="6" fill="#59A14F" opacity="0.85"><title>List()</title></circle>
+<circle cx="965.1" cy="312.8" r="6" fill="#59A14F" opacity="0.85"><title>_add()</title></circle>
+<circle cx="968.4" cy="322.0" r="6" fill="#59A14F" opacity="0.85"><title>app_state</title></circle>
+<circle cx="971.5" cy="331.4" r="6" fill="#59A14F" opacity="0.85"><title>../config/config.dart</title></circle>
+<circle cx="974.4" cy="340.8" r="6" fill="#59A14F" opacity="0.85"><title>../daemon/flutter_daemon.dart</title></circle>
+<circle cx="977.0" cy="350.2" r="6" fill="#59A14F" opacity="0.85"><title>../devices/device_manager.dart</title></circle>
+<circle cx="979.4" cy="359.8" r="6" fill="#59A14F" opacity="0.85"><title>../ide/ide_launcher.dart</title></circle>
+<circle cx="981.6" cy="369.4" r="6" fill="#59A14F" opacity="0.85"><title>../project/project_detector.dart</title></circle>
+<circle cx="983.5" cy="379.0" r="6" fill="#59A14F" opacity="0.85"><title>../vm/isolate_manager.dart</title></circle>
+<circle cx="985.2" cy="388.7" r="6" fill="#59A14F" opacity="0.85"><title>run_controller.dart</title></circle>
+<circle cx="986.6" cy="398.5" r="6" fill="#59A14F" opacity="0.85"><title>transcript.dart</title></circle>
+<circle cx="987.8" cy="408.3" r="6" fill="#59A14F" opacity="0.85"><title>_config()</title></circle>
+<circle cx="988.7" cy="418.1" r="6" fill="#E15759" opacity="0.85"><title>run_controller</title></circle>
+<circle cx="989.4" cy="427.9" r="6" fill="#E15759" opacity="0.85"><title>dart:async</title></circle>
+<circle cx="989.8" cy="437.7" r="6" fill="#E15759" opacity="0.85"><title>../daemon/app_session.dart</title></circle>
+<circle cx="990.0" cy="447.5" r="6" fill="#E15759" opacity="0.85"><title>../daemon/daemon_messages.dart</title></circle>
+<circle cx="989.9" cy="457.4" r="6" fill="#E15759" opacity="0.85"><title>../project/launch_config.dart</title></circle>
+<circle cx="989.6" cy="467.2" r="6" fill="#E15759" opacity="0.85"><title>../watcher/dart_file_watcher.dart</title></circle>
+<circle cx="989.1" cy="477.0" r="6" fill="#E15759" opacity="0.85"><title>app_state.dart</title></circle>
+<circle cx="988.3" cy="486.8" r="6" fill="#E15759" opacity="0.85"><title>run_tab.dart</title></circle>
+<circle cx="987.2" cy="496.6" r="6" fill="#E15759" opacity="0.85"><title>_activeIndex()</title></circle>
+<circle cx="985.9" cy="506.4" r="6" fill="#E15759" opacity="0.85"><title>tabs()</title></circle>
+<circle cx="984.4" cy="516.1" r="6" fill="#E15759" opacity="0.85"><title>activeTab()</title></circle>
+<circle cx="982.6" cy="525.8" r="6" fill="#E15759" opacity="0.85"><title>hotReloadTab()</title></circle>
+<circle cx="980.5" cy="535.4" r="6" fill="#E15759" opacity="0.85"><title>hotRestartTab()</title></circle>
+<circle cx="978.3" cy="545.0" r="6" fill="#BAB0AC" opacity="0.85"><title>link_extractor</title></circle>
+<circle cx="975.7" cy="554.5" r="6" fill="#BAB0AC" opacity="0.85"><title>config_command</title></circle>
+<circle cx="973.0" cy="563.9" r="6" fill="#BAB0AC" opacity="0.85"><title>../../config/config.dart</title></circle>
+<circle cx="970.0" cy="573.3" r="6" fill="#BAB0AC" opacity="0.85"><title>../../config/config_store.dart</title></circle>
+<circle cx="966.8" cy="582.6" r="6" fill="#BAB0AC" opacity="0.85"><title>../app_state.dart</title></circle>
+<circle cx="963.3" cy="591.8" r="6" fill="#BAB0AC" opacity="0.85"><title>command.dart</title></circle>
+<circle cx="959.6" cy="600.9" r="6" fill="#FF9DA7" opacity="0.85"><title>clear_command</title></circle>
+<circle cx="955.7" cy="610.0" r="6" fill="#FF9DA7" opacity="0.85"><title>../app_state.dart</title></circle>
+<circle cx="951.5" cy="618.9" r="6" fill="#FF9DA7" opacity="0.85"><title>command.dart</title></circle>
+<circle cx="947.2" cy="627.7" r="6" fill="#59A14F" opacity="0.85"><title>help_command</title></circle>
+<circle cx="942.6" cy="636.4" r="6" fill="#59A14F" opacity="0.85"><title>../app_state.dart</title></circle>
+<circle cx="937.7" cy="645.0" r="6" fill="#59A14F" opacity="0.85"><title>command.dart</title></circle>
+<circle cx="932.7" cy="653.5" r="6" fill="#59A14F" opacity="0.85"><title>command_registry.dart</title></circle>
+<circle cx="927.5" cy="661.8" r="6" fill="#B07AA1" opacity="0.85"><title>quit_command</title></circle>
+<circle cx="922.0" cy="670.0" r="6" fill="#B07AA1" opacity="0.85"><title>../app_state.dart</title></circle>
+<circle cx="916.4" cy="678.0" r="6" fill="#B07AA1" opacity="0.85"><title>command.dart</title></circle>
+<circle cx="910.5" cy="686.0" r="6" fill="#BAB0AC" opacity="0.85"><title>reload_command</title></circle>
+<circle cx="904.5" cy="693.7" r="6" fill="#BAB0AC" opacity="0.85"><title>../app_state.dart</title></circle>
+<circle cx="898.2" cy="701.3" r="6" fill="#BAB0AC" opacity="0.85"><title>../run_controller.dart</title></circle>
+<circle cx="891.8" cy="708.8" r="6" fill="#BAB0AC" opacity="0.85"><title>command.dart</title></circle>
+<circle cx="885.2" cy="716.0" r="6" fill="#4E79A7" opacity="0.85"><title>command</title></circle>
+<circle cx="878.4" cy="723.1" r="6" fill="#4E79A7" opacity="0.85"><title>../app_state.dart</title></circle>
+<circle cx="871.4" cy="730.1" r="6" fill="#4E79A7" opacity="0.85"><title>run()</title></circle>
+<circle cx="864.2" cy="736.8" r="6" fill="#E15759" opacity="0.85"><title>status_command</title></circle>
+<circle cx="856.9" cy="743.4" r="6" fill="#E15759" opacity="0.85"><title>../app_state.dart</title></circle>
+<circle cx="849.4" cy="749.8" r="6" fill="#E15759" opacity="0.85"><title>command.dart</title></circle>
+<circle cx="841.8" cy="756.0" r="6" fill="#9C755F" opacity="0.85"><title>devices_command</title></circle>
+<circle cx="834.0" cy="762.0" r="6" fill="#9C755F" opacity="0.85"><title>../../config/config_store.dart</title></circle>
+<circle cx="826.0" cy="767.8" r="6" fill="#9C755F" opacity="0.85"><title>../app_state.dart</title></circle>
+<circle cx="817.9" cy="773.4" r="6" fill="#9C755F" opacity="0.85"><title>command.dart</title></circle>
+<circle cx="809.7" cy="778.8" r="6" fill="#F28E2B" opacity="0.85"><title>emulators_command</title></circle>
+<circle cx="801.4" cy="784.0" r="6" fill="#F28E2B" opacity="0.85"><title>../../config/config_store.dart</title></circle>
+<circle cx="792.9" cy="789.0" r="6" fill="#F28E2B" opacity="0.85"><title>../../devices/emulator_manager.dart</title></circle>
+<circle cx="784.3" cy="793.7" r="6" fill="#F28E2B" opacity="0.85"><title>../app_state.dart</title></circle>
+<circle cx="775.5" cy="798.3" r="6" fill="#F28E2B" opacity="0.85"><title>command.dart</title></circle>
+<circle cx="766.7" cy="802.6" r="6" fill="#BAB0AC" opacity="0.85"><title>run_command</title></circle>
+<circle cx="757.7" cy="806.7" r="6" fill="#BAB0AC" opacity="0.85"><title>dart:io</title></circle>
+<circle cx="748.7" cy="810.5" r="6" fill="#BAB0AC" opacity="0.85"><title>package:path/path.dart'</title></circle>
+<circle cx="739.5" cy="814.2" r="6" fill="#BAB0AC" opacity="0.85"><title>../../project/launch_config.dart</title></circle>
+<circle cx="730.3" cy="817.6" r="6" fill="#BAB0AC" opacity="0.85"><title>../../project/main_scanner.dart</title></circle>
+<circle cx="721.0" cy="820.8" r="6" fill="#BAB0AC" opacity="0.85"><title>../app_state.dart</title></circle>
+<circle cx="711.6" cy="823.7" r="6" fill="#BAB0AC" opacity="0.85"><title>../run_controller.dart</title></circle>
+<circle cx="702.1" cy="826.4" r="6" fill="#BAB0AC" opacity="0.85"><title>command.dart</title></circle>
+<circle cx="692.6" cy="828.8" r="6" fill="#B07AA1" opacity="0.85"><title>devtools_command</title></circle>
+<circle cx="683.0" cy="831.1" r="6" fill="#B07AA1" opacity="0.85"><title>dart:io</title></circle>
+<circle cx="673.4" cy="833.0" r="6" fill="#B07AA1" opacity="0.85"><title>../../config/config.dart</title></circle>
+<circle cx="663.7" cy="834.8" r="6" fill="#B07AA1" opacity="0.85"><title>../app_state.dart</title></circle>
+<circle cx="654.0" cy="836.3" r="6" fill="#B07AA1" opacity="0.85"><title>command.dart</title></circle>
+<circle cx="644.2" cy="837.5" r="6" fill="#4E79A7" opacity="0.85"><title>isolates_command</title></circle>
+<circle cx="634.4" cy="838.5" r="6" fill="#4E79A7" opacity="0.85"><title>package:vm_service/vm_service.dart'</title></circle>
+<circle cx="624.6" cy="839.2" r="6" fill="#4E79A7" opacity="0.85"><title>../../ide/ide_launcher.dart</title></circle>
+<circle cx="614.8" cy="839.7" r="6" fill="#4E79A7" opacity="0.85"><title>../../ide/source_location.dart</title></circle>
+<circle cx="604.9" cy="840.0" r="6" fill="#4E79A7" opacity="0.85"><title>../../vm/isolate_manager.dart</title></circle>
+<circle cx="595.1" cy="840.0" r="6" fill="#4E79A7" opacity="0.85"><title>../app_state.dart</title></circle>
+<circle cx="585.2" cy="839.7" r="6" fill="#4E79A7" opacity="0.85"><title>command.dart</title></circle>
+<circle cx="575.4" cy="839.2" r="6" fill="#59A14F" opacity="0.85"><title>command_registry</title></circle>
+<circle cx="565.6" cy="838.5" r="6" fill="#59A14F" opacity="0.85"><title>command.dart</title></circle>
+<circle cx="555.8" cy="837.5" r="6" fill="#59A14F" opacity="0.85"><title>_byName()</title></circle>
+<circle cx="546.0" cy="836.3" r="6" fill="#76B7B2" opacity="0.85"><title>inspect_command</title></circle>
+<circle cx="536.3" cy="834.8" r="6" fill="#76B7B2" opacity="0.85"><title>dart:async</title></circle>
+<circle cx="526.6" cy="833.0" r="6" fill="#76B7B2" opacity="0.85"><title>package:vm_service/vm_service.dart'</title></circle>
+<circle cx="517.0" cy="831.1" r="6" fill="#76B7B2" opacity="0.85"><title>../../ide/source_location.dart</title></circle>
+<circle cx="507.4" cy="828.8" r="6" fill="#76B7B2" opacity="0.85"><title>../app_state.dart</title></circle>
+<circle cx="497.9" cy="826.4" r="6" fill="#76B7B2" opacity="0.85"><title>command.dart</title></circle>
+<circle cx="488.4" cy="823.7" r="6" fill="#FF9DA7" opacity="0.85"><title>dart_file_watcher</title></circle>
+<circle cx="479.0" cy="820.8" r="6" fill="#FF9DA7" opacity="0.85"><title>dart:async</title></circle>
+<circle cx="469.7" cy="817.6" r="6" fill="#FF9DA7" opacity="0.85"><title>package:path/path.dart'</title></circle>
+<circle cx="460.5" cy="814.2" r="6" fill="#FF9DA7" opacity="0.85"><title>package:watcher/watcher.dart</title></circle>
+<circle cx="451.3" cy="810.5" r="6" fill="#FF9DA7" opacity="0.85"><title>_onChange()</title></circle>
+<circle cx="442.3" cy="806.7" r="6" fill="#4E79A7" opacity="0.85"><title>config_store</title></circle>
+<circle cx="433.3" cy="802.6" r="6" fill="#4E79A7" opacity="0.85"><title>dart:io</title></circle>
+<circle cx="424.5" cy="798.3" r="6" fill="#4E79A7" opacity="0.85"><title>package:path/path.dart'</title></circle>
+<circle cx="415.7" cy="793.7" r="6" fill="#4E79A7" opacity="0.85"><title>package:yaml/yaml.dart</title></circle>
+<circle cx="407.1" cy="789.0" r="6" fill="#4E79A7" opacity="0.85"><title>config.dart</title></circle>
+<circle cx="398.6" cy="784.0" r="6" fill="#B07AA1" opacity="0.85"><title>config</title></circle>
+<circle cx="390.3" cy="778.8" r="6" fill="#B07AA1" opacity="0.85"><title>FrunIde</title></circle>
+<circle cx="382.1" cy="773.4" r="6" fill="#B07AA1" opacity="0.85"><title>.name()</title></circle>
+<circle cx="374.0" cy="767.8" r="6" fill="#B07AA1" opacity="0.85"><title>FrunEditorMode</title></circle>
+<circle cx="366.0" cy="762.0" r="6" fill="#B07AA1" opacity="0.85"><title>.name()</title></circle>
+<circle cx="358.2" cy="756.0" r="6" fill="#B07AA1" opacity="0.85"><title>FrunDevToolsAutoOpen</title></circle>
+<circle cx="350.6" cy="749.8" r="6" fill="#B07AA1" opacity="0.85"><title>.name()</title></circle>
+<circle cx="343.1" cy="743.4" r="6" fill="#B07AA1" opacity="0.85"><title>FrunThemeMode</title></circle>
+<circle cx="335.8" cy="736.8" r="6" fill="#B07AA1" opacity="0.85"><title>.name()</title></circle>
+<circle cx="328.6" cy="730.1" r="6" fill="#EDC948" opacity="0.85"><title>hit_regions</title></circle>
+<circle cx="321.6" cy="723.1" r="6" fill="#EDC948" opacity="0.85"><title>package:dart_tui/dart_tui.dart</title></circle>
+<circle cx="314.8" cy="716.0" r="6" fill="#EDC948" opacity="0.85"><title>_regions()</title></circle>
+<circle cx="308.2" cy="708.8" r="6" fill="#F28E2B" opacity="0.85"><title>clipboard</title></circle>
+<circle cx="301.8" cy="701.3" r="6" fill="#F28E2B" opacity="0.85"><title>dart:io</title></circle>
+<circle cx="295.5" cy="693.7" r="6" fill="#F28E2B" opacity="0.85"><title>copyToClipboard()</title></circle>
+<circle cx="289.5" cy="686.0" r="6" fill="#F28E2B" opacity="0.85"><title>frun_app</title></circle>
+<circle cx="283.6" cy="678.0" r="6" fill="#F28E2B" opacity="0.85"><title>dart:async</title></circle>
+<circle cx="278.0" cy="670.0" r="6" fill="#F28E2B" opacity="0.85"><title>dart:math'</title></circle>
+<circle cx="272.5" cy="661.8" r="6" fill="#F28E2B" opacity="0.85"><title>package:dart_tui/dart_tui.dart</title></circle>
+<circle cx="267.3" cy="653.5" r="6" fill="#F28E2B" opacity="0.85"><title>../app/app_state.dart</title></circle>
+<circle cx="262.3" cy="645.0" r="6" fill="#F28E2B" opacity="0.85"><title>../app/commands/command.dart</title></circle>
+<circle cx="257.4" cy="636.4" r="6" fill="#F28E2B" opacity="0.85"><title>../app/commands/command_registry.dart</title></circle>
+<circle cx="252.8" cy="627.7" r="6" fill="#F28E2B" opacity="0.85"><title>../app/link_extractor.dart</title></circle>
+<circle cx="248.5" cy="618.9" r="6" fill="#F28E2B" opacity="0.85"><title>../app/run_tab.dart</title></circle>
+<circle cx="244.3" cy="610.0" r="6" fill="#F28E2B" opacity="0.85"><title>../app/transcript.dart</title></circle>
+<circle cx="240.4" cy="600.9" r="6" fill="#F28E2B" opacity="0.85"><title>../config/config.dart</title></circle>
+<circle cx="236.7" cy="591.8" r="6" fill="#F28E2B" opacity="0.85"><title>../ide/source_location.dart</title></circle>
+<circle cx="233.2" cy="582.6" r="6" fill="#F28E2B" opacity="0.85"><title>../version.dart</title></circle>
+<circle cx="230.0" cy="573.3" r="6" fill="#F28E2B" opacity="0.85"><title>clipboard.dart</title></circle>
+<circle cx="227.0" cy="563.9" r="6" fill="#F28E2B" opacity="0.85"><title>hit_regions.dart</title></circle>
+<circle cx="224.3" cy="554.5" r="6" fill="#F28E2B" opacity="0.85"><title>input_controller.dart</title></circle>
+<circle cx="221.7" cy="545.0" r="6" fill="#F28E2B" opacity="0.85"><title>theme.dart</title></circle>
+<circle cx="219.5" cy="535.4" r="6" fill="#F28E2B" opacity="0.85"><title>transcript_cursor.dart</title></circle>
+<circle cx="217.4" cy="525.8" r="6" fill="#F28E2B" opacity="0.85"><title>_ModSetExt</title></circle>
+<circle cx="215.6" cy="516.1" r="6" fill="#9C755F" opacity="0.85"><title>transcript_cursor</title></circle>
+<circle cx="214.1" cy="506.4" r="6" fill="#76B7B2" opacity="0.85"><title>input_controller</title></circle>
+<circle cx="212.8" cy="496.6" r="6" fill="#76B7B2" opacity="0.85"><title>package:dart_tui/dart_tui.dart</title></circle>
+<circle cx="211.7" cy="486.8" r="6" fill="#76B7B2" opacity="0.85"><title>../config/config.dart</title></circle>
+<circle cx="210.9" cy="477.0" r="6" fill="#76B7B2" opacity="0.85"><title>VimMode</title></circle>
+<circle cx="210.4" cy="467.2" r="6" fill="#76B7B2" opacity="0.85"><title>InputAction</title></circle>
+<circle cx="210.1" cy="457.4" r="6" fill="#76B7B2" opacity="0.85"><title>_text()</title></circle>
+<circle cx="210.0" cy="447.5" r="6" fill="#76B7B2" opacity="0.85"><title>_cursor()</title></circle>
+<circle cx="210.2" cy="437.7" r="6" fill="#76B7B2" opacity="0.85"><title>_mode()</title></circle>
+<circle cx="210.6" cy="427.9" r="6" fill="#76B7B2" opacity="0.85"><title>_editorMode()</title></circle>
+<circle cx="211.3" cy="418.1" r="6" fill="#76B7B2" opacity="0.85"><title>RegExp()</title></circle>
+<circle cx="212.2" cy="408.3" r="6" fill="#9C755F" opacity="0.85"><title>theme</title></circle>
+<circle cx="213.4" cy="398.5" r="6" fill="#9C755F" opacity="0.85"><title>package:dart_tui/dart_tui.dart</title></circle>
+<circle cx="214.8" cy="388.7" r="6" fill="#9C755F" opacity="0.85"><title>../app/transcript.dart</title></circle>
+<circle cx="216.5" cy="379.0" r="6" fill="#9C755F" opacity="0.85"><title>../config/config.dart</title></circle>
+<circle cx="218.4" cy="369.4" r="6" fill="#9C755F" opacity="0.85"><title>FrunTheme()</title></circle>
+<circle cx="220.6" cy="359.8" r="6" fill="#B07AA1" opacity="0.85"><title>main_scanner</title></circle>
+<circle cx="223.0" cy="350.2" r="6" fill="#B07AA1" opacity="0.85"><title>dart:io</title></circle>
+<circle cx="225.6" cy="340.8" r="6" fill="#B07AA1" opacity="0.85"><title>package:path/path.dart'</title></circle>
+<circle cx="228.5" cy="331.4" r="6" fill="#B07AA1" opacity="0.85"><title>launch_config.dart</title></circle>
+<circle cx="231.6" cy="322.0" r="6" fill="#EDC948" opacity="0.85"><title>project_detector</title></circle>
+<circle cx="234.9" cy="312.8" r="6" fill="#EDC948" opacity="0.85"><title>dart:io</title></circle>
+<circle cx="238.5" cy="303.6" r="6" fill="#EDC948" opacity="0.85"><title>package:path/path.dart'</title></circle>
+<circle cx="242.3" cy="294.5" r="6" fill="#EDC948" opacity="0.85"><title>package:yaml/yaml.dart</title></circle>
+<circle cx="246.4" cy="285.6" r="6" fill="#EDC948" opacity="0.85"><title>p()</title></circle>
+<circle cx="250.6" cy="276.7" r="6" fill="#EDC948" opacity="0.85"><title>launch_config</title></circle>
+<circle cx="255.1" cy="267.9" r="6" fill="#EDC948" opacity="0.85"><title>dart:convert</title></circle>
+<circle cx="259.8" cy="259.3" r="6" fill="#EDC948" opacity="0.85"><title>dart:io</title></circle>
+<circle cx="264.7" cy="250.8" r="6" fill="#EDC948" opacity="0.85"><title>LaunchEntrySource</title></circle>
+<circle cx="269.9" cy="242.4" r="6" fill="#EDC948" opacity="0.85"><title>isolate_manager</title></circle>
+<circle cx="275.2" cy="234.1" r="6" fill="#EDC948" opacity="0.85"><title>dart:async</title></circle>
+<circle cx="280.8" cy="226.0" r="6" fill="#EDC948" opacity="0.85"><title>package:vm_service/vm_service.dart'</title></circle>
+<circle cx="286.5" cy="218.0" r="6" fill="#EDC948" opacity="0.85"><title>package:vm_service/vm_service_io.dart</title></circle>
+<circle cx="292.5" cy="210.2" r="6" fill="#EDC948" opacity="0.85"><title>IsolateStatus</title></circle>
+<circle cx="298.6" cy="202.5" r="6" fill="#EDC948" opacity="0.85"><title>_service()</title></circle>
+<circle cx="305.0" cy="194.9" r="6" fill="#EDC948" opacity="0.85"><title>_changes()</title></circle>
+<circle cx="311.5" cy="187.6" r="6" fill="#EDC948" opacity="0.85"><title>_extensionStream()</title></circle>
+<circle cx="318.2" cy="180.4" r="6" fill="#EDC948" opacity="0.85"><title>_isolates()</title></circle>
+<circle cx="325.1" cy="173.4" r="6" fill="#9C755F" opacity="0.85"><title>flutter_daemon</title></circle>
+<circle cx="332.2" cy="166.5" r="6" fill="#9C755F" opacity="0.85"><title>dart:async</title></circle>
+<circle cx="339.4" cy="159.8" r="6" fill="#9C755F" opacity="0.85"><title>dart:convert</title></circle>
+<circle cx="346.8" cy="153.4" r="6" fill="#9C755F" opacity="0.85"><title>dart:io</title></circle>
+<circle cx="354.4" cy="147.1" r="6" fill="#9C755F" opacity="0.85"><title>daemon_messages.dart</title></circle>
+<circle cx="362.1" cy="141.0" r="6" fill="#9C755F" opacity="0.85"><title>_executable()</title></circle>
+<circle cx="370.0" cy="135.1" r="6" fill="#9C755F" opacity="0.85"><title>_events()</title></circle>
+<circle cx="378.0" cy="129.4" r="6" fill="#9C755F" opacity="0.85"><title>_stderrLines()</title></circle>
+<circle cx="386.1" cy="123.9" r="6" fill="#76B7B2" opacity="0.85"><title>daemon_messages</title></circle>
+<circle cx="394.4" cy="118.6" r="6" fill="#76B7B2" opacity="0.85"><title>FlutterDevice()</title></circle>
+<circle cx="402.9" cy="113.5" r="6" fill="#76B7B2" opacity="0.85"><title>FlutterEmulator()</title></circle>
+<circle cx="411.4" cy="108.6" r="6" fill="#FF9DA7" opacity="0.85"><title>app_session</title></circle>
+<circle cx="420.1" cy="104.0" r="6" fill="#FF9DA7" opacity="0.85"><title>dart:async</title></circle>
+<circle cx="428.9" cy="99.5" r="6" fill="#FF9DA7" opacity="0.85"><title>dart:convert</title></circle>
+<circle cx="437.8" cy="95.3" r="6" fill="#FF9DA7" opacity="0.85"><title>dart:io</title></circle>
+<circle cx="446.8" cy="91.4" r="6" fill="#FF9DA7" opacity="0.85"><title>package:path/path.dart'</title></circle>
+<circle cx="455.9" cy="87.6" r="6" fill="#FF9DA7" opacity="0.85"><title>../project/launch_config.dart</title></circle>
+<circle cx="465.1" cy="84.1" r="6" fill="#FF9DA7" opacity="0.85"><title>daemon_messages.dart</title></circle>
+<circle cx="474.3" cy="80.8" r="6" fill="#FF9DA7" opacity="0.85"><title>_events()</title></circle>
+<circle cx="483.7" cy="77.7" r="6" fill="#FF9DA7" opacity="0.85"><title>_process()</title></circle>
+<circle cx="493.1" cy="74.9" r="6" fill="#4E79A7" opacity="0.85"><title>version</title></circle>
+<circle cx="502.6" cy="72.4" r="6" fill="#E15759" opacity="0.85"><title>device_manager</title></circle>
+<circle cx="512.2" cy="70.0" r="6" fill="#E15759" opacity="0.85"><title>dart:async</title></circle>
+<circle cx="521.8" cy="67.9" r="6" fill="#E15759" opacity="0.85"><title>../daemon/daemon_messages.dart</title></circle>
+<circle cx="531.5" cy="66.1" r="6" fill="#E15759" opacity="0.85"><title>../daemon/flutter_daemon.dart</title></circle>
+<circle cx="541.2" cy="64.5" r="6" fill="#E15759" opacity="0.85"><title>_changes()</title></circle>
+<circle cx="550.9" cy="63.1" r="6" fill="#76B7B2" opacity="0.85"><title>emulator_manager</title></circle>
+<circle cx="560.7" cy="62.0" r="6" fill="#76B7B2" opacity="0.85"><title>dart:async</title></circle>
+<circle cx="570.5" cy="61.1" r="6" fill="#76B7B2" opacity="0.85"><title>../daemon/daemon_messages.dart</title></circle>
+<circle cx="580.3" cy="60.5" r="6" fill="#76B7B2" opacity="0.85"><title>../daemon/flutter_daemon.dart</title></circle>
+<circle cx="590.2" cy="60.1" r="6" fill="#76B7B2" opacity="0.85"><title>_daemon()</title></circle>
 </svg>

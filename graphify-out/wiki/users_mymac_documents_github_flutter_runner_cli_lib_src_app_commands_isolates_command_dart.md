@@ -3,7 +3,7 @@
 - **ID:** `users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart`
 - **Type:** File
 - **File:** `/Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/app/commands/isolates_command.dart`
-- **Community:** 11 (../../vm/isolate_manager.dart)
+- **Community:** 10 (../../vm/isolate_manager.dart)
 
 ## Relationships
 

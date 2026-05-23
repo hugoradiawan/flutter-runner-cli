@@ -3,7 +3,7 @@
 - **ID:** `users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_inspect_command_dart`
 - **Type:** File
 - **File:** `/Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/app/commands/inspect_command.dart`
-- **Community:** 14 (package:vm_service/vm_service.dart')
+- **Community:** 13 (package:vm_service/vm_service.dart')
 
 ## Relationships
 

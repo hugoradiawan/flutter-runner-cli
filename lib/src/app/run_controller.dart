@@ -111,8 +111,10 @@ class RunController {
     }
   }
 
-  Future<void> hotReloadActive() async {
-    final tab = activeTab;
+  Future<void> hotReloadActive() => hotReloadTab(activeTab);
+  Future<void> hotRestartActive() => hotRestartTab(activeTab);
+
+  Future<void> hotReloadTab(RunTab? tab) async {
     if (tab == null || tab.session == null) {
       state.transcript.warn('No app running. Use /run first.');
       return;
@@ -125,8 +127,7 @@ class RunController {
     }
   }
 
-  Future<void> hotRestartActive() async {
-    final tab = activeTab;
+  Future<void> hotRestartTab(RunTab? tab) async {
     if (tab == null || tab.session == null) {
       state.transcript.warn('No app running. Use /run first.');
       return;
@@ -137,6 +138,34 @@ class RunController {
     } catch (e) {
       tab.transcript.error('Hot restart failed: $e');
     }
+  }
+
+  /// Stop and remove an arbitrary tab (not necessarily the active one).
+  /// Used by the clickable per-tab stop / close glyph.
+  Future<void> stopTabByIndex(int index) async {
+    if (index < 0 || index >= tabs.length) return;
+    final tab = tabs[index];
+    await _stopTab(tab);
+    final actualIndex = tabs.indexOf(tab);
+    if (actualIndex >= 0) tabs.removeAt(actualIndex);
+    if (tabs.isEmpty) {
+      _activeIndex = -1;
+    } else if (_activeIndex >= tabs.length) {
+      _activeIndex = tabs.length - 1;
+    } else if (actualIndex >= 0 && _activeIndex > actualIndex) {
+      _activeIndex--;
+    }
+    await _disposeWatcherIfIdle();
+  }
+
+  /// Re-launch a specific tab on the same device.
+  Future<void> rerunTabByIndex(int index) async {
+    if (index < 0 || index >= tabs.length) return;
+    final tab = tabs[index];
+    final entry = tab.entry;
+    final deviceId = tab.deviceId;
+    await stopTabByIndex(index);
+    await startOrFocus(entry, deviceId: deviceId);
   }
 
   /// Re-launch the active tab's entry on the same device.

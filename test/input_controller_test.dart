@@ -1,7 +1,13 @@
+import 'package:dart_tui/dart_tui.dart';
 import 'package:frun/src/config/config.dart';
 import 'package:frun/src/tui/input_controller.dart';
 import 'package:test/test.dart';
-import 'package:utopia_tui/utopia_tui.dart';
+
+KeyMsg _rune(String ch, {Set<KeyMod> mods = const {}}) =>
+    KeyPressMsg(TeaKey(code: KeyCode.rune, text: ch, modifiers: mods));
+
+KeyMsg _key(KeyCode code, {Set<KeyMod> mods = const {}}) =>
+    KeyPressMsg(TeaKey(code: code, modifiers: mods));
 
 void main() {
   group('InputController normal editor mode', () {
@@ -9,21 +15,21 @@ void main() {
       final c = InputController(editorMode: FrunEditorMode.normal);
       _type(c, 'hi');
       expect(c.text, 'hi');
-      final res = c.handle(const TuiKeyEvent(code: TuiKeyCode.enter));
+      final res = c.handle(_key(KeyCode.enter));
       expect(res, InputAction.submit);
     });
 
     test('backspace deletes character behind cursor', () {
       final c = InputController(editorMode: FrunEditorMode.normal);
       _type(c, 'abc');
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.backspace));
+      c.handle(_key(KeyCode.backspace));
       expect(c.text, 'ab');
     });
 
     test('Ctrl-U clears to beginning of line', () {
       final c = InputController(editorMode: FrunEditorMode.normal);
       _type(c, '/run lib/main.dart');
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.ctrlU));
+      c.handle(_rune('u', mods: {KeyMod.ctrl}));
       expect(c.text, '');
     });
   });
@@ -37,7 +43,7 @@ void main() {
     test('Escape switches to normal mode and steps cursor back', () {
       final c = InputController(editorMode: FrunEditorMode.vim);
       _type(c, 'foo');
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.escape));
+      c.handle(_key(KeyCode.escape));
       expect(c.mode, VimMode.normal);
       expect(c.cursor, 2);
     });
@@ -45,50 +51,50 @@ void main() {
     test('h/l move the cursor in normal mode', () {
       final c = InputController(editorMode: FrunEditorMode.vim);
       _type(c, 'hello');
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.escape));
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.printable, char: 'h'));
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.printable, char: 'h'));
+      c.handle(_key(KeyCode.escape));
+      c.handle(_rune('h'));
+      c.handle(_rune('h'));
       expect(c.cursor, 2);
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.printable, char: 'l'));
+      c.handle(_rune('l'));
       expect(c.cursor, 3);
     });
 
     test('0 and \$ jump to start/end', () {
       final c = InputController(editorMode: FrunEditorMode.vim);
       _type(c, 'abcdef');
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.escape));
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.printable, char: '0'));
+      c.handle(_key(KeyCode.escape));
+      c.handle(_rune('0'));
       expect(c.cursor, 0);
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.printable, char: r'$'));
+      c.handle(_rune(r'$'));
       expect(c.cursor, c.text.length);
     });
 
     test('dw deletes a word', () {
       final c = InputController(editorMode: FrunEditorMode.vim);
       _type(c, 'foo bar baz');
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.escape));
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.printable, char: '0'));
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.printable, char: 'd'));
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.printable, char: 'w'));
+      c.handle(_key(KeyCode.escape));
+      c.handle(_rune('0'));
+      c.handle(_rune('d'));
+      c.handle(_rune('w'));
       expect(c.text, 'bar baz');
     });
 
     test('i re-enters insert mode', () {
       final c = InputController(editorMode: FrunEditorMode.vim);
       _type(c, 'foo');
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.escape));
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.printable, char: 'i'));
+      c.handle(_key(KeyCode.escape));
+      c.handle(_rune('i'));
       expect(c.mode, VimMode.insert);
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.printable, char: 'X'));
+      c.handle(_rune('X'));
       expect(c.text, contains('X'));
     });
 
     test('x deletes character under cursor', () {
       final c = InputController(editorMode: FrunEditorMode.vim);
       _type(c, 'abc');
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.escape));
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.printable, char: '0'));
-      c.handle(const TuiKeyEvent(code: TuiKeyCode.printable, char: 'x'));
+      c.handle(_key(KeyCode.escape));
+      c.handle(_rune('0'));
+      c.handle(_rune('x'));
       expect(c.text, 'bc');
     });
   });
@@ -96,6 +102,6 @@ void main() {
 
 void _type(InputController c, String text) {
   for (final ch in text.split('')) {
-    c.handle(TuiKeyEvent(code: TuiKeyCode.printable, char: ch));
+    c.handle(_rune(ch));
   }
 }

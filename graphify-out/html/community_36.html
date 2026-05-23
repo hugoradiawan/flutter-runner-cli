@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>link_extractor — Community 36</title>
+<title>command.dart (36) — Community 36</title>
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,8 +25,8 @@ body { background: #0f0f1a; color: #e0e0e0; font-family: 'Segoe UI', system-ui, 
 <body>
 <div id="sidebar">
     <div>
-        <h2>link_extractor</h2>
-        <p style="font-size:12px;color:#666;">1 nodes · Community 36</p>
+        <h2>command.dart (36)</h2>
+        <p style="font-size:12px;color:#666;">3 nodes · Community 36</p>
     </div>
     <input id="search" type="text" placeholder="Search nodes…" />
     <div>
@@ -41,8 +41,8 @@ body { background: #0f0f1a; color: #e0e0e0; font-family: 'Segoe UI', system-ui, 
 <div id="graph-container"></div>
 <script>
 (function() {
-    var nodesData = [{id:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_link_extractor_dart",label:"link_extractor",title:"link_extractor\nType: File\nFile: /Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/app/link_extractor.dart\nDegree: 0",color:"#B07AA1",size:8.0}];
-    var edgesData = [];
+    var nodesData = [{id:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart",label:"quit_command",title:"quit_command\nType: File\nFile: /Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/app/commands/quit_command.dart\nDegree: 2",color:"#B07AA1",size:13.7},{id:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart_import_app_state_dart",label:"../app_state.dart",title:"../app_state.dart\nType: Module\nFile: /Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/app/commands/quit_command.dart\nDegree: 1",color:"#B07AA1",size:12.0},{id:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart_import_command_dart",label:"command.dart",title:"command.dart\nType: Module\nFile: /Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/app/commands/quit_command.dart\nDegree: 1",color:"#B07AA1",size:12.0}];
+    var edgesData = [{from:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart",to:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart_import_app_state_dart",label:"imports",dashes:false,title:"imports: users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart_import_app_state_dart\nConfidence: Extracted"},{from:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart",to:"users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart_import_command_dart",label:"imports",dashes:false,title:"imports: users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_quit_command_dart_import_command_dart\nConfidence: Extracted"}];
     var container = document.getElementById('graph-container');
     var nodes = new vis.DataSet(nodesData);
     var edges = new vis.DataSet(edgesData);

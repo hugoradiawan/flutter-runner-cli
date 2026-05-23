@@ -1,19 +1,19 @@
-# Community 21: package:yaml/yaml.dart
+# Community 21: ../../devices/emulator_manager.dart
 
 **Members:** 5
 
 ## Nodes
 
-- **config_store** (`users_mymac_documents_github_flutter_runner_cli_lib_src_config_config_store_dart`, File, degree: 4)
-- **config.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_config_config_store_dart_import_config_dart`, Module, degree: 1)
-- **dart:io** (`users_mymac_documents_github_flutter_runner_cli_lib_src_config_config_store_dart_import_dart_io`, Module, degree: 1)
-- **package:path/path.dart'** (`users_mymac_documents_github_flutter_runner_cli_lib_src_config_config_store_dart_import_package_path_path_dart`, Module, degree: 1)
-- **package:yaml/yaml.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_config_config_store_dart_import_package_yaml_yaml_dart`, Module, degree: 1)
+- **emulators_command** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_emulators_command_dart`, File, degree: 4)
+- **../app_state.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_emulators_command_dart_import_app_state_dart`, Module, degree: 1)
+- **command.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_emulators_command_dart_import_command_dart`, Module, degree: 1)
+- **../../config/config_store.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_emulators_command_dart_import_config_config_store_dart`, Module, degree: 1)
+- **../../devices/emulator_manager.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_emulators_command_dart_import_devices_emulator_manager_dart`, Module, degree: 1)
 
 ## Relationships
 
-- users_mymac_documents_github_flutter_runner_cli_lib_src_config_config_store_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_config_config_store_dart_import_dart_io (imports)
-- users_mymac_documents_github_flutter_runner_cli_lib_src_config_config_store_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_config_config_store_dart_import_package_path_path_dart (imports)
-- users_mymac_documents_github_flutter_runner_cli_lib_src_config_config_store_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_config_config_store_dart_import_package_yaml_yaml_dart (imports)
-- users_mymac_documents_github_flutter_runner_cli_lib_src_config_config_store_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_config_config_store_dart_import_config_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_emulators_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_emulators_command_dart_import_config_config_store_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_emulators_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_emulators_command_dart_import_devices_emulator_manager_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_emulators_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_emulators_command_dart_import_app_state_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_emulators_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_emulators_command_dart_import_command_dart (imports)
 

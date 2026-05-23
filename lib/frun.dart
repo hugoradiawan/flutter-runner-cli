@@ -4,7 +4,7 @@ library;
 import 'dart:async';
 import 'dart:io';
 
-import 'package:utopia_tui/utopia_tui.dart';
+import 'package:dart_tui/dart_tui.dart';
 
 import 'src/app/app_state.dart';
 import 'src/app/commands/clear_command.dart';
@@ -72,17 +72,26 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     ..register(StatusCommand());
   registry.register(HelpCommand(registry));
 
-  final tuiApp = FrunApp(
+  final program = Program(
+    programOptions: [
+      withAltScreen(),
+      withHideCursor(),
+      withMouseAllMotion(),
+      withTickInterval(const Duration(milliseconds: 250)),
+    ],
+  );
+
+  final tuiApp = FrunModel(
     state: state,
     registry: registry,
-    onQuit: _restoreTerminalAndExit,
+    onQuit: program.quit,
   );
 
   // Kick the daemon off in the background so the TUI is interactive
   // immediately. Any failure is surfaced in the transcript.
   unawaited(_bootDaemon(state));
 
-  await TuiRunner(tuiApp).run();
+  await program.run(tuiApp);
   await state.runController.stopAll();
   await state.isolateManager.disconnect();
   await state.daemon?.shutdown();
@@ -113,18 +122,3 @@ Future<void> _bootDaemon(AppState state) async {
   }
 }
 
-/// `/quit` exits hard. We restore the terminal first so the user's shell isn't
-/// left in raw-mode with the alt-screen buffer active. `TuiRunner` doesn't
-/// currently expose a programmatic stop, so this is the safest cross-platform
-/// way to leave from inside an event handler.
-Never _restoreTerminalAndExit() {
-  try {
-    stdin.lineMode = true;
-    stdin.echoMode = true;
-  } catch (_) {/* not a TTY — ignore */}
-  stdout
-    ..write('\x1b[0m') // reset color
-    ..write('\x1b[?25h') // show cursor
-    ..write('\x1b[?1049l'); // leave alt-screen buffer
-  exit(0);
-}

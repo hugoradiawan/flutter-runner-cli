@@ -1,19 +1,19 @@
-# Community 15: dart:io
+# Community 15: p()
 
 **Members:** 5
 
 ## Nodes
 
-- **devtools_command** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_devtools_command_dart`, File, degree: 4)
-- **../app_state.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_devtools_command_dart_import_app_state_dart`, Module, degree: 1)
-- **command.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_devtools_command_dart_import_command_dart`, Module, degree: 1)
-- **../../config/config.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_devtools_command_dart_import_config_config_dart`, Module, degree: 1)
-- **dart:io** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_devtools_command_dart_import_dart_io`, Module, degree: 1)
+- **project_detector** (`users_mymac_documents_github_flutter_runner_cli_lib_src_project_project_detector_dart`, File, degree: 4)
+- **dart:io** (`users_mymac_documents_github_flutter_runner_cli_lib_src_project_project_detector_dart_import_dart_io`, Module, degree: 1)
+- **package:path/path.dart'** (`users_mymac_documents_github_flutter_runner_cli_lib_src_project_project_detector_dart_import_package_path_path_dart`, Module, degree: 1)
+- **package:yaml/yaml.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_project_project_detector_dart_import_package_yaml_yaml_dart`, Module, degree: 1)
+- **p()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_project_project_detector_dart_p`, Function, degree: 1)
 
 ## Relationships
 
-- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_devtools_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_devtools_command_dart_import_dart_io (imports)
-- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_devtools_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_devtools_command_dart_import_config_config_dart (imports)
-- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_devtools_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_devtools_command_dart_import_app_state_dart (imports)
-- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_devtools_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_devtools_command_dart_import_command_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_project_project_detector_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_project_project_detector_dart_import_dart_io (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_project_project_detector_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_project_project_detector_dart_import_package_path_path_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_project_project_detector_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_project_project_detector_dart_import_package_yaml_yaml_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_project_project_detector_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_project_project_detector_dart_p (defines)
 

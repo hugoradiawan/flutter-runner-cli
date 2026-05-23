@@ -33,7 +33,7 @@ class RunCommand extends SlashCommand {
     final entries = _discover(state);
 
     if (entries.isEmpty) {
-      state.transcript.warn(
+      state.visibleTranscript.warn(
         'No launch entries found. Add lib/main.dart or a .vscode/launch.json with type=dart.',
       );
       return CommandResult.ok;
@@ -46,19 +46,19 @@ class RunCommand extends SlashCommand {
 
     final picked = _resolve(args.first, entries);
     if (picked == null) {
-      state.transcript.error('No launch entry matches "${args.first}".');
+      state.visibleTranscript.error('No launch entry matches "${args.first}".');
       return CommandResult.ok;
     }
 
     final deviceId = picked.deviceId ?? state.selectedDeviceId;
     if (deviceId == null) {
-      state.transcript.warn(
+      state.visibleTranscript.warn(
         'No device for this entry. Use /devices first, or add `"deviceId": "<id>"` to the launch config.',
       );
       return CommandResult.ok;
     }
     if (picked.deviceId != null && picked.deviceId != state.selectedDeviceId) {
-      state.transcript.system(
+      state.visibleTranscript.system(
         'Using deviceId "${picked.deviceId}" from launch config.',
       );
     }
@@ -77,7 +77,7 @@ class RunCommand extends SlashCommand {
   }
 
   void _printList(AppState state, List<LaunchEntry> entries) {
-    state.transcript.system('Launch entries:');
+    state.visibleTranscript.system('Launch entries:');
     for (var i = 0; i < entries.length; i++) {
       final e = entries[i];
       final src = e.source == LaunchEntrySource.launchJson ? 'launch.json' : 'lib scan';
@@ -87,11 +87,11 @@ class RunCommand extends SlashCommand {
         if (e.deviceId != null) 'device=${e.deviceId}',
         if (e.cwd != null) 'cwd=${_shorten(e.cwd!, state.project.workspaceRoot)}',
       ].join(' ');
-      state.transcript.info(
+      state.visibleTranscript.info(
         '  [${i.toString().padLeft(2)}] ${e.name.padRight(34)} ${p.basename(e.program).padRight(18)} $src  $bits',
       );
     }
-    state.transcript.info('Pick one with `/run <index>` or `/run <name>`.');
+    state.visibleTranscript.info('Pick one with `/run <index>` or `/run <name>`.');
   }
 
   String _shorten(String absPath, String workspaceRoot) {

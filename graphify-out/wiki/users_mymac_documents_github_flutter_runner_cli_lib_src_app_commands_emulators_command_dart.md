@@ -3,7 +3,7 @@
 - **ID:** `users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_emulators_command_dart`
 - **Type:** File
 - **File:** `/Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/app/commands/emulators_command.dart`
-- **Community:** 16 (../../devices/emulator_manager.dart)
+- **Community:** 21 (../../devices/emulator_manager.dart)
 
 ## Relationships
 

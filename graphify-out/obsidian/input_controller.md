@@ -1,14 +1,14 @@
 ---
-id: users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart
+id: lib_src_tui_input_controller_dart
 type: File
-source: /Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/tui/input_controller.dart
+source: lib/src/tui/input_controller.dart
 community: 3
 community_label: _text()
 ---
 
 ## Connections
 
-- [[package_utopia_tui_utopia_tui_dart]] (imports)
+- [[package_dart_tui_dart_tui_dart]] (imports)
 - [[___config_config_dart]] (imports)
 - [[VimMode]] (defines)
 - [[InputAction]] (defines)

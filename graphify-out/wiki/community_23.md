@@ -1,17 +1,19 @@
-# Community 23: ../run_controller.dart
+# Community 23: _daemon()
 
-**Members:** 4
+**Members:** 5
 
 ## Nodes
 
-- **reload_command** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart`, File, degree: 3)
-- **../app_state.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart_import_app_state_dart`, Module, degree: 1)
-- **command.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart_import_command_dart`, Module, degree: 1)
-- **../run_controller.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart_import_run_controller_dart`, Module, degree: 1)
+- **emulator_manager** (`users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart`, File, degree: 4)
+- **_daemon()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart_daemon`, Function, degree: 1)
+- **../daemon/daemon_messages.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart_import_daemon_daemon_messages_dart`, Module, degree: 1)
+- **../daemon/flutter_daemon.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart_import_daemon_flutter_daemon_dart`, Module, degree: 1)
+- **dart:async** (`users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart_import_dart_async`, Module, degree: 1)
 
 ## Relationships
 
-- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart_import_app_state_dart (imports)
-- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart_import_run_controller_dart (imports)
-- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_reload_command_dart_import_command_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart_import_dart_async (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart_import_daemon_daemon_messages_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart_import_daemon_flutter_daemon_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart_daemon (defines)
 

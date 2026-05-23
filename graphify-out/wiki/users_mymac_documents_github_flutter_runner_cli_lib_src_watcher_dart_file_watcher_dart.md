@@ -3,7 +3,7 @@
 - **ID:** `users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart`
 - **Type:** File
 - **File:** `/Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/watcher/dart_file_watcher.dart`
-- **Community:** 19 (_onChange())
+- **Community:** 17 (_onChange())
 
 ## Relationships
 

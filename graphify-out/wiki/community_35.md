@@ -1,15 +1,15 @@
-# Community 35: command.dart (35)
+# Community 35: _regions()
 
 **Members:** 3
 
 ## Nodes
 
-- **status_command** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_status_command_dart`, File, degree: 2)
-- **../app_state.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_status_command_dart_import_app_state_dart`, Module, degree: 1)
-- **command.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_status_command_dart_import_command_dart`, Module, degree: 1)
+- **hit_regions** (`lib_src_tui_hit_regions_dart`, File, degree: 2)
+- **package:dart_tui/dart_tui.dart** (`lib_src_tui_hit_regions_dart_import_package_dart_tui_dart_tui_dart`, Module, degree: 1)
+- **_regions()** (`lib_src_tui_hit_regions_dart_regions`, Function, degree: 1)
 
 ## Relationships
 
-- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_status_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_status_command_dart_import_app_state_dart (imports)
-- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_status_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_status_command_dart_import_command_dart (imports)
+- lib_src_tui_hit_regions_dart → lib_src_tui_hit_regions_dart_import_package_dart_tui_dart_tui_dart (imports)
+- lib_src_tui_hit_regions_dart → lib_src_tui_hit_regions_dart_regions (defines)
 

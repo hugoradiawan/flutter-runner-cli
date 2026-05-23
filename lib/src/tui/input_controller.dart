@@ -1,4 +1,4 @@
-import 'package:utopia_tui/utopia_tui.dart';
+import 'package:dart_tui/dart_tui.dart';
 
 import '../config/config.dart';
 
@@ -14,10 +14,8 @@ enum InputAction { none, submit }
 /// motions/edits; `i`/`a`/`A`/`I`/`o` re-enter insert mode.
 class InputController {
   InputController({required FrunEditorMode editorMode})
-    : _editorMode = editorMode {
-    _mode = editorMode == FrunEditorMode.vim
-        ? VimMode.insert
-        : VimMode.insert;
+      : _editorMode = editorMode {
+    _mode = VimMode.insert;
   }
 
   String _text = '';
@@ -49,9 +47,15 @@ class InputController {
     _pendingCount = 0;
   }
 
-  /// Removes the last [n] characters from the input. Used to "swallow" the
-  /// printable-byte tail of a modifier+arrow escape sequence that the
-  /// underlying TUI library emits as individual chars.
+  /// Replace the buffer's contents — used by `[+ Run]` button to inject
+  /// "/run" and submit.
+  void setText(String value) {
+    _text = value;
+    _cursor = value.length;
+  }
+
+  /// Removes the last [n] characters from the input. Kept for the modifier-
+  /// arrow workaround in case dart_tui ever needs it.
   void removeLast(int n) {
     if (n <= 0 || _text.isEmpty) return;
     final r = n.clamp(0, _text.length);
@@ -59,13 +63,12 @@ class InputController {
     if (_cursor > _text.length) _cursor = _text.length;
   }
 
-  InputAction handle(TuiKeyEvent event) {
+  InputAction handle(KeyMsg event) {
     if (_editorMode == FrunEditorMode.vim) {
       if (_mode == VimMode.normal) {
         return _handleVimNormal(event);
       }
-      // Insert mode in vim: Escape returns to normal.
-      if (event.code == TuiKeyCode.escape) {
+      if (event.keyEvent.code == KeyCode.escape) {
         _mode = VimMode.normal;
         if (_cursor > 0) _cursor--;
         return InputAction.none;
@@ -74,54 +77,66 @@ class InputController {
     return _handleInsert(event);
   }
 
-  InputAction _handleInsert(TuiKeyEvent event) {
-    switch (event.code) {
-      case TuiKeyCode.enter:
+  InputAction _handleInsert(KeyMsg event) {
+    final ke = event.keyEvent;
+    final isCtrl = ke.modifiers.contains(KeyMod.ctrl);
+    switch (ke.code) {
+      case KeyCode.enter:
         return InputAction.submit;
-      case TuiKeyCode.backspace:
+      case KeyCode.backspace:
         if (_cursor > 0) {
           _text = _text.substring(0, _cursor - 1) + _text.substring(_cursor);
           _cursor--;
         }
-      case TuiKeyCode.delete:
+      case KeyCode.delete:
         if (_cursor < _text.length) {
           _text = _text.substring(0, _cursor) + _text.substring(_cursor + 1);
         }
-      case TuiKeyCode.arrowLeft:
+      case KeyCode.left:
         if (_cursor > 0) _cursor--;
-      case TuiKeyCode.arrowRight:
+      case KeyCode.right:
         if (_cursor < _text.length) _cursor++;
-      case TuiKeyCode.home:
-      case TuiKeyCode.ctrlA:
+      case KeyCode.home:
         _cursor = 0;
-      case TuiKeyCode.end:
-      case TuiKeyCode.ctrlE:
+      case KeyCode.end:
         _cursor = _text.length;
-      case TuiKeyCode.ctrlU:
-        _text = _text.substring(_cursor);
-        _cursor = 0;
-      case TuiKeyCode.printable:
-        final ch = event.char;
-        if (ch != null) {
+      case KeyCode.rune:
+        if (isCtrl) {
+          final t = ke.text;
+          if (t == 'a' || t == 'A') {
+            _cursor = 0;
+          } else if (t == 'e' || t == 'E') {
+            _cursor = _text.length;
+          } else if (t == 'u' || t == 'U') {
+            _text = _text.substring(_cursor);
+            _cursor = 0;
+          }
+          break;
+        }
+        final ch = ke.text;
+        if (ch.isNotEmpty && ch != '\n' && ch != '\r') {
           _text = _text.substring(0, _cursor) + ch + _text.substring(_cursor);
           _cursor += ch.length;
         }
+      case KeyCode.space:
+        _text = '${_text.substring(0, _cursor)} ${_text.substring(_cursor)}';
+        _cursor += 1;
       default:
         break;
     }
     return InputAction.none;
   }
 
-  InputAction _handleVimNormal(TuiKeyEvent event) {
-    if (event.code == TuiKeyCode.enter) return InputAction.submit;
-    if (event.code != TuiKeyCode.printable) {
-      // Allow arrow keys & escape only.
-      switch (event.code) {
-        case TuiKeyCode.arrowLeft:
+  InputAction _handleVimNormal(KeyMsg event) {
+    final ke = event.keyEvent;
+    if (ke.code == KeyCode.enter) return InputAction.submit;
+    if (ke.code != KeyCode.rune) {
+      switch (ke.code) {
+        case KeyCode.left:
           if (_cursor > 0) _cursor--;
-        case TuiKeyCode.arrowRight:
+        case KeyCode.right:
           if (_cursor < _text.length) _cursor++;
-        case TuiKeyCode.escape:
+        case KeyCode.escape:
           _pendingOperator = '';
           _pendingCount = 0;
         default:
@@ -130,10 +145,9 @@ class InputController {
       return InputAction.none;
     }
 
-    final ch = event.char ?? '';
+    final ch = ke.text;
     final count = _pendingCount == 0 ? 1 : _pendingCount;
 
-    // Count prefix: any non-zero leading digit.
     if (RegExp(r'\d').hasMatch(ch) && !(ch == '0' && _pendingCount == 0)) {
       _pendingCount = _pendingCount * 10 + int.parse(ch);
       return InputAction.none;
@@ -167,7 +181,8 @@ class InputController {
         for (var i = 0; i < count; i++) {
           if (_cursor < _text.length) {
             _yank = _text[_cursor];
-            _text = _text.substring(0, _cursor) + _text.substring(_cursor + 1);
+            _text =
+                _text.substring(0, _cursor) + _text.substring(_cursor + 1);
           }
         }
       case 'i':
@@ -188,7 +203,8 @@ class InputController {
       case 'p':
         if (_yank.isNotEmpty) {
           final insertAt = (_cursor + 1).clamp(0, _text.length);
-          _text = _text.substring(0, insertAt) + _yank + _text.substring(insertAt);
+          _text =
+              _text.substring(0, insertAt) + _yank + _text.substring(insertAt);
           _cursor = insertAt + _yank.length - 1;
         }
       case 'P':
