@@ -1,0 +1,35 @@
+# Community 1: ../version.dart
+
+**Members:** 13
+
+## Nodes
+
+- **frun_app** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart`, File, degree: 12)
+- **../app/app_state.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_app_app_state_dart`, Module, degree: 1)
+- **../app/commands/command.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_app_commands_command_dart`, Module, degree: 1)
+- **../app/commands/command_registry.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_app_commands_command_registry_dart`, Module, degree: 1)
+- **../app/link_extractor.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_app_link_extractor_dart`, Module, degree: 1)
+- **../app/transcript.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_app_transcript_dart`, Module, degree: 1)
+- **../config/config.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_config_config_dart`, Module, degree: 1)
+- **dart:math'** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_dart_math`, Module, degree: 1)
+- **../ide/source_location.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_ide_source_location_dart`, Module, degree: 1)
+- **input_controller.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_input_controller_dart`, Module, degree: 1)
+- **package:utopia_tui/utopia_tui.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_package_utopia_tui_utopia_tui_dart`, Module, degree: 1)
+- **theme.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_theme_dart`, Module, degree: 1)
+- **../version.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_version_dart`, Module, degree: 1)
+
+## Relationships
+
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_dart_math (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_package_utopia_tui_utopia_tui_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_app_app_state_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_app_commands_command_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_app_commands_command_registry_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_app_link_extractor_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_app_transcript_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_config_config_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_ide_source_location_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_version_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_input_controller_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_frun_app_dart_import_theme_dart (imports)
+

@@ -1,0 +1,15 @@
+# ide_launcher_test
+
+- **ID:** `users_mymac_documents_github_flutter_runner_cli_test_ide_launcher_test_dart`
+- **Type:** File
+- **File:** `/Users/mymac/Documents/GitHub/flutter-runner-cli/test/ide_launcher_test.dart`
+- **Community:** 21 (main() (21))
+
+## Relationships
+
+- users_mymac_documents_github_flutter_runner_cli_test_ide_launcher_test_dart → users_mymac_documents_github_flutter_runner_cli_test_ide_launcher_test_dart_import_package_frun_src_config_config_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_test_ide_launcher_test_dart → users_mymac_documents_github_flutter_runner_cli_test_ide_launcher_test_dart_import_package_frun_src_ide_ide_launcher_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_test_ide_launcher_test_dart → users_mymac_documents_github_flutter_runner_cli_test_ide_launcher_test_dart_import_package_frun_src_ide_source_location_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_test_ide_launcher_test_dart → users_mymac_documents_github_flutter_runner_cli_test_ide_launcher_test_dart_import_package_test_test_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_test_ide_launcher_test_dart → users_mymac_documents_github_flutter_runner_cli_test_ide_launcher_test_dart_main (defines, Extracted)
+

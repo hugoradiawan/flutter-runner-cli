@@ -54,5 +54,5 @@ class AppState {
   bool quitRequested = false;
 
   /// Whether the bottom status block is rendered. Toggled by `/status`.
-  bool showStatusPanel = true;
+  bool showStatusPanel = false;
 }

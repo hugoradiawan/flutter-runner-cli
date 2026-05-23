@@ -1,0 +1,29 @@
+# Community 3: _text()
+
+**Members:** 10
+
+## Nodes
+
+- **input_controller** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart`, File, degree: 9)
+- **_cursor()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_cursor`, Function, degree: 1)
+- **_editorMode()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_editormode`, Function, degree: 1)
+- **../config/config.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_import_config_config_dart`, Module, degree: 1)
+- **package:utopia_tui/utopia_tui.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_import_package_utopia_tui_utopia_tui_dart`, Module, degree: 1)
+- **InputAction** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_inputaction`, Enum, degree: 1)
+- **_mode()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_mode`, Function, degree: 1)
+- **RegExp()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_regexp`, Function, degree: 1)
+- **_text()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_text`, Function, degree: 1)
+- **VimMode** (`users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_vimmode`, Enum, degree: 1)
+
+## Relationships
+
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_import_package_utopia_tui_utopia_tui_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_import_config_config_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_vimmode (defines)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_inputaction (defines)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_text (defines)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_cursor (defines)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_mode (defines)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_editormode (defines)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_tui_input_controller_dart_regexp (defines)
+

@@ -1,0 +1,14 @@
+# emulator_manager
+
+- **ID:** `users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart`
+- **Type:** File
+- **File:** `/Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/devices/emulator_manager.dart`
+- **Community:** 20 (_daemon())
+
+## Relationships
+
+- users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart_import_dart_async (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart_import_daemon_daemon_messages_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart_import_daemon_flutter_daemon_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart_daemon (defines, Extracted)
+

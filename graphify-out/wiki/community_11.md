@@ -1,0 +1,23 @@
+# Community 11: ../../vm/isolate_manager.dart
+
+**Members:** 7
+
+## Nodes
+
+- **isolates_command** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart`, File, degree: 6)
+- **../app_state.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart_import_app_state_dart`, Module, degree: 1)
+- **command.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart_import_command_dart`, Module, degree: 1)
+- **../../ide/ide_launcher.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart_import_ide_ide_launcher_dart`, Module, degree: 1)
+- **../../ide/source_location.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart_import_ide_source_location_dart`, Module, degree: 1)
+- **package:vm_service/vm_service.dart'** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart_import_package_vm_service_vm_service_dart`, Module, degree: 1)
+- **../../vm/isolate_manager.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart_import_vm_isolate_manager_dart`, Module, degree: 1)
+
+## Relationships
+
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart_import_package_vm_service_vm_service_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart_import_ide_ide_launcher_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart_import_ide_source_location_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart_import_vm_isolate_manager_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart_import_app_state_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_isolates_command_dart_import_command_dart (imports)
+

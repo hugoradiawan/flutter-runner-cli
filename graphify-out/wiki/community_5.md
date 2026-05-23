@@ -1,0 +1,27 @@
+# Community 5: _service()
+
+**Members:** 9
+
+## Nodes
+
+- **isolate_manager** (`users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart`, File, degree: 8)
+- **_changes()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_changes`, Function, degree: 1)
+- **_extensionStream()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_extensionstream`, Function, degree: 1)
+- **dart:async** (`users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_import_dart_async`, Module, degree: 1)
+- **package:vm_service/vm_service.dart'** (`users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_import_package_vm_service_vm_service_dart`, Module, degree: 1)
+- **package:vm_service/vm_service_io.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_import_package_vm_service_vm_service_io_dart`, Module, degree: 1)
+- **_isolates()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_isolates`, Function, degree: 1)
+- **IsolateStatus** (`users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_isolatestatus`, Enum, degree: 1)
+- **_service()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_service`, Function, degree: 1)
+
+## Relationships
+
+- users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_import_dart_async (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_import_package_vm_service_vm_service_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_import_package_vm_service_vm_service_io_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_isolatestatus (defines)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_service (defines)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_changes (defines)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_extensionstream (defines)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_vm_isolate_manager_dart_isolates (defines)
+

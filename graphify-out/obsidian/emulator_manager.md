@@ -1,0 +1,14 @@
+---
+id: users_mymac_documents_github_flutter_runner_cli_lib_src_devices_emulator_manager_dart
+type: File
+source: /Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/devices/emulator_manager.dart
+community: 20
+community_label: _daemon()
+---
+
+## Connections
+
+- [[dart_async]] (imports)
+- [[___daemon_daemon_messages_dart]] (imports)
+- [[___daemon_flutter_daemon_dart]] (imports)
+- [[_daemon__]] (defines)

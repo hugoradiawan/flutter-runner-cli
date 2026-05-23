@@ -1,0 +1,14 @@
+# dart_file_watcher
+
+- **ID:** `users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart`
+- **Type:** File
+- **File:** `/Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/watcher/dart_file_watcher.dart`
+- **Community:** 19 (_onChange())
+
+## Relationships
+
+- users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart_import_dart_async (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart_import_package_path_path_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart_import_package_watcher_watcher_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_watcher_dart_file_watcher_dart_onchange (defines, Extracted)
+

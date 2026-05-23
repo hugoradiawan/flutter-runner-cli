@@ -1,0 +1,11 @@
+---
+id: users_mymac_documents_github_flutter_runner_cli_lib_frun_dart_bootdaemon
+type: Function
+source: /Users/mymac/Documents/GitHub/flutter-runner-cli/lib/frun.dart
+community: 0
+community_label: runFrun()
+---
+
+## Connections
+
+- [[frun]] (defines)

@@ -1,0 +1,14 @@
+# device_manager
+
+- **ID:** `users_mymac_documents_github_flutter_runner_cli_lib_src_devices_device_manager_dart`
+- **Type:** File
+- **File:** `/Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/devices/device_manager.dart`
+- **Community:** 18 (_changes())
+
+## Relationships
+
+- users_mymac_documents_github_flutter_runner_cli_lib_src_devices_device_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_devices_device_manager_dart_import_dart_async (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_devices_device_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_devices_device_manager_dart_import_daemon_daemon_messages_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_devices_device_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_devices_device_manager_dart_import_daemon_flutter_daemon_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_devices_device_manager_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_devices_device_manager_dart_changes (defines, Extracted)
+

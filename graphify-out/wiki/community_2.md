@@ -1,0 +1,31 @@
+# Community 2: tabs()
+
+**Members:** 11
+
+## Nodes
+
+- **run_controller** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart`, File, degree: 10)
+- **_activeIndex()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_activeindex`, Function, degree: 1)
+- **activeTab()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_activetab`, Function, degree: 1)
+- **app_state.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_import_app_state_dart`, Module, degree: 1)
+- **../daemon/app_session.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_import_daemon_app_session_dart`, Module, degree: 1)
+- **../daemon/daemon_messages.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_import_daemon_daemon_messages_dart`, Module, degree: 1)
+- **dart:async** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_import_dart_async`, Module, degree: 1)
+- **../project/launch_config.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_import_project_launch_config_dart`, Module, degree: 1)
+- **run_tab.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_import_run_tab_dart`, Module, degree: 1)
+- **../watcher/dart_file_watcher.dart** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_import_watcher_dart_file_watcher_dart`, Module, degree: 1)
+- **tabs()** (`users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_tabs`, Function, degree: 1)
+
+## Relationships
+
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_import_dart_async (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_import_daemon_app_session_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_import_daemon_daemon_messages_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_import_project_launch_config_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_import_watcher_dart_file_watcher_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_import_app_state_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_import_run_tab_dart (imports)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_activeindex (defines)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_tabs (defines)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_run_controller_dart_activetab (defines)
+

@@ -1,0 +1,14 @@
+# config_command
+
+- **ID:** `users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart`
+- **Type:** File
+- **File:** `/Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/app/commands/config_command.dart`
+- **Community:** 22 (../../config/config_store.dart (22))
+
+## Relationships
+
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart_import_config_config_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart_import_config_config_store_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart_import_app_state_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_app_commands_config_command_dart_import_command_dart (imports, Extracted)
+

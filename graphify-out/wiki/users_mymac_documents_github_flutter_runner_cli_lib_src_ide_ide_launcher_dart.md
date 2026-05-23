@@ -1,0 +1,15 @@
+# ide_launcher
+
+- **ID:** `users_mymac_documents_github_flutter_runner_cli_lib_src_ide_ide_launcher_dart`
+- **Type:** File
+- **File:** `/Users/mymac/Documents/GitHub/flutter-runner-cli/lib/src/ide/ide_launcher.dart`
+- **Community:** 12 (_commandFor())
+
+## Relationships
+
+- users_mymac_documents_github_flutter_runner_cli_lib_src_ide_ide_launcher_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_ide_ide_launcher_dart_import_dart_io (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_ide_ide_launcher_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_ide_ide_launcher_dart_import_app_app_state_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_ide_ide_launcher_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_ide_ide_launcher_dart_import_config_config_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_ide_ide_launcher_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_ide_ide_launcher_dart_import_source_location_dart (imports, Extracted)
+- users_mymac_documents_github_flutter_runner_cli_lib_src_ide_ide_launcher_dart → users_mymac_documents_github_flutter_runner_cli_lib_src_ide_ide_launcher_dart_commandfor (defines, Extracted)
+
