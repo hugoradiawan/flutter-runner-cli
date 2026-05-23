@@ -5,27 +5,54 @@ import '../daemon/daemon_messages.dart';
 import '../project/launch_config.dart';
 import '../watcher/dart_file_watcher.dart';
 import 'app_state.dart';
+import 'run_tab.dart';
 
-/// Owns the single active [AppRunSession] for a project, plus the file watcher
-/// that drives hot reload on save.
+/// Owns all concurrent `flutter run` sessions as a list of [RunTab]s. Tabs are
+/// added on `/run`, removed on `/stop`, and one is "active" — that's the tab
+/// the TUI renders and the one `/reload`, `/restart`, `/stop` operate on.
+///
+/// The file watcher is shared: when any `.dart` file is saved, every running
+/// session is hot-reloaded.
 class RunController {
   RunController(this.state);
 
   final AppState state;
-  AppRunSession? _session;
-  LaunchEntry? _lastEntry;
-  String? _lastDeviceId;
+
+  final List<RunTab> tabs = <RunTab>[];
+  int _activeIndex = -1;
+  int _nextTabId = 1;
+
   DartFileWatcher? _watcher;
-  StreamSubscription<DaemonEvent>? _eventsSub;
 
-  AppRunSession? get session => _session;
-  LaunchEntry? get lastEntry => _lastEntry;
-  bool get isRunning => _session != null;
+  RunTab? get activeTab =>
+      (_activeIndex >= 0 && _activeIndex < tabs.length) ? tabs[_activeIndex] : null;
+  int get activeIndex => _activeIndex;
+  bool get isRunning => activeTab?.isRunning ?? false;
+  bool get hasTabs => tabs.isNotEmpty;
 
-  /// Start an app. Tears down any existing session first.
-  Future<void> start(LaunchEntry entry, {required String deviceId}) async {
-    await stop();
-    state.transcript.system(
+  /// Legacy single-session getter, kept for the status panel.
+  AppRunSession? get session => activeTab?.session;
+
+  /// Legacy "last entry" getter, kept for the status panel.
+  LaunchEntry? get lastEntry => activeTab?.entry;
+
+  /// Start an app, or focus an existing tab that matches this entry + device.
+  Future<RunTab?> startOrFocus(LaunchEntry entry, {required String deviceId}) async {
+    final dedupeKey = '${entry.name}|${entry.program}|$deviceId';
+    for (var i = 0; i < tabs.length; i++) {
+      if (tabs[i].dedupeKey == dedupeKey && tabs[i].isRunning) {
+        _activeIndex = i;
+        state.transcript.system(
+          'Already running — focused tab ${i + 1} (${tabs[i].label}).',
+        );
+        return tabs[i];
+      }
+    }
+
+    final tab = RunTab(id: _nextTabId++, entry: entry, deviceId: deviceId);
+    tabs.add(tab);
+    _activeIndex = tabs.length - 1;
+    tab.transcript.system(
       'Launching ${entry.name} on $deviceId (${entry.program})…',
     );
     try {
@@ -34,117 +61,181 @@ class RunController {
         entry: entry,
         deviceId: deviceId,
       );
-      _session = session;
-      _lastEntry = entry;
-      _lastDeviceId = deviceId;
-      _eventsSub = session.events.listen(_onEvent);
+      tab.session = session;
+      tab.eventsSub = session.events.listen((e) => _onEvent(tab, e));
       // Capture the session in the callback so a late exit from an older
-      // process can't clobber a newer session (happens when switching apps
-      // without /stop — the killed process resolves exitCode after the new
-      // one is already running).
+      // process can't clobber a newer session (happens when an app dies
+      // after we already wired a new one up).
       unawaited(
-        session.exitCode.then((code) => _onProcessExit(session, code)),
+        session.exitCode.then((code) => _onProcessExit(tab, session, code)),
       );
-      _startWatcher();
+      _ensureWatcher();
+      return tab;
     } catch (e) {
-      state.transcript.error('Failed to launch: $e');
+      tab.transcript.error('Failed to launch: $e');
+      tabs.remove(tab);
+      if (_activeIndex >= tabs.length) _activeIndex = tabs.length - 1;
+      return null;
     }
   }
 
-  void _startWatcher() {
+  void _ensureWatcher() {
     if (!state.config.hotReloadOnSave) return;
+    if (_watcher != null) return;
     final watcher = DartFileWatcher(root: state.project.libDir);
     watcher.start();
     watcher.onChange.listen((_) {
-      if (_session == null) return;
-      state.transcript.system('File changed — hot reload.');
-      hotReload();
+      if (tabs.every((t) => !t.isRunning)) return;
+      state.transcript.system('File changed — hot reloading all tabs.');
+      unawaited(hotReloadAll());
     });
     _watcher = watcher;
   }
 
-  Future<void> hotReload() async {
-    final s = _session;
-    if (s == null) {
+  Future<void> _disposeWatcherIfIdle() async {
+    if (tabs.isNotEmpty) return;
+    await _watcher?.dispose();
+    _watcher = null;
+  }
+
+  Future<void> hotReloadAll() async {
+    for (final tab in tabs) {
+      final s = tab.session;
+      if (s == null) continue;
+      try {
+        await s.hotReload();
+        tab.transcript.success('Hot reload requested.');
+      } catch (e) {
+        tab.transcript.error('Hot reload failed: $e');
+      }
+    }
+  }
+
+  Future<void> hotReloadActive() async {
+    final tab = activeTab;
+    if (tab == null || tab.session == null) {
       state.transcript.warn('No app running. Use /run first.');
       return;
     }
     try {
-      await s.hotReload();
-      state.transcript.success('Hot reload requested.');
+      await tab.session!.hotReload();
+      tab.transcript.success('Hot reload requested.');
     } catch (e) {
-      state.transcript.error('Hot reload failed: $e');
+      tab.transcript.error('Hot reload failed: $e');
     }
   }
 
-  Future<void> hotRestart() async {
-    final s = _session;
-    if (s == null) {
+  Future<void> hotRestartActive() async {
+    final tab = activeTab;
+    if (tab == null || tab.session == null) {
       state.transcript.warn('No app running. Use /run first.');
       return;
     }
     try {
-      await s.hotRestart();
-      state.transcript.success('Hot restart requested.');
+      await tab.session!.hotRestart();
+      tab.transcript.success('Hot restart requested.');
     } catch (e) {
-      state.transcript.error('Hot restart failed: $e');
+      tab.transcript.error('Hot restart failed: $e');
     }
   }
 
-  /// Re-launch the last entry on the same device.
-  Future<void> rerun() async {
-    final entry = _lastEntry;
-    final deviceId = _lastDeviceId ?? state.selectedDeviceId;
-    if (entry == null || deviceId == null) {
+  /// Re-launch the active tab's entry on the same device.
+  Future<void> rerunActive() async {
+    final tab = activeTab;
+    if (tab == null) {
       state.transcript.warn('Nothing to rerun. Use /run first.');
       return;
     }
-    await start(entry, deviceId: deviceId);
+    final entry = tab.entry;
+    final deviceId = tab.deviceId;
+    await stopActive();
+    await startOrFocus(entry, deviceId: deviceId);
   }
 
-  Future<void> stop() async {
-    final s = _session;
-    if (s == null) return;
-    state.transcript.system('Stopping running app…');
-    try {
-      await s.stop();
-    } catch (e) {
-      state.transcript.warn('Stop reported error: $e');
+  Future<void> stopActive() async {
+    final tab = activeTab;
+    if (tab == null) return;
+    await _stopTab(tab);
+    final removedIndex = tabs.indexOf(tab);
+    if (removedIndex >= 0) tabs.removeAt(removedIndex);
+    if (tabs.isEmpty) {
+      _activeIndex = -1;
+    } else if (_activeIndex >= tabs.length) {
+      _activeIndex = tabs.length - 1;
     }
-    await _eventsSub?.cancel();
-    _eventsSub = null;
-    await _watcher?.dispose();
-    _watcher = null;
-    _session = null;
+    await _disposeWatcherIfIdle();
   }
 
-  void _onEvent(DaemonEvent event) {
+  Future<void> stopAll() async {
+    if (tabs.isEmpty) return;
+    final snapshot = List<RunTab>.from(tabs);
+    for (final tab in snapshot) {
+      await _stopTab(tab);
+    }
+    tabs.clear();
+    _activeIndex = -1;
+    await _disposeWatcherIfIdle();
+  }
+
+  Future<void> _stopTab(RunTab tab) async {
+    final s = tab.session;
+    if (s != null) {
+      tab.transcript.system('Stopping app…');
+      try {
+        await s.stop();
+      } catch (e) {
+        tab.transcript.warn('Stop reported error: $e');
+      }
+    }
+    await tab.eventsSub?.cancel();
+    tab.eventsSub = null;
+    tab.session = null;
+  }
+
+  /// Cycle the active tab. No-op if there are fewer than two tabs.
+  void cycleActive({bool forward = true}) {
+    if (tabs.length < 2) return;
+    final delta = forward ? 1 : -1;
+    _activeIndex = (_activeIndex + delta) % tabs.length;
+    if (_activeIndex < 0) _activeIndex += tabs.length;
+  }
+
+  void setActiveIndex(int index) {
+    if (index < 0 || index >= tabs.length) return;
+    _activeIndex = index;
+  }
+
+  void _onEvent(RunTab tab, DaemonEvent event) {
     switch (event.name) {
       case 'app.start':
-        state.transcript.success('App started (appId=${event.params['appId']}).');
+        tab.transcript.success('App started (appId=${event.params['appId']}).');
       case 'app.debugPort':
         final ws = event.params['wsUri']?.toString();
         if (ws != null) {
-          state.transcript.info('VM service: $ws');
-          _connectIsolates(ws);
+          tab.transcript.info('VM service: $ws');
+          // Isolate connection is shared across the process — only the active
+          // tab drives it to keep the UX coherent.
+          if (tab == activeTab) _connectIsolates(ws);
         }
       case 'app.devTools':
         final uri = event.params['wsUri'] ?? event.params['uri'];
-        if (uri != null) state.transcript.info('DevTools: $uri');
+        if (uri != null) tab.transcript.info('DevTools: $uri');
       case 'app.log':
         final raw = event.params['log']?.toString() ?? '';
         if (raw.isEmpty) return;
         if (event.params['error'] == true) {
-          state.transcript.error(raw);
+          tab.transcript.error(raw);
         } else {
-          state.transcript.info(raw);
+          tab.transcript.info(raw);
         }
       case 'app.progress':
         final msg = event.params['message']?.toString() ?? '';
-        if (msg.isNotEmpty) state.transcript.system(msg);
+        if (msg.isNotEmpty) tab.transcript.system(msg);
       case 'app.stop':
-        state.transcript.system('App stopped.');
-        unawaited(state.isolateManager.disconnect());
+        tab.transcript.system('App stopped.');
+        if (tab == activeTab) {
+          unawaited(state.isolateManager.disconnect());
+        }
     }
   }
 
@@ -159,16 +250,15 @@ class RunController {
     }
   }
 
-  void _onProcessExit(AppRunSession exitedSession, int code) {
-    if (_session != exitedSession) {
-      // A newer session has already taken over — this exit notification
-      // belongs to a previous run. Don't touch the active state.
+  void _onProcessExit(RunTab tab, AppRunSession exitedSession, int code) {
+    if (tab.session != exitedSession) {
+      // A newer session has taken over this tab — ignore the older exit.
       return;
     }
-    state.transcript.system('flutter run exited (code $code).');
-    _session = null;
-    _watcher?.dispose();
-    _watcher = null;
-    unawaited(state.isolateManager.disconnect());
+    tab.transcript.system('flutter run exited (code $code).');
+    tab.session = null;
+    if (tab == activeTab) {
+      unawaited(state.isolateManager.disconnect());
+    }
   }
 }

@@ -62,7 +62,7 @@ class RunCommand extends SlashCommand {
         'Using deviceId "${picked.deviceId}" from launch config.',
       );
     }
-    await controller.start(picked, deviceId: deviceId);
+    await controller.startOrFocus(picked, deviceId: deviceId);
     return CommandResult.ok;
   }
 

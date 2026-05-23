@@ -17,7 +17,7 @@ class ReloadCommand extends SlashCommand {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    await controller.hotReload();
+    await controller.hotReloadActive();
     return CommandResult.ok;
   }
 }
@@ -37,7 +37,7 @@ class RestartCommand extends SlashCommand {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    await controller.hotRestart();
+    await controller.hotRestartActive();
     return CommandResult.ok;
   }
 }
@@ -50,11 +50,18 @@ class StopCommand extends SlashCommand {
   String get name => 'stop';
 
   @override
-  String get summary => 'Stop the running app';
+  String get summary => 'Stop the active tab (or `/stop all` for every tab)';
+
+  @override
+  String get usage => '/stop [all]';
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    await controller.stop();
+    if (args.isNotEmpty && args.first == 'all') {
+      await controller.stopAll();
+    } else {
+      await controller.stopActive();
+    }
     return CommandResult.ok;
   }
 }

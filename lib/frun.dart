@@ -83,7 +83,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   unawaited(_bootDaemon(state));
 
   await TuiRunner(tuiApp).run();
-  await state.runController.stop();
+  await state.runController.stopAll();
   await state.isolateManager.disconnect();
   await state.daemon?.shutdown();
   return 0;

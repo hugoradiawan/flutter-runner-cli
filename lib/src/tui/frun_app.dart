@@ -29,36 +29,15 @@ class _DisplayRow {
   final String text;
 }
 
-/// One icon-button in the top bar. [activeWhenRunning] is true for actions
-/// that only make sense while an app is live (reload/restart/stop). [onPress]
-/// is the bound action — called when keyboard or (future) mouse triggers it.
-class _IconButton {
-  _IconButton({
-    required this.label,
-    required this.onPress,
-    this.activeWhenRunning = false,
-  });
-
-  final String label;
-  final bool activeWhenRunning;
-  final void Function() onPress;
-
-  // x range filled in during paint so a future mouse layer can hit-test it.
-  int xStart = 0;
-  int xEnd = 0;
-}
-
 /// Top-level TUI:
-///   row 0:       icon bar (run / reload / restart / stop) + right-side info
-///   1..bodyH-1:  transcript (full width, borderless)
-///   bottom:      optional status block (toggled by /status)
+///   0..bodyH-1:  transcript (full width, borderless)
+///   then:        optional status block (toggled by /status)
+///   then:        info bar — tabs strip on the left, project/device/ide on the right
 ///   penultimate: input prompt
 ///   last:        footer / hints
 class FrunApp extends TuiApp {
   FrunApp({required this.state, required this.registry, required this.onQuit})
-    : _input = InputController(editorMode: state.config.editorMode) {
-    _buildIcons();
-  }
+    : _input = InputController(editorMode: state.config.editorMode);
 
   final AppState state;
   final CommandRegistry registry;
@@ -69,44 +48,9 @@ class FrunApp extends TuiApp {
   int _focusedLinkIndex = -1;
   bool _pendingG = false; // vim 'gg' first-keystroke flag
 
-  late final List<_IconButton> _icons;
-
   // Recomputed each build so onEvent can reuse it.
   List<_VisibleLink> _visibleLinks = const <_VisibleLink>[];
   int _lastBodyHeight = 10;
-
-  void _buildIcons() {
-    _icons = <_IconButton>[
-      _IconButton(label: '▶ run', onPress: () => _runCmd('run', const [])),
-      _IconButton(
-        label: '↻ reload',
-        activeWhenRunning: true,
-        onPress: () => _runCmd('reload', const []),
-      ),
-      _IconButton(
-        label: '⟲ restart',
-        activeWhenRunning: true,
-        onPress: () => _runCmd('restart', const []),
-      ),
-      _IconButton(
-        label: '■ stop',
-        activeWhenRunning: true,
-        onPress: () => _runCmd('stop', const []),
-      ),
-    ];
-  }
-
-  void _runCmd(String name, List<String> args) {
-    final command = registry.lookup(name);
-    if (command == null) {
-      state.transcript.error('Unknown command: /$name');
-      return;
-    }
-    state.transcript.system('> /$name');
-    command.run(args, state).then(_handleResult).catchError((Object e, _) {
-      state.transcript.error('Command /$name failed: $e');
-    });
-  }
 
   @override
   void init(TuiContext context) {
@@ -130,6 +74,18 @@ class FrunApp extends TuiApp {
     }
 
     if (_handleScroll(event)) return;
+
+    // Ctrl+T cycles tabs. Shift+Tab would be ideal here, but utopia_tui's
+    // input parser silently swallows ESC [ Z (no case for byte 0x5A), so it
+    // can't surface that key to us. Ctrl+T is the working substitute; the
+    // footer documents it.
+    if (event.code == TuiKeyCode.ctrlT) {
+      if (state.runController.tabs.length >= 2) {
+        state.runController.cycleActive(forward: true);
+        _resetViewForNewTab();
+      }
+      return;
+    }
 
     if (event.code == TuiKeyCode.tab) {
       _cycleLink(forward: true);
@@ -277,6 +233,12 @@ class FrunApp extends TuiApp {
     _focusedLinkIndex = -1;
   }
 
+  void _resetViewForNewTab() {
+    _transcriptScroll = 0;
+    _focusedLinkIndex = -1;
+    _pendingG = false;
+  }
+
   void _cycleLink({required bool forward}) {
     if (_visibleLinks.isEmpty) {
       _focusedLinkIndex = -1;
@@ -363,56 +325,27 @@ class FrunApp extends TuiApp {
       return;
     }
 
-    const iconBarH = 1;
     const inputH = 1;
     const footerH = 1;
-    final statusH = state.showStatusPanel ? _statusHeight(h) : 0;
-    final bodyH = h - iconBarH - inputH - footerH - statusH;
+    const infoBarH = 1; // tabs + project/device/ide, just above the input
+    final statusH = state.showStatusPanel ? _statusHeight(h, infoBarH) : 0;
+    final bodyH = h - inputH - footerH - statusH - infoBarH;
     _lastBodyHeight = bodyH;
 
-    _paintIconBar(context, theme, w);
-    _paintTranscript(context, theme, w, iconBarH, bodyH);
+    _paintTranscript(context, theme, w, 0, bodyH);
     if (state.showStatusPanel) {
-      _paintStatus(context, theme, w, iconBarH + bodyH, statusH);
+      _paintStatus(context, theme, w, bodyH, statusH);
     }
+    _paintInfoBar(context, theme, w, h - footerH - inputH - infoBarH);
     _paintInput(context, theme, w, h - footerH - inputH);
     _paintFooter(context, theme, w, h - footerH);
   }
 
-  int _statusHeight(int totalHeight) {
+  int _statusHeight(int totalHeight, int infoBarH) {
     // 1 separator + 4 lines of stats — enough room for the essentials.
     const desired = 5;
-    final available = totalHeight - 4; // leave room for icon bar / input / footer / 1+ transcript
+    final available = totalHeight - 3 - infoBarH;
     return desired.clamp(0, available.clamp(0, desired));
-  }
-
-  void _paintIconBar(TuiContext ctx, FrunTheme theme, int width) {
-    final surface = ctx.surface;
-    surface.clearRect(0, 0, width, 1);
-    final running = state.runController.isRunning;
-
-    var x = 0;
-    for (final ic in _icons) {
-      if (x + ic.label.length + 4 > width) break;
-      final enabled = !ic.activeWhenRunning || running;
-      final btn = ' ${ic.label} ';
-      final btnStyle = enabled
-          ? const TuiStyle(bg: 24, fg: 230, bold: true)
-          : const TuiStyle(bg: 235, fg: 244);
-      surface.putText(x, 0, '[', style: theme.dimStyle);
-      surface.putText(x + 1, 0, btn, style: btnStyle);
-      surface.putText(x + 1 + btn.length, 0, ']', style: theme.dimStyle);
-      ic.xStart = x;
-      ic.xEnd = x + 1 + btn.length + 1; // inclusive of right ]
-      x += 1 + btn.length + 1 + 1; // brackets + label + 1 gap
-    }
-
-    final right = ' ${state.project.name}  '
-        'dev:${state.selectedDeviceId ?? "—"}  '
-        'ide:${state.config.ide.id} ';
-    if (right.length + x + 1 < width) {
-      surface.putText(width - right.length, 0, right, style: theme.dimStyle);
-    }
   }
 
   void _paintTranscript(
@@ -423,7 +356,7 @@ class FrunApp extends TuiApp {
     int height,
   ) {
     if (height <= 0 || width <= 0) return;
-    final lines = state.transcript.lines;
+    final lines = state.visibleTranscript.lines;
     final displayRows = _layoutDisplayRows(lines, width);
 
     final visibleCount = height;
@@ -545,6 +478,50 @@ class FrunApp extends TuiApp {
     return out;
   }
 
+  void _paintInfoBar(TuiContext ctx, FrunTheme theme, int width, int y) {
+    final surface = ctx.surface;
+    surface.clearRect(0, y, width, 1);
+
+    final tabs = state.runController.tabs;
+    final tabCount = tabs.length;
+    final tabsSegment = tabCount > 0 ? '  tabs:$tabCount' : '';
+    final right = ' ${state.project.name}  '
+        'dev:${state.selectedDeviceId ?? "—"}  '
+        'ide:${state.config.ide.id}$tabsSegment ';
+    final rightX = (width - right.length).clamp(0, width);
+    surface.putText(rightX, y, right, style: theme.dimStyle);
+
+    if (tabs.isEmpty) return;
+
+    final activeIndex = state.runController.activeIndex;
+    final stripWidth = rightX;
+
+    const activeStyle = TuiStyle(bg: 24, fg: 230, bold: true);
+    const inactiveStyle = TuiStyle(bg: 235, fg: 250);
+    const exitedStyle = TuiStyle(bg: 235, fg: 244);
+
+    var x = 0;
+    for (var i = 0; i < tabs.length; i++) {
+      final t = tabs[i];
+      final marker = t.isRunning ? '' : ' ✕';
+      var label = ' ${i + 1}: ${t.label}$marker ';
+      final remaining = stripWidth - x;
+      if (remaining <= 0) break;
+      if (label.length + 2 > remaining) {
+        final maxLabel = (remaining - 3).clamp(3, remaining);
+        if (maxLabel < 3) break;
+        label = '${label.substring(0, maxLabel - 1)}…';
+      }
+      surface.putText(x, y, '[', style: theme.dimStyle);
+      final style = i == activeIndex
+          ? activeStyle
+          : (t.isRunning ? inactiveStyle : exitedStyle);
+      surface.putText(x + 1, y, label, style: style);
+      surface.putText(x + 1 + label.length, y, ']', style: theme.dimStyle);
+      x += 1 + label.length + 1 + 1;
+    }
+  }
+
   void _paintInput(TuiContext ctx, FrunTheme theme, int width, int y) {
     final prompt = _input.isInserting ? '> ' : '· ';
     final usable = width - prompt.length;
@@ -580,15 +557,17 @@ class FrunApp extends TuiApp {
               .join('  ')
         : '';
 
+    final tabHint =
+        state.runController.tabs.length >= 2 ? ' · ^t next tab' : '';
     final String left;
     if (suggestions.isNotEmpty) {
       left = 'suggest: $suggestions';
     } else if (_visibleLinks.isNotEmpty) {
       left = _focusedLinkIndex >= 0
-          ? 'link ${_focusedLinkIndex + 1}/${_visibleLinks.length}: enter open · tab cycle'
-          : 'tab: focus link (${_visibleLinks.length}) · ↑↓ scroll · ^↑↓ half · ^⇧↑↓ page';
+          ? 'link ${_focusedLinkIndex + 1}/${_visibleLinks.length}: enter open · tab cycle$tabHint'
+          : 'tab: focus link (${_visibleLinks.length}) · ↑↓ scroll$tabHint';
     } else {
-      left = '↑↓ scroll · ^↑↓ half · ^⇧↑↓ page · /status · ctrl-c quit';
+      left = '↑↓ scroll · ^↑↓ half · ^⇧↑↓ page$tabHint · ctrl-c quit';
     }
     final modeLabel = state.config.editorMode == FrunEditorMode.vim
         ? 'vim:${_input.mode.name}'

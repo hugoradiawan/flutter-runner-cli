@@ -15,7 +15,16 @@ class AppState {
       transcript = Transcript();
 
   final FlutterProject project;
+
+  /// The "system" transcript — boot banner, project info, `/devices`, `/help`,
+  /// daemon errors. Anything not tied to a specific running session. Per-tab
+  /// logs live on each [RunTab.transcript]; see [visibleTranscript].
   final Transcript transcript;
+
+  /// What the TUI renders in the body panel: the active tab's log if any tab
+  /// is open, otherwise the system transcript.
+  Transcript get visibleTranscript =>
+      runController.activeTab?.transcript ?? transcript;
 
   FrunConfig _config;
   FrunConfig get config => _config;
