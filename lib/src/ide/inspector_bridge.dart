@@ -1,93 +1,99 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:vm_service/vm_service.dart' as vm;
 
 import '../app/app_state.dart';
 import 'source_location.dart';
 
-/// Listens to widget-inspector selection events from the running app's VM
-/// service and opens the corresponding source file in the configured IDE.
+/// Bridges widget-inspector selection in the running app to a jump-to-source
+/// action in the user's IDE.
 ///
-/// Triggers:
-///   • `/inspect` in-app tap → Flutter posts `Flutter.Selection` with a
-///     `creationLocation` payload.
-///   • DevTools widget-tree click → Flutter posts `Flutter.SelectionChanged`
-///     (no payload). We then pull the selected widget's details via
-///     `ext.flutter.inspector.getSelectedSummaryWidget`.
+/// Two paths:
+///   • In-app tap during `/inspect` mode → Flutter posts `Flutter.Selection`
+///     with a full `creationLocation` payload. Handled synchronously via
+///     [_handleSelectionEvent].
+///   • DevTools widget-tree click → no useful extension event is broadcast
+///     (Flutter only fires `Flutter.Frame`/`Flutter.ServiceExtensionStateChanged`).
+///     A 500 ms poll on `ext.flutter.inspector.getSelectedSummaryWidget`
+///     picks up the change.
 class InspectorBridge {
-  static const _selectionKinds = <String>{
-    'Flutter.Selection',
-    'Flutter.SelectionChanged',
-  };
   static const _objectGroup = 'frun-inspector';
-  static const _dedupeWindow = Duration(seconds: 2);
+  static const _pollInterval = Duration(milliseconds: 500);
 
   StreamSubscription<vm.Event>? _sub;
-  bool _busy = false;
+  Timer? _poll;
+  bool _polling = false;
+  bool _primed = false;
   String? _lastKey;
-  DateTime _lastAt = DateTime.fromMillisecondsSinceEpoch(0);
 
-  bool get isAttached => _sub != null;
+  bool get isAttached => _sub != null || _poll != null;
 
-  /// (Re)subscribe against the current `state.isolateManager.extensionEvents`
-  /// stream. Safe to call repeatedly; cancels any prior subscription first so
-  /// the bridge survives app restarts that swap the underlying stream.
+  /// (Re)subscribe to selection events and start polling. Safe to call
+  /// repeatedly; cancels any prior subscription/timer first so the bridge
+  /// survives app restarts that swap the underlying VM-service stream.
   void attach(AppState state) {
     _sub?.cancel();
+    _poll?.cancel();
+    _primed = false;
     _sub = state.isolateManager.extensionEvents.listen((event) {
-      final kind = event.extensionKind;
-      if (kind == null) return;
-      if (_selectionKinds.contains(kind) || kind.startsWith('Flutter.')) {
-        _handleSelection(event, state);
+      if (event.extensionKind == 'Flutter.Selection') {
+        _handleSelectionEvent(event, state);
       }
     });
+    _poll = Timer.periodic(_pollInterval, (_) => _pollSelection(state));
   }
 
   Future<void> detach() async {
     await _sub?.cancel();
+    _poll?.cancel();
     _sub = null;
+    _poll = null;
     _lastKey = null;
+    _primed = false;
   }
 
-  Future<void> _handleSelection(vm.Event event, AppState state) async {
-    if (_busy) return;
-    _busy = true;
+  Future<void> _handleSelectionEvent(vm.Event event, AppState state) async {
+    final data = event.extensionData?.data ?? const <String, dynamic>{};
+    final loc = _extractLocation(data);
+    if (loc != null) await _open(loc, state);
+  }
+
+  Future<void> _pollSelection(AppState state) async {
+    if (_polling) return;
+    _polling = true;
     try {
-      final data = event.extensionData?.data ?? const <String, dynamic>{};
-      var loc = _extractLocation(data);
-      loc ??= await _fetchSelectedLocation(state);
-      if (loc == null) {
-        state.visibleTranscript.warn(
-          'Inspector selection had no resolvable creationLocation.',
-        );
-        return;
-      }
-      final src = SourceLocation.fromVmServiceUri(
-        loc.uri,
-        projectRoot: state.project.root,
-        line: loc.line,
-        column: loc.column,
-      );
-      if (src == null) {
-        state.visibleTranscript.warn('Could not resolve ${loc.uri} to a file.');
-        return;
-      }
-      final key = '${src.file}:${src.line}:${src.column}';
-      final now = DateTime.now();
-      if (key == _lastKey && now.difference(_lastAt) < _dedupeWindow) {
-        return;
-      }
-      _lastKey = key;
-      _lastAt = now;
-      await state.ideLauncher.open(src, state);
+      final loc = await _fetchSelectedLocation(state);
+      if (loc != null) await _open(loc, state);
     } finally {
-      _busy = false;
+      _polling = false;
     }
   }
 
+  Future<void> _open(_CreationLocation loc, AppState state) async {
+    final src = SourceLocation.fromVmServiceUri(
+      loc.uri,
+      projectRoot: state.project.root,
+      line: loc.line,
+      column: loc.column,
+    );
+    if (src == null) return;
+    final key = '${src.file}:${src.line}:${src.column}';
+    // Only open when selection actually changes. Without this, the 500 ms
+    // poller would re-launch the IDE on every tick and yank focus away
+    // continuously.
+    if (key == _lastKey) return;
+    final wasPrimed = _primed;
+    _primed = true;
+    _lastKey = key;
+    // First observation after attach is the *current* selection — don't open
+    // it; only open on subsequent changes.
+    if (!wasPrimed) return;
+    await state.ideLauncher.open(src, state);
+  }
+
   /// Asks the running app for the currently-selected widget and pulls its
-  /// `creationLocation`. Used when the selection event itself omitted the
-  /// payload (e.g., DevTools-driven tree clicks).
+  /// `creationLocation`.
   Future<_CreationLocation?> _fetchSelectedLocation(AppState state) async {
     final session = state.runController.session;
     if (session == null) return null;
@@ -110,31 +116,28 @@ class InspectorBridge {
   }
 
   _CreationLocation? _extractFromResponse(Object? response) {
-    Map<dynamic, dynamic>? node;
-    if (response is Map) {
-      final result = response['result'];
-      if (result is Map) {
-        node = result;
-      } else {
-        node = response;
-      }
-    }
+    final node = _coerceMap(response);
     if (node == null) return null;
-    return _extractLocation(node);
+    // Service-extension responses are often wrapped as {type, method, result}.
+    // The `result` may itself be a Map or a JSON-encoded string.
+    final inner = _coerceMap(node['result']);
+    return _extractLocation(inner ?? node);
+  }
+
+  Map<dynamic, dynamic>? _coerceMap(Object? value) {
+    if (value is Map) return value;
+    if (value is String && value.isNotEmpty) {
+      try {
+        final decoded = json.decode(value);
+        if (decoded is Map) return decoded;
+      } catch (_) {}
+    }
+    return null;
   }
 
   _CreationLocation? _extractLocation(Map<dynamic, dynamic> data) {
-    Map<dynamic, dynamic>? loc;
-    final raw = data['creationLocation'];
-    if (raw is Map) {
-      loc = raw;
-    } else {
-      final value = data['value'];
-      if (value is Map) {
-        final inner = value['creationLocation'];
-        if (inner is Map) loc = inner;
-      }
-    }
+    final loc = _coerceMap(data['creationLocation']) ??
+        _coerceMap(_coerceMap(data['value'])?['creationLocation']);
     if (loc == null) return null;
     final file = (loc['file'] ?? loc['uri'])?.toString();
     if (file == null || file.isEmpty) return null;
