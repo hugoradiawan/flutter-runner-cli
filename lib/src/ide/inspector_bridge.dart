@@ -20,9 +20,12 @@ class InspectorBridge {
     'Flutter.SelectionChanged',
   };
   static const _objectGroup = 'frun-inspector';
+  static const _dedupeWindow = Duration(seconds: 2);
 
   StreamSubscription<vm.Event>? _sub;
   bool _busy = false;
+  String? _lastKey;
+  DateTime _lastAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   bool get isAttached => _sub != null;
 
@@ -32,24 +35,18 @@ class InspectorBridge {
   void attach(AppState state) {
     _sub?.cancel();
     _sub = state.isolateManager.extensionEvents.listen((event) {
-      final kind = event.extensionKind ?? '(none)';
-      state.visibleTranscript.system('[inspector-bridge] ext event: $kind');
-      if (!_selectionKinds.contains(kind)) {
-        // Any Flutter.* event during select-mode usage might carry selection
-        // info — pull on every Flutter.* just in case the kind name differs
-        // across versions.
-        if (kind.startsWith('Flutter.')) {
-          _handleSelection(event, state);
-        }
-        return;
+      final kind = event.extensionKind;
+      if (kind == null) return;
+      if (_selectionKinds.contains(kind) || kind.startsWith('Flutter.')) {
+        _handleSelection(event, state);
       }
-      _handleSelection(event, state);
     });
   }
 
   Future<void> detach() async {
     await _sub?.cancel();
     _sub = null;
+    _lastKey = null;
   }
 
   Future<void> _handleSelection(vm.Event event, AppState state) async {
@@ -75,6 +72,13 @@ class InspectorBridge {
         state.visibleTranscript.warn('Could not resolve ${loc.uri} to a file.');
         return;
       }
+      final key = '${src.file}:${src.line}:${src.column}';
+      final now = DateTime.now();
+      if (key == _lastKey && now.difference(_lastAt) < _dedupeWindow) {
+        return;
+      }
+      _lastKey = key;
+      _lastAt = now;
       await state.ideLauncher.open(src, state);
     } finally {
       _busy = false;
