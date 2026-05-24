@@ -36,6 +36,26 @@ class RunController {
   /// Legacy "last entry" getter, kept for the status panel.
   LaunchEntry? get lastEntry => activeTab?.entry;
 
+  /// Resolve a launch entry's device and start (or focus) it. Mirrors the
+  /// device-resolution warnings the `/run` slash-command used to print, so
+  /// callers — slash-command, TUI picker, future scripted runs — all behave
+  /// identically.
+  Future<RunTab?> launchEntry(LaunchEntry entry) async {
+    final deviceId = entry.deviceId ?? state.selectedDeviceId;
+    if (deviceId == null) {
+      state.visibleTranscript.warn(
+        'No device for this entry. Use /devices first, or add `"deviceId": "<id>"` to the launch config.',
+      );
+      return null;
+    }
+    if (entry.deviceId != null && entry.deviceId != state.selectedDeviceId) {
+      state.visibleTranscript.system(
+        'Using deviceId "${entry.deviceId}" from launch config.',
+      );
+    }
+    return startOrFocus(entry, deviceId: deviceId);
+  }
+
   /// Start an app, or focus an existing tab that matches this entry + device.
   Future<RunTab?> startOrFocus(LaunchEntry entry, {required String deviceId}) async {
     final dedupeKey = '${entry.name}|${entry.program}|$deviceId';

@@ -18,11 +18,11 @@ class HelpCommand extends SlashCommand {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    state.transcript.system('Available commands:');
+    state.visibleTranscript.system('Available commands:');
     for (final cmd in registry.all) {
       final aliasPart =
           cmd.aliases.isEmpty ? '' : ' (aliases: ${cmd.aliases.join(', ')})';
-      state.transcript.info('  /${cmd.name.padRight(10)} ${cmd.summary}$aliasPart');
+      state.visibleTranscript.info('  /${cmd.name.padRight(10)} ${cmd.summary}$aliasPart');
     }
     return CommandResult.ok;
   }

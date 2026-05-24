@@ -7,11 +7,17 @@ class TranscriptLine {
     required this.text,
     required this.level,
     required this.timestamp,
+    this.onClick,
   });
 
   final String text;
   final TranscriptLevel level;
   final DateTime timestamp;
+
+  /// Optional click action. When set, the TUI registers a hit region for this
+  /// line so the user can click it to fire [onClick]. Used by command output
+  /// that lists pickable items (e.g. `/run` entries).
+  final void Function()? onClick;
 }
 
 /// Append-only ring buffer of lines rendered in the transcript panel.
@@ -34,13 +40,24 @@ class Transcript {
   void debug(String text) => _add(text, TranscriptLevel.debug);
   void system(String text) => _add(text, TranscriptLevel.system);
 
-  void _add(String text, TranscriptLevel level) {
+  /// Append a clickable line. [onClick] fires when the user clicks the row
+  /// in the TUI. The line is also navigable via the normal scroll/search
+  /// flow — the click is purely an extra affordance.
+  void action(
+    String text, {
+    required void Function() onClick,
+    TranscriptLevel level = TranscriptLevel.info,
+  }) =>
+      _add(text, level, onClick: onClick);
+
+  void _add(String text, TranscriptLevel level, {void Function()? onClick}) {
     for (final raw in text.split('\n')) {
       _lines.add(
         TranscriptLine(
           text: raw,
           level: level,
           timestamp: DateTime.now(),
+          onClick: onClick,
         ),
       );
       if (_lines.length > maxLines) _lines.removeFirst();

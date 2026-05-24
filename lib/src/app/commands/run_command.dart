@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'package:path/path.dart' as p;
-
 import '../../project/launch_config.dart';
 import '../../project/main_scanner.dart';
 import '../app_state.dart';
@@ -11,8 +9,8 @@ import 'command.dart';
 /// `/run` — pick a launch entry and start the app.
 ///
 /// Usage:
-///   /run               → list discovered entries
-///   /run `<index>`     → launch by index from the last `/run` list
+///   /run               → open the launch-entry button bar above the input
+///   /run `<index>`     → launch by index from the discovered entries
 ///   /run `<name>`      → launch by entry name
 class RunCommand extends SlashCommand {
   RunCommand(this.controller);
@@ -33,6 +31,7 @@ class RunCommand extends SlashCommand {
     final entries = _discover(state);
 
     if (entries.isEmpty) {
+      state.launchChoices = const <LaunchEntry>[];
       state.visibleTranscript.warn(
         'No launch entries found. Add lib/main.dart or a .vscode/launch.json with type=dart.',
       );
@@ -40,7 +39,8 @@ class RunCommand extends SlashCommand {
     }
 
     if (args.isEmpty) {
-      _printList(state, entries);
+      // Hand the list to the TUI picker — buttons render above the input.
+      state.launchChoices = entries;
       return CommandResult.ok;
     }
 
@@ -50,19 +50,8 @@ class RunCommand extends SlashCommand {
       return CommandResult.ok;
     }
 
-    final deviceId = picked.deviceId ?? state.selectedDeviceId;
-    if (deviceId == null) {
-      state.visibleTranscript.warn(
-        'No device for this entry. Use /devices first, or add `"deviceId": "<id>"` to the launch config.',
-      );
-      return CommandResult.ok;
-    }
-    if (picked.deviceId != null && picked.deviceId != state.selectedDeviceId) {
-      state.visibleTranscript.system(
-        'Using deviceId "${picked.deviceId}" from launch config.',
-      );
-    }
-    await controller.startOrFocus(picked, deviceId: deviceId);
+    state.launchChoices = const <LaunchEntry>[];
+    await controller.launchEntry(picked);
     return CommandResult.ok;
   }
 
@@ -74,33 +63,6 @@ class RunCommand extends SlashCommand {
     );
     final scanned = MainScanner.scan(state.project.libDir);
     return MainScanner.merge(launchJson, scanned);
-  }
-
-  void _printList(AppState state, List<LaunchEntry> entries) {
-    state.visibleTranscript.system('Launch entries:');
-    for (var i = 0; i < entries.length; i++) {
-      final e = entries[i];
-      final src = e.source == LaunchEntrySource.launchJson ? 'launch.json' : 'lib scan';
-      final bits = <String>[
-        if (e.flutterMode != null) e.flutterMode!,
-        if (e.flavor != null) 'flavor=${e.flavor}',
-        if (e.deviceId != null) 'device=${e.deviceId}',
-        if (e.cwd != null) 'cwd=${_shorten(e.cwd!, state.project.workspaceRoot)}',
-      ].join(' ');
-      state.visibleTranscript.info(
-        '  [${i.toString().padLeft(2)}] ${e.name.padRight(34)} ${p.basename(e.program).padRight(18)} $src  $bits',
-      );
-    }
-    state.visibleTranscript.info('Pick one with `/run <index>` or `/run <name>`.');
-  }
-
-  String _shorten(String absPath, String workspaceRoot) {
-    if (absPath == workspaceRoot) return '.';
-    if (absPath.startsWith('$workspaceRoot/') ||
-        absPath.startsWith('$workspaceRoot\\')) {
-      return absPath.substring(workspaceRoot.length + 1);
-    }
-    return absPath;
   }
 
   LaunchEntry? _resolve(String token, List<LaunchEntry> entries) {

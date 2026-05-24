@@ -20,11 +20,15 @@ class FrunTheme {
     required this.exitedTabStyle,
     required this.buttonStyle,
     required this.buttonStopStyle,
+    required this.pickerChipStyle,
     required this.linkHighlightStyle,
     required this.selectionStyle,
+    required this.visualLineStyle,
+    required this.visualBlockStyle,
     required this.searchMatchStyle,
     required this.searchActiveStyle,
     required this.cursorStyle,
+    required this.replaceCursorStyle,
   });
 
   final Style titleStyle;
@@ -42,11 +46,15 @@ class FrunTheme {
   final Style exitedTabStyle;
   final Style buttonStyle;
   final Style buttonStopStyle;
+  final Style pickerChipStyle;
   final Style linkHighlightStyle;
   final Style selectionStyle;
+  final Style visualLineStyle;
+  final Style visualBlockStyle;
   final Style searchMatchStyle;
   final Style searchActiveStyle;
   final Style cursorStyle;
+  final Style replaceCursorStyle;
 
   Style forLevel(TranscriptLevel level) {
     switch (level) {
@@ -90,11 +98,20 @@ class FrunTheme {
         buttonStopStyle: const Style(isBold: true)
             .backgroundColor256(124)
             .foregroundColor256(255),
+        pickerChipStyle: const Style(isBold: true)
+            .backgroundColor256(22)
+            .foregroundColor256(231),
         linkHighlightStyle: const Style(isBold: true)
             .backgroundColor256(240)
             .foregroundColor256(226),
         selectionStyle: const Style()
             .backgroundColor256(60)
+            .foregroundColor256(231),
+        visualLineStyle: const Style()
+            .backgroundColor256(54)
+            .foregroundColor256(231),
+        visualBlockStyle: const Style(isBold: true)
+            .backgroundColor256(63)
             .foregroundColor256(231),
         searchMatchStyle: const Style()
             .backgroundColor256(94)
@@ -104,6 +121,9 @@ class FrunTheme {
             .foregroundColor256(16),
         cursorStyle:
             const Style().backgroundColor256(244).foregroundColor256(16),
+        replaceCursorStyle: const Style(isBold: true)
+            .backgroundColor256(196)
+            .foregroundColor256(231),
       );
 
   static FrunTheme light() => FrunTheme(
@@ -131,11 +151,20 @@ class FrunTheme {
         buttonStopStyle: const Style(isBold: true)
             .backgroundColor256(160)
             .foregroundColor256(231),
+        pickerChipStyle: const Style(isBold: true)
+            .backgroundColor256(22)
+            .foregroundColor256(231),
         linkHighlightStyle: const Style(isBold: true)
             .backgroundColor256(229)
             .foregroundColor256(94),
         selectionStyle: const Style()
             .backgroundColor256(153)
+            .foregroundColor256(16),
+        visualLineStyle: const Style()
+            .backgroundColor256(189)
+            .foregroundColor256(16),
+        visualBlockStyle: const Style(isBold: true)
+            .backgroundColor256(117)
             .foregroundColor256(16),
         searchMatchStyle: const Style()
             .backgroundColor256(220)
@@ -145,6 +174,9 @@ class FrunTheme {
             .foregroundColor256(16),
         cursorStyle:
             const Style().backgroundColor256(238).foregroundColor256(231),
+        replaceCursorStyle: const Style(isBold: true)
+            .backgroundColor256(160)
+            .foregroundColor256(231),
       );
 
   static FrunTheme fromConfig(FrunConfig config) =>

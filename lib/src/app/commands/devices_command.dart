@@ -24,7 +24,7 @@ class DevicesCommand extends SlashCommand {
   Future<CommandResult> run(List<String> args, AppState state) async {
     final mgr = state.deviceManager;
     if (mgr == null) {
-      state.transcript.warn(
+      state.visibleTranscript.warn(
         'Flutter daemon is still starting. Try /devices again in a moment.',
       );
       return CommandResult.ok;
@@ -42,39 +42,39 @@ class DevicesCommand extends SlashCommand {
       _select(args.first, state);
       return CommandResult.ok;
     }
-    state.transcript.warn('Usage: $usage');
+    state.visibleTranscript.warn('Usage: $usage');
     return CommandResult.ok;
   }
 
   void _printList(AppState state) {
     final list = state.deviceManager!.devices;
     if (list.isEmpty) {
-      state.transcript.warn(
+      state.visibleTranscript.warn(
         'No devices found. Try /emulators to launch one or connect a device.',
       );
       return;
     }
-    state.transcript.system('Devices:');
+    state.visibleTranscript.system('Devices:');
     for (final d in list) {
       final marker = d.id == state.selectedDeviceId ? '>' : ' ';
       final kind = d.emulator ? 'emulator' : 'physical';
-      state.transcript.info(
+      state.visibleTranscript.info(
         '  $marker ${d.name.padRight(30)} ${d.id.padRight(28)} ${d.platform.padRight(14)} $kind',
       );
     }
-    state.transcript.info('Pick one with `/devices select <id>`.');
+    state.visibleTranscript.info('Pick one with `/devices select <id>`.');
   }
 
   void _select(String id, AppState state) {
     final device = state.deviceManager!.byId(id);
     if (device == null) {
-      state.transcript.error('No device with id "$id".');
+      state.visibleTranscript.error('No device with id "$id".');
       return;
     }
     state.selectedDeviceId = device.id;
     final updated = state.config.copyWith(defaultDeviceId: device.id);
     state.setConfig(updated);
     configStore.save(updated);
-    state.transcript.success('Selected device: ${device.name} (${device.id}).');
+    state.visibleTranscript.success('Selected device: ${device.name} (${device.id}).');
   }
 }

@@ -30,7 +30,7 @@ class EmulatorsCommand extends SlashCommand {
   Future<CommandResult> run(List<String> args, AppState state) async {
     final daemon = state.daemon;
     if (daemon == null) {
-      state.transcript.warn(
+      state.visibleTranscript.warn(
         'Flutter daemon is still starting. Try /emulators again shortly.',
       );
       return CommandResult.ok;
@@ -50,7 +50,7 @@ class EmulatorsCommand extends SlashCommand {
       await _create(manager, name, state);
       return CommandResult.ok;
     }
-    state.transcript.warn('Usage: $usage');
+    state.visibleTranscript.warn('Usage: $usage');
     return CommandResult.ok;
   }
 
@@ -58,20 +58,20 @@ class EmulatorsCommand extends SlashCommand {
     try {
       final emulators = await manager.list();
       if (emulators.isEmpty) {
-        state.transcript.warn(
+        state.visibleTranscript.warn(
           'No emulators defined. Try `/emulators create [name]` (Android only).',
         );
         return;
       }
-      state.transcript.system('Emulators:');
+      state.visibleTranscript.system('Emulators:');
       for (final e in emulators) {
-        state.transcript.info(
+        state.visibleTranscript.info(
           '  ${e.id.padRight(28)} ${e.name.padRight(30)} ${e.platformType ?? ""}',
         );
       }
-      state.transcript.info('Launch with `/emulators launch <id>`.');
+      state.visibleTranscript.info('Launch with `/emulators launch <id>`.');
     } catch (e) {
-      state.transcript.error('Failed to list emulators: $e');
+      state.visibleTranscript.error('Failed to list emulators: $e');
     }
   }
 
@@ -80,11 +80,11 @@ class EmulatorsCommand extends SlashCommand {
     String id,
     AppState state,
   ) async {
-    state.transcript.system('Launching emulator $id…');
+    state.visibleTranscript.system('Launching emulator $id…');
     try {
       final device = await manager.launchAndAwaitDevice(id);
       if (device == null) {
-        state.transcript.warn(
+        state.visibleTranscript.warn(
           'Emulator $id launched but no device appeared within the timeout.',
         );
         return;
@@ -93,11 +93,11 @@ class EmulatorsCommand extends SlashCommand {
       final next = state.config.copyWith(defaultDeviceId: device.id);
       state.setConfig(next);
       configStore.save(next);
-      state.transcript.success(
+      state.visibleTranscript.success(
         'Emulator ready: ${device.name} (${device.id}). Selected.',
       );
     } catch (e) {
-      state.transcript.error('Failed to launch emulator $id: $e');
+      state.visibleTranscript.error('Failed to launch emulator $id: $e');
     }
   }
 
@@ -106,14 +106,14 @@ class EmulatorsCommand extends SlashCommand {
     String? name,
     AppState state,
   ) async {
-    state.transcript.system('Creating emulator${name == null ? "" : " $name"}…');
+    state.visibleTranscript.system('Creating emulator${name == null ? "" : " $name"}…');
     try {
       await manager.create(name: name);
-      state.transcript.success(
+      state.visibleTranscript.success(
         'Emulator created. Run `/emulators` to see it.',
       );
     } catch (e) {
-      state.transcript.error('Failed to create emulator: $e');
+      state.visibleTranscript.error('Failed to create emulator: $e');
     }
   }
 }

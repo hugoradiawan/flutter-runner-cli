@@ -28,3 +28,28 @@ Future<bool> copyToClipboard(String text) async {
   }
   return false;
 }
+
+/// Read the OS clipboard via pbpaste / wl-paste / xclip / xsel / PowerShell.
+/// Returns null when no helper is available or all helpers fail.
+Future<String?> pasteFromClipboard() async {
+  final candidates = <List<String>>[
+    if (Platform.isMacOS) ['pbpaste'],
+    if (Platform.isLinux) ...[
+      ['wl-paste', '--no-newline'],
+      ['xclip', '-selection', 'clipboard', '-o'],
+      ['xsel', '--clipboard', '--output'],
+    ],
+    if (Platform.isWindows)
+      ['powershell', '-NoProfile', '-Command', 'Get-Clipboard'],
+  ];
+
+  for (final argv in candidates) {
+    try {
+      final r = await Process.run(argv.first, argv.skip(1).toList());
+      if (r.exitCode == 0) return (r.stdout as String?) ?? '';
+    } catch (_) {
+      // try next candidate
+    }
+  }
+  return null;
+}

@@ -2,6 +2,7 @@ import '../config/config.dart';
 import '../daemon/flutter_daemon.dart';
 import '../devices/device_manager.dart';
 import '../ide/ide_launcher.dart';
+import '../project/launch_config.dart';
 import '../project/project_detector.dart';
 import '../vm/isolate_manager.dart';
 import 'run_controller.dart';
@@ -55,4 +56,9 @@ class AppState {
 
   /// Whether the bottom status block is rendered. Toggled by `/status`.
   bool showStatusPanel = false;
+
+  /// Active `/run` picker. When non-empty, the TUI renders a button bar of
+  /// launch entries above the input line. Cleared after the user picks one
+  /// or dismisses the picker.
+  List<LaunchEntry> launchChoices = const <LaunchEntry>[];
 }

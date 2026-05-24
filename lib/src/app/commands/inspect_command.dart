@@ -31,7 +31,7 @@ class InspectCommand extends SlashCommand {
   Future<CommandResult> run(List<String> args, AppState state) async {
     final session = state.runController.session;
     if (session == null) {
-      state.transcript.warn('No running app. Start one with /run first.');
+      state.visibleTranscript.warn('No running app. Start one with /run first.');
       return CommandResult.ok;
     }
     _enabled = !_enabled;
@@ -41,19 +41,19 @@ class InspectCommand extends SlashCommand {
         <String, Object?>{'enabled': _enabled},
       );
     } catch (e) {
-      state.transcript.error('Could not toggle inspector: $e');
+      state.visibleTranscript.error('Could not toggle inspector: $e');
       _enabled = !_enabled;
       return CommandResult.ok;
     }
     if (_enabled) {
       _attach(state);
-      state.transcript.success(
+      state.visibleTranscript.success(
         'Inspector ON — tap widgets in the app to jump to source.',
       );
     } else {
       await _sub?.cancel();
       _sub = null;
-      state.transcript.success('Inspector OFF.');
+      state.visibleTranscript.success('Inspector OFF.');
     }
     return CommandResult.ok;
   }
@@ -70,7 +70,7 @@ class InspectCommand extends SlashCommand {
     final data = event.extensionData?.data ?? const <String, dynamic>{};
     final loc = _extractLocation(data);
     if (loc == null) {
-      state.transcript.warn('Inspector selection had no creationLocation.');
+      state.visibleTranscript.warn('Inspector selection had no creationLocation.');
       return;
     }
     final src = SourceLocation.fromVmServiceUri(
@@ -80,7 +80,7 @@ class InspectCommand extends SlashCommand {
       column: loc.column,
     );
     if (src == null) {
-      state.transcript.warn('Could not resolve ${loc.uri} to a file.');
+      state.visibleTranscript.warn('Could not resolve ${loc.uri} to a file.');
       return;
     }
     await state.ideLauncher.open(src, state);

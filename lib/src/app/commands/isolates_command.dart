@@ -37,7 +37,7 @@ class IsolatesCommand extends SlashCommand {
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
     if (manager.service == null) {
-      state.transcript.warn(
+      state.visibleTranscript.warn(
         'No VM service yet. Start the app with /run, then try /isolates.',
       );
       return CommandResult.ok;
@@ -67,7 +67,7 @@ class IsolatesCommand extends SlashCommand {
       case 'stack':
         await _printStack(state, _need(id));
       default:
-        state.transcript.warn('Usage: $usage');
+        state.visibleTranscript.warn('Usage: $usage');
     }
     return CommandResult.ok;
   }
@@ -75,13 +75,13 @@ class IsolatesCommand extends SlashCommand {
   void _print(AppState state) {
     final list = manager.isolates;
     if (list.isEmpty) {
-      state.transcript.info('No isolates connected.');
+      state.visibleTranscript.info('No isolates connected.');
       return;
     }
-    state.transcript.system('Isolates:');
+    state.visibleTranscript.system('Isolates:');
     for (final iso in list) {
       final extra = iso.pauseReason == null ? '' : ' (${iso.pauseReason})';
-      state.transcript.info(
+      state.visibleTranscript.info(
         '  ${iso.id.padRight(22)} ${iso.name.padRight(24)} ${iso.status.name}$extra',
       );
     }
@@ -91,21 +91,21 @@ class IsolatesCommand extends SlashCommand {
     try {
       final stack = await manager.getStack(id);
       if (stack == null) {
-        state.transcript.warn('No stack available.');
+        state.visibleTranscript.warn('No stack available.');
         return;
       }
       final frames = stack.frames ?? const <vm.Frame>[];
       if (frames.isEmpty) {
-        state.transcript.info('Stack empty for $id.');
+        state.visibleTranscript.info('Stack empty for $id.');
         return;
       }
-      state.transcript.system('Stack for $id:');
+      state.visibleTranscript.system('Stack for $id:');
       for (var i = 0; i < frames.length && i < 30; i++) {
         final f = frames[i];
         final fn = f.function?.name ?? '<anon>';
         final loc = f.location;
         final script = loc?.script?.uri ?? '';
-        state.transcript.info('  #$i  $fn  $script');
+        state.visibleTranscript.info('  #$i  $fn  $script');
       }
       // Auto-open the top frame in the user's IDE if it has a script.
       final top = frames.first;
@@ -115,7 +115,7 @@ class IsolatesCommand extends SlashCommand {
         if (loc != null) await ide.open(loc, state);
       }
     } catch (e) {
-      state.transcript.error('Stack lookup failed: $e');
+      state.visibleTranscript.error('Stack lookup failed: $e');
     }
   }
 
@@ -123,7 +123,7 @@ class IsolatesCommand extends SlashCommand {
     try {
       await body();
     } catch (e) {
-      state.transcript.error('VM service call failed: $e');
+      state.visibleTranscript.error('VM service call failed: $e');
     }
   }
 

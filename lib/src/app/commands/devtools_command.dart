@@ -20,20 +20,20 @@ class DevToolsCommand extends SlashCommand {
   Future<CommandResult> run(List<String> args, AppState state) async {
     final daemon = state.daemon;
     if (daemon == null) {
-      state.transcript.warn('Flutter daemon not ready yet. Try again shortly.');
+      state.visibleTranscript.warn('Flutter daemon not ready yet. Try again shortly.');
       return CommandResult.ok;
     }
     Map<String, Object?> served;
     try {
       served = await daemon.serveDevTools();
     } catch (e) {
-      state.transcript.error('devtools.serve failed: $e');
+      state.visibleTranscript.error('devtools.serve failed: $e');
       return CommandResult.ok;
     }
     final host = served['host'] as String? ?? '127.0.0.1';
     final port = (served['port'] as num?)?.toInt();
     if (port == null) {
-      state.transcript.error(
+      state.visibleTranscript.error(
         'DevTools server did not report a port. Response: $served',
       );
       return CommandResult.ok;
@@ -44,7 +44,7 @@ class DevToolsCommand extends SlashCommand {
         ? base
         : '$base?uri=${Uri.encodeComponent(vmUri)}';
     state.runController.session?.devToolsUri = full;
-    state.transcript.success('DevTools: $full');
+    state.visibleTranscript.success('DevTools: $full');
 
     final autoOpen = state.config.openDevtoolsOnLaunch;
     if (autoOpen == FrunDevToolsAutoOpen.always) {
@@ -67,9 +67,9 @@ class DevToolsCommand extends SlashCommand {
       args = [url];
     }
     Process.start(exe, args, runInShell: Platform.isWindows).then((p) {
-      state.transcript.system('Opened DevTools in browser.');
+      state.visibleTranscript.system('Opened DevTools in browser.');
     }).catchError((Object e) {
-      state.transcript.warn('Could not auto-open browser: $e');
+      state.visibleTranscript.warn('Could not auto-open browser: $e');
     });
   }
 }

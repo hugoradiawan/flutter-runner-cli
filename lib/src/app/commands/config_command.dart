@@ -32,17 +32,17 @@ class ConfigCommand extends SlashCommand {
         _show(state);
         return CommandResult.ok;
       case 'path':
-        state.transcript.info(store.path);
+        state.visibleTranscript.info(store.path);
         return CommandResult.ok;
       case 'set':
         if (args.length < 3) {
-          state.transcript.warn('Usage: $usage');
+          state.visibleTranscript.warn('Usage: $usage');
           return CommandResult.ok;
         }
         _set(args[1], args.sublist(2).join(' '), state);
         return CommandResult.ok;
       default:
-        state.transcript.warn('Unknown subcommand "$sub". $usage');
+        state.visibleTranscript.warn('Unknown subcommand "$sub". $usage');
         return CommandResult.ok;
     }
   }
@@ -80,12 +80,12 @@ class ConfigCommand extends SlashCommand {
           openDevtoolsOnLaunch: FrunDevToolsAutoOpen.fromString(value),
         );
       default:
-        state.transcript.warn('Unknown key "$key".');
+        state.visibleTranscript.warn('Unknown key "$key".');
         return;
     }
     state.setConfig(next);
     store.save(next);
-    state.transcript.success('Set $key = $value');
+    state.visibleTranscript.success('Set $key = $value');
   }
 
   static bool _parseBool(String v) {

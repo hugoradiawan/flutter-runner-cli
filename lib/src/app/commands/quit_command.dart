@@ -13,7 +13,7 @@ class QuitCommand extends SlashCommand {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    state.transcript.system('Bye.');
+    state.visibleTranscript.system('Bye.');
     return CommandResult.quit;
   }
 }

@@ -1,107 +1,92 @@
 import 'package:dart_tui/dart_tui.dart';
 import 'package:frun/src/config/config.dart';
 import 'package:frun/src/tui/input_controller.dart';
+import 'package:frun/src/tui/vim/vim_buffer.dart';
 import 'package:test/test.dart';
 
-KeyMsg _rune(String ch, {Set<KeyMod> mods = const {}}) =>
-    KeyPressMsg(TeaKey(code: KeyCode.rune, text: ch, modifiers: mods));
-
-KeyMsg _key(KeyCode code, {Set<KeyMod> mods = const {}}) =>
-    KeyPressMsg(TeaKey(code: code, modifiers: mods));
+import 'vim/test_support.dart';
 
 void main() {
-  group('InputController normal editor mode', () {
-    test('inserts printable characters and submits on Enter', () {
+  group('InputController insert handling', () {
+    test('inserts printable characters and submits Enter on single line', () {
       final c = InputController(editorMode: FrunEditorMode.normal);
-      _type(c, 'hi');
+      type(c, 'hi');
       expect(c.text, 'hi');
-      final res = c.handle(_key(KeyCode.enter));
+      final res = c.insertKey(key(KeyCode.enter));
       expect(res, InputAction.submit);
     });
 
     test('backspace deletes character behind cursor', () {
       final c = InputController(editorMode: FrunEditorMode.normal);
-      _type(c, 'abc');
-      c.handle(_key(KeyCode.backspace));
+      type(c, 'abc');
+      c.insertKey(key(KeyCode.backspace));
       expect(c.text, 'ab');
     });
 
     test('Ctrl-U clears to beginning of line', () {
       final c = InputController(editorMode: FrunEditorMode.normal);
-      _type(c, '/run lib/main.dart');
-      c.handle(_rune('u', mods: {KeyMod.ctrl}));
+      type(c, '/run lib/main.dart');
+      c.insertKey(rune('u', mods: const {KeyMod.ctrl}));
       expect(c.text, '');
     });
-  });
 
-  group('InputController vim editor mode', () {
-    test('starts in insert mode', () {
-      final c = InputController(editorMode: FrunEditorMode.vim);
-      expect(c.mode, VimMode.insert);
+    test('Shift-Enter inserts newline; plain Enter on multi-line inserts too', () {
+      final c = InputController(editorMode: FrunEditorMode.normal);
+      type(c, 'abc');
+      c.insertKey(key(KeyCode.enter, mods: const {KeyMod.shift}));
+      type(c, 'def');
+      expect(c.text, 'abc\ndef');
+      // Now buffer is multi-line; plain Enter should also insert newline.
+      final res = c.insertKey(key(KeyCode.enter));
+      expect(res, InputAction.none);
+      expect(c.text, 'abc\ndef\n');
     });
 
-    test('Escape switches to normal mode and steps cursor back', () {
-      final c = InputController(editorMode: FrunEditorMode.vim);
-      _type(c, 'foo');
-      c.handle(_key(KeyCode.escape));
-      expect(c.mode, VimMode.normal);
-      expect(c.cursor, 2);
+    test('insertAt with newline splits the line', () {
+      final c = InputController(editorMode: FrunEditorMode.normal);
+      type(c, 'hello');
+      c.cursor = const Pos(0, 2);
+      c.insertAt(const Pos(0, 2), '\n');
+      expect(c.text, 'he\nllo');
+      expect(c.cursor.row, 1);
+      expect(c.cursor.col, 0);
     });
 
-    test('h/l move the cursor in normal mode', () {
-      final c = InputController(editorMode: FrunEditorMode.vim);
-      _type(c, 'hello');
-      c.handle(_key(KeyCode.escape));
-      c.handle(_rune('h'));
-      c.handle(_rune('h'));
-      expect(c.cursor, 2);
-      c.handle(_rune('l'));
-      expect(c.cursor, 3);
+    test('replaceRange linewise removes a whole line', () {
+      final c = InputController(editorMode: FrunEditorMode.normal);
+      c.setText('one\ntwo\nthree');
+      const r = Range(Pos(1, 0), Pos(1, 3), RangeKind.linewise);
+      c.replaceRange(r, '', RangeKind.linewise);
+      expect(c.text, 'one\nthree');
     });
 
-    test('0 and \$ jump to start/end', () {
-      final c = InputController(editorMode: FrunEditorMode.vim);
-      _type(c, 'abcdef');
-      c.handle(_key(KeyCode.escape));
-      c.handle(_rune('0'));
-      expect(c.cursor, 0);
-      c.handle(_rune(r'$'));
-      expect(c.cursor, c.text.length);
-    });
-
-    test('dw deletes a word', () {
-      final c = InputController(editorMode: FrunEditorMode.vim);
-      _type(c, 'foo bar baz');
-      c.handle(_key(KeyCode.escape));
-      c.handle(_rune('0'));
-      c.handle(_rune('d'));
-      c.handle(_rune('w'));
-      expect(c.text, 'bar baz');
-    });
-
-    test('i re-enters insert mode', () {
-      final c = InputController(editorMode: FrunEditorMode.vim);
-      _type(c, 'foo');
-      c.handle(_key(KeyCode.escape));
-      c.handle(_rune('i'));
-      expect(c.mode, VimMode.insert);
-      c.handle(_rune('X'));
-      expect(c.text, contains('X'));
-    });
-
-    test('x deletes character under cursor', () {
-      final c = InputController(editorMode: FrunEditorMode.vim);
-      _type(c, 'abc');
-      c.handle(_key(KeyCode.escape));
-      c.handle(_rune('0'));
-      c.handle(_rune('x'));
-      expect(c.text, 'bc');
+    test('Ctrl-W deletes word backward', () {
+      final c = InputController(editorMode: FrunEditorMode.normal);
+      type(c, '/run lib');
+      c.insertKey(rune('w', mods: const {KeyMod.ctrl}));
+      expect(c.text, '/run ');
     });
   });
-}
 
-void _type(InputController c, String text) {
-  for (final ch in text.split('')) {
-    c.handle(_rune(ch));
-  }
+  group('VimBuffer compliance', () {
+    test('textInRange returns the right slice', () {
+      final c = InputController(editorMode: FrunEditorMode.vim);
+      c.setText('hello world');
+      const r = Range(Pos(0, 0), Pos(0, 4), RangeKind.charwise);
+      expect(c.textInRange(r), 'hello');
+    });
+
+    test('linewise yank then paste appends a duplicate line below', () {
+      final c = InputController(editorMode: FrunEditorMode.vim);
+      c.setText('alpha\nbeta');
+      c.cursor = const Pos(1, 0);
+      const r = Range(Pos(1, 0), Pos(1, 4), RangeKind.linewise);
+      final text = c.textInRange(r);
+      expect(text, 'beta');
+      // Insert below row 1 — append at end.
+      c.insertAt(Pos(c.lineCount - 1, c.lineAt(c.lineCount - 1).length),
+          '\n$text');
+      expect(c.text, 'alpha\nbeta\nbeta');
+    });
+  });
 }
