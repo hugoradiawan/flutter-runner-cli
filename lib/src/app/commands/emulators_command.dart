@@ -21,7 +21,7 @@ class EmulatorsCommand extends SlashCommand {
   String get summary => 'List, launch, or create emulators';
 
   @override
-  String get usage => '/emulators [launch `<id>`|create [name]]';
+  String get usage => '/emulators [launch `<id>`|create [name]|list]';
 
   @override
   List<String> get aliases => const ['emu'];
@@ -37,7 +37,11 @@ class EmulatorsCommand extends SlashCommand {
     }
     final manager = EmulatorManager(daemon);
 
-    if (args.isEmpty || args.first == 'list' || args.first == 'ls') {
+    if (args.isEmpty) {
+      await _openPicker(manager, state);
+      return CommandResult.ok;
+    }
+    if (args.first == 'list' || args.first == 'ls') {
       await _list(manager, state);
       return CommandResult.ok;
     }
@@ -52,6 +56,21 @@ class EmulatorsCommand extends SlashCommand {
     }
     state.visibleTranscript.warn('Usage: $usage');
     return CommandResult.ok;
+  }
+
+  Future<void> _openPicker(EmulatorManager manager, AppState state) async {
+    try {
+      final emulators = await manager.list();
+      if (emulators.isEmpty) {
+        state.visibleTranscript.warn(
+          'No emulators defined. Try `/emulators create [name]` (Android only).',
+        );
+        return;
+      }
+      state.setEmulatorPicker(emulators);
+    } catch (e) {
+      state.visibleTranscript.error('Failed to list emulators: $e');
+    }
   }
 
   Future<void> _list(EmulatorManager manager, AppState state) async {

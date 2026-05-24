@@ -37,10 +37,12 @@ void main() {
   }
 
   stdout.writeln('Reactivating frun from $repoRoot…');
+  // Use the same `dart` that's running this script. Avoids picking up a
+  // stale SDK (e.g. fvm default) that PATH resolves first when multiple
+  // dart installs are present.
   final result = Process.runSync(
-    Platform.isWindows ? 'dart.exe' : 'dart',
+    Platform.resolvedExecutable,
     ['pub', 'global', 'activate', '--source', 'path', repoRoot],
-    runInShell: Platform.isWindows,
   );
   stdout.write(result.stdout);
   if ((result.stderr as String).isNotEmpty) stderr.write(result.stderr);

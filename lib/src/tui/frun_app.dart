@@ -11,7 +11,6 @@ import '../app/run_tab.dart';
 import '../app/transcript.dart';
 import '../config/config.dart';
 import '../ide/source_location.dart';
-import '../project/launch_config.dart';
 import '../version.dart';
 import 'clipboard.dart';
 import 'hit_regions.dart';
@@ -87,6 +86,24 @@ final class PickLaunchEntryMsg extends Msg {
 
 final class CloseLaunchPickerMsg extends Msg {
   const CloseLaunchPickerMsg();
+}
+
+final class PickEmulatorMsg extends Msg {
+  const PickEmulatorMsg(this.index);
+  final int index;
+}
+
+final class CloseEmulatorPickerMsg extends Msg {
+  const CloseEmulatorPickerMsg();
+}
+
+final class PickDeviceMsg extends Msg {
+  const PickDeviceMsg(this.index);
+  final int index;
+}
+
+final class CloseDevicePickerMsg extends Msg {
+  const CloseDevicePickerMsg();
 }
 
 final class _CycleTabsForwardMsg extends Msg {
@@ -232,11 +249,31 @@ final class FrunModel extends TeaModel {
       final entries = state.launchChoices;
       if (msg.index >= 0 && msg.index < entries.length) {
         final picked = entries[msg.index];
-        state.launchChoices = const <LaunchEntry>[];
+        state.clearPickers();
         unawaited(state.runController.launchEntry(picked));
       }
     } else if (msg is CloseLaunchPickerMsg) {
-      state.launchChoices = const <LaunchEntry>[];
+      state.clearPickers();
+    } else if (msg is PickEmulatorMsg) {
+      final emulators = state.emulatorChoices;
+      if (msg.index >= 0 && msg.index < emulators.length) {
+        final picked = emulators[msg.index];
+        state.clearPickers();
+        _input.setText('/emulators launch ${picked.id}');
+        _submit();
+      }
+    } else if (msg is CloseEmulatorPickerMsg) {
+      state.clearPickers();
+    } else if (msg is PickDeviceMsg) {
+      final devices = state.deviceChoices;
+      if (msg.index >= 0 && msg.index < devices.length) {
+        final picked = devices[msg.index];
+        state.clearPickers();
+        _input.setText('/devices select ${picked.id}');
+        _submit();
+      }
+    } else if (msg is CloseDevicePickerMsg) {
+      state.clearPickers();
     } else if (msg is _CycleTabsForwardMsg) {
       if (state.runController.tabs.length >= 2) {
         state.runController.cycleActive(forward: true);
@@ -270,12 +307,27 @@ final class FrunModel extends TeaModel {
       return;
     }
 
-    // Esc dismisses the `/run` launch picker if it's open. Takes priority
-    // over vim/transcript-cursor mode so a stray Esc doesn't strand the
-    // picker on screen.
-    if (ke.code == KeyCode.escape && state.launchChoices.isNotEmpty) {
-      state.launchChoices = const <LaunchEntry>[];
+    // Esc dismisses any open picker. Takes priority over vim/transcript-cursor
+    // mode so a stray Esc doesn't strand the picker on screen.
+    if (ke.code == KeyCode.escape && state.hasActivePicker) {
+      state.clearPickers();
       return;
+    }
+
+    // Keyboard pick: when a picker is active and the input is empty, digit
+    // keys 0-9 pick the matching entry. Lets users drive the picker without
+    // a mouse (some terminals swallow mouse events).
+    if (state.hasActivePicker &&
+        _input.text.isEmpty &&
+        ke.code == KeyCode.rune &&
+        !ke.modifiers.contains(KeyMod.ctrl) &&
+        !ke.modifiers.contains(KeyMod.alt) &&
+        ke.text.length == 1) {
+      final code = ke.text.codeUnitAt(0);
+      if (code >= 0x30 && code <= 0x39) {
+        _pickFromActivePicker(code - 0x30);
+        return;
+      }
     }
 
     // In vim mode, while engine is in ex/search, route everything to it.
@@ -793,7 +845,8 @@ final class FrunModel extends TeaModel {
     final inputH = _computeInputHeight();
     const footerH = 1;
     final infoBarH = _computeInfoBarHeight(w);
-    final pickerH = _computeLaunchPickerHeight(w);
+    final picker = _activePicker();
+    final pickerH = _computePickerHeight(picker);
     final statusH = state.showStatusPanel ? _statusHeight(h, infoBarH + pickerH + inputH) : 0;
     final bodyH = h - inputH - footerH - statusH - infoBarH - pickerH;
     _lastBodyHeight = bodyH;
@@ -805,10 +858,11 @@ final class FrunModel extends TeaModel {
     if (state.showStatusPanel) {
       _paintStatus(canvas, theme, w, bodyH, statusH);
     }
-    if (pickerH > 0) {
-      _paintLaunchPicker(
+    if (pickerH > 0 && picker != null) {
+      _paintPicker(
         canvas,
         theme,
+        picker,
         w,
         h - footerH - inputH - infoBarH - pickerH,
         pickerH,
@@ -1094,30 +1148,135 @@ final class FrunModel extends TeaModel {
         'ide:${state.config.ide.id}$tabsSegment ';
   }
 
-  String _pickerChipText(int index, LaunchEntry entry) {
-    final tags = <String>[
-      if (entry.flutterMode != null) entry.flutterMode!,
-      if (entry.deviceId != null) entry.deviceId!,
-    ];
-    final tail = tags.isEmpty ? '' : '  ${tags.join(' · ')}';
-    return ' [$index] ${entry.name}$tail ';
+  void _pickFromActivePicker(int idx) {
+    if (state.launchChoices.isNotEmpty) {
+      if (idx < 0 || idx >= state.launchChoices.length) return;
+      final picked = state.launchChoices[idx];
+      state.clearPickers();
+      unawaited(state.runController.launchEntry(picked));
+      return;
+    }
+    if (state.emulatorChoices.isNotEmpty) {
+      if (idx < 0 || idx >= state.emulatorChoices.length) return;
+      final picked = state.emulatorChoices[idx];
+      state.clearPickers();
+      _input.setText('/emulators launch ${picked.id}');
+      _submit();
+      return;
+    }
+    if (state.deviceChoices.isNotEmpty) {
+      if (idx < 0 || idx >= state.deviceChoices.length) return;
+      final picked = state.deviceChoices[idx];
+      state.clearPickers();
+      _input.setText('/devices select ${picked.id}');
+      _submit();
+      return;
+    }
   }
 
-  (List<_PickerChip>, int) _layoutPickerChips(int width) {
-    final entries = state.launchChoices;
+  _PickerSpec? _activePicker() {
+    if (state.launchChoices.isNotEmpty) {
+      return _PickerSpec(
+        kind: _PickerKind.launch,
+        itemCount: state.launchChoices.length,
+        header: ' Run: pick an entry — click or press esc to close',
+        moreHintFormat: '/run <index|name>',
+      );
+    }
+    if (state.emulatorChoices.isNotEmpty) {
+      return _PickerSpec(
+        kind: _PickerKind.emulator,
+        itemCount: state.emulatorChoices.length,
+        header: ' Emulators: pick to launch — click or press esc to close',
+        moreHintFormat: '/emulators launch <id>',
+      );
+    }
+    if (state.deviceChoices.isNotEmpty) {
+      return _PickerSpec(
+        kind: _PickerKind.device,
+        itemCount: state.deviceChoices.length,
+        header: ' Devices: pick to select — click or press esc to close',
+        moreHintFormat: '/devices select <id>',
+      );
+    }
+    return null;
+  }
+
+  Style _pickerChipStyle(_PickerKind kind, FrunTheme theme) {
+    switch (kind) {
+      case _PickerKind.launch:
+        return theme.pickerChipStyle;
+      case _PickerKind.emulator:
+        return theme.pickerEmulatorChipStyle;
+      case _PickerKind.device:
+        return theme.pickerDeviceChipStyle;
+    }
+  }
+
+  Msg _pickerPickMsg(_PickerKind kind, int index) {
+    switch (kind) {
+      case _PickerKind.launch:
+        return PickLaunchEntryMsg(index);
+      case _PickerKind.emulator:
+        return PickEmulatorMsg(index);
+      case _PickerKind.device:
+        return PickDeviceMsg(index);
+    }
+  }
+
+  Msg _pickerCloseMsg(_PickerKind kind) {
+    switch (kind) {
+      case _PickerKind.launch:
+        return const CloseLaunchPickerMsg();
+      case _PickerKind.emulator:
+        return const CloseEmulatorPickerMsg();
+      case _PickerKind.device:
+        return const CloseDevicePickerMsg();
+    }
+  }
+
+  String _pickerChipText(_PickerKind kind, int index) {
+    switch (kind) {
+      case _PickerKind.launch:
+        final entry = state.launchChoices[index];
+        final tags = <String>[
+          if (entry.flutterMode != null) entry.flutterMode!,
+          if (entry.deviceId != null) entry.deviceId!,
+        ];
+        final tail = tags.isEmpty ? '' : '  ${tags.join(' · ')}';
+        return ' [$index] ${entry.name}$tail ';
+      case _PickerKind.emulator:
+        final e = state.emulatorChoices[index];
+        final tags = <String>[
+          e.id,
+          if ((e.platformType ?? '').isNotEmpty) e.platformType!,
+        ];
+        return ' [$index] ${e.name}  ${tags.join(' · ')} ';
+      case _PickerKind.device:
+        final d = state.deviceChoices[index];
+        final tags = <String>[
+          d.platform,
+          d.emulator ? 'emulator' : 'physical',
+        ];
+        final selected = d.id == state.selectedDeviceId ? ' ✓' : '';
+        return ' [$index] ${d.name}$selected  ${tags.join(' · ')} ';
+    }
+  }
+
+  (List<_PickerChip>, int) _layoutPickerChips(_PickerSpec spec, int width) {
     final maxChipWidth = math.max(8, width - _pickerIndent * 2);
 
     final raws = <String>[];
     var widest = 0;
-    for (var i = 0; i < entries.length; i++) {
-      final raw = _pickerChipText(i, entries[i]);
+    for (var i = 0; i < spec.itemCount; i++) {
+      final raw = _pickerChipText(spec.kind, i);
       raws.add(raw);
       if (raw.length > widest) widest = raw.length;
     }
     final uniformWidth = math.min(widest, maxChipWidth);
 
     final chips = <_PickerChip>[];
-    for (var i = 0; i < entries.length; i++) {
+    for (var i = 0; i < spec.itemCount; i++) {
       final raw = raws[i];
       final String text;
       if (raw.length > uniformWidth) {
@@ -1130,9 +1289,9 @@ final class FrunModel extends TeaModel {
     return (chips, uniformWidth);
   }
 
-  int _computeLaunchPickerHeight(int width) {
-    if (state.launchChoices.isEmpty) return 0;
-    final entries = state.launchChoices.length;
+  int _computePickerHeight(_PickerSpec? spec) {
+    if (spec == null) return 0;
+    final entries = spec.itemCount;
     final chipBlock = math.max(0, entries * 2 - 1);
     final desired = 1 + 1 + chipBlock + 1;
     final headroom = math.max(4, _height - 6);
@@ -1141,16 +1300,17 @@ final class FrunModel extends TeaModel {
     return math.min(desired, math.min(maxByCap, headroom));
   }
 
-  void _paintLaunchPicker(
+  void _paintPicker(
     Canvas canvas,
     FrunTheme theme,
+    _PickerSpec spec,
     int width,
     int y,
     int height,
   ) {
-    if (height <= 0 || state.launchChoices.isEmpty) return;
+    if (height <= 0) return;
 
-    const header = ' Run: pick an entry — click or press esc to close';
+    final header = spec.header;
     final headerClipped =
         header.length > width ? header.substring(0, width) : header;
     canvas.paint(0, y, theme.dimStyle.render(headerClipped));
@@ -1162,7 +1322,7 @@ final class FrunModel extends TeaModel {
         y: y,
         w: _pickerCloseLabel.length,
         h: 1,
-        msg: const CloseLaunchPickerMsg(),
+        msg: _pickerCloseMsg(spec.kind),
       );
     }
 
@@ -1179,7 +1339,7 @@ final class FrunModel extends TeaModel {
       canvas.paint(width - 1, r, theme.borderStyle.render('│'));
     }
 
-    final (chips, _) = _layoutPickerChips(width);
+    final (chips, _) = _layoutPickerChips(spec, width);
     final innerH = innerEndY - innerStartY + 1;
     if (innerH <= 0) return;
     final maxVisible = (innerH + 1) ~/ 2;
@@ -1188,26 +1348,27 @@ final class FrunModel extends TeaModel {
         ? math.max(0, maxVisible - 1)
         : chips.length;
 
+    final chipStyle = _pickerChipStyle(spec.kind, theme);
     for (var i = 0; i < visibleCount; i++) {
       final rowY = innerStartY + i * 2;
       if (rowY > innerEndY) break;
       canvas.paint(
         _pickerIndent,
         rowY,
-        theme.pickerChipStyle.render(chips[i].text),
+        chipStyle.render(chips[i].text),
       );
       _hits.add(
         x: _pickerIndent,
         y: rowY,
         w: chips[i].text.length,
         h: 1,
-        msg: PickLaunchEntryMsg(chips[i].index),
+        msg: _pickerPickMsg(spec.kind, chips[i].index),
       );
     }
     if (hidden > 0) {
       final rowY = innerStartY + visibleCount * 2;
       if (rowY <= innerEndY) {
-        final more = ' +$hidden more — /run <index|name> to launch ';
+        final more = ' +$hidden more — ${spec.moreHintFormat} to apply ';
         final maxLen = math.max(0, width - _pickerIndent * 2);
         final clipped = more.length > maxLen ? more.substring(0, maxLen) : more;
         canvas.paint(_pickerIndent, rowY, theme.dimStyle.render(clipped));
@@ -1481,7 +1642,11 @@ final class FrunModel extends TeaModel {
     final tabHint = state.runController.tabs.length >= 2 ? ' · ^t next tab' : '';
     final String left;
     if (state.launchChoices.isNotEmpty) {
-      left = 'launch picker · click a button · /run <index|name> · esc cancel';
+      left = 'launch picker · 0-9 pick · click chip · /run <index|name> · esc cancel';
+    } else if (state.emulatorChoices.isNotEmpty) {
+      left = 'emulator picker · 0-9 launch · click chip · /emulators launch <id> · esc cancel';
+    } else if (state.deviceChoices.isNotEmpty) {
+      left = 'device picker · 0-9 select · click chip · /devices select <id> · esc cancel';
     } else if (_vimState.mode == VimMode.search) {
       left = 'search: enter run · esc cancel';
     } else if (_vimState.mode == VimMode.exCmd) {
@@ -1547,6 +1712,21 @@ class _PickerChip {
   const _PickerChip(this.index, this.text);
   final int index;
   final String text;
+}
+
+enum _PickerKind { launch, emulator, device }
+
+class _PickerSpec {
+  const _PickerSpec({
+    required this.kind,
+    required this.itemCount,
+    required this.header,
+    required this.moreHintFormat,
+  });
+  final _PickerKind kind;
+  final int itemCount;
+  final String header;
+  final String moreHintFormat;
 }
 
 class _Button {

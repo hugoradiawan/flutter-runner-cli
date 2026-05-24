@@ -1,4 +1,5 @@
 import '../config/config.dart';
+import '../daemon/daemon_messages.dart';
 import '../daemon/flutter_daemon.dart';
 import '../devices/device_manager.dart';
 import '../ide/ide_launcher.dart';
@@ -63,4 +64,37 @@ class AppState {
   /// launch entries above the input line. Cleared after the user picks one
   /// or dismisses the picker.
   List<LaunchEntry> launchChoices = const <LaunchEntry>[];
+
+  /// Active `/emulators` picker. Same shape as [launchChoices] — only one
+  /// picker is open at a time; opening one clears the others.
+  List<FlutterEmulator> emulatorChoices = const <FlutterEmulator>[];
+
+  /// Active `/devices` picker.
+  List<FlutterDevice> deviceChoices = const <FlutterDevice>[];
+
+  bool get hasActivePicker =>
+      launchChoices.isNotEmpty ||
+      emulatorChoices.isNotEmpty ||
+      deviceChoices.isNotEmpty;
+
+  void clearPickers() {
+    launchChoices = const <LaunchEntry>[];
+    emulatorChoices = const <FlutterEmulator>[];
+    deviceChoices = const <FlutterDevice>[];
+  }
+
+  void setLaunchPicker(List<LaunchEntry> entries) {
+    clearPickers();
+    launchChoices = entries;
+  }
+
+  void setEmulatorPicker(List<FlutterEmulator> emulators) {
+    clearPickers();
+    emulatorChoices = emulators;
+  }
+
+  void setDevicePicker(List<FlutterDevice> devices) {
+    clearPickers();
+    deviceChoices = devices;
+  }
 }

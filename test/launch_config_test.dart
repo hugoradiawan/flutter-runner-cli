@@ -31,8 +31,30 @@ void main() {
       expect(e.program, 'lib/main_dev.dart');
       expect(e.flutterMode, 'debug');
       expect(e.flavor, 'dev');
-      expect(e.args, ['--foo']);
-      expect(e.toolArgs, ['--web-renderer=canvaskit']);
+      // `args` is appended to toolArgs so its entries reach `flutter run`
+      // as Flutter flags. Dart Code documents `args` as Dart entry-point
+      // args, but in practice users put Flutter CLI flags there.
+      expect(e.args, isEmpty);
+      expect(e.toolArgs, ['--web-renderer=canvaskit', '--foo']);
+    });
+
+    test('appends args after toolArgs (flatten, no `--` split)', () {
+      const jsonc = r'''
+{
+  "configurations": [
+    {
+      "name": "uat",
+      "type": "dart",
+      "program": "lib/main_uat.dart",
+      "args": ["--flavor", "uat", "--debug"]
+    }
+  ]
+}
+''';
+      final entries = LaunchConfigParser.parse(jsonc);
+      final e = entries.single;
+      expect(e.args, isEmpty);
+      expect(e.toolArgs, ['--flavor', 'uat', '--debug']);
     });
 
     test('tolerates // comments, /* */ comments, and trailing commas', () {

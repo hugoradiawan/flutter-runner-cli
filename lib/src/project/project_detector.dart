@@ -104,9 +104,17 @@ class ProjectDetector {
       );
     }
 
+    final melosEntries = _melosEntries(dir);
+    if (melosEntries.isNotEmpty) {
+      return _resolveFromWorkspace(
+        workspaceRoot: dir,
+        entries: melosEntries,
+      );
+    }
+
     return ProjectDetectionResult.failure(
       'Found pubspec.yaml at ${pubspecFile.path}, but it does not depend on Flutter '
-      'and is not a workspace pubspec.\n'
+      'and is not a workspace pubspec (no `workspace:` key, no `melos.yaml`).\n'
       'Either run `frun` from inside a Flutter project, or pass a path: `frun <path-to-flutter-project>`.',
     );
   }
@@ -189,6 +197,75 @@ class ProjectDetector {
       if (s != null && s.isNotEmpty) out.add(s);
     }
     return out;
+  }
+
+  /// Reads a sibling `melos.yaml` and returns its `packages:` list with
+  /// glob entries (e.g. `cores/*`) expanded into concrete sub-directories.
+  /// Returns an empty list when no `melos.yaml` exists or it lacks a
+  /// `packages:` list.
+  static List<String> _melosEntries(String rootDir) {
+    final melosFile = File(p.join(rootDir, 'melos.yaml'));
+    if (!melosFile.existsSync()) return const <String>[];
+    final doc = _readPubspec(melosFile);
+    if (doc == null) return const <String>[];
+    final raw = doc['packages'];
+    if (raw is! List) return const <String>[];
+    final out = <String>[];
+    for (final entry in raw) {
+      final s = entry?.toString();
+      if (s == null || s.isEmpty) continue;
+      if (s.contains('*')) {
+        for (final abs in _expandGlob(rootDir, s)) {
+          out.add(p.relative(abs, from: rootDir));
+        }
+      } else {
+        out.add(s);
+      }
+    }
+    return out;
+  }
+
+  /// Expands a melos `packages:` glob pattern like `cores/*` or
+  /// `packages/foo_*` against [rootDir]. Only `*` wildcards are supported
+  /// (no `**`). Returns absolute directory paths.
+  static List<String> _expandGlob(String rootDir, String pattern) {
+    final parts = p.split(pattern).where((s) => s.isNotEmpty).toList();
+    List<String> current = <String>[rootDir];
+    for (final part in parts) {
+      final next = <String>[];
+      for (final base in current) {
+        if (part.contains('*')) {
+          final dir = Directory(base);
+          if (!dir.existsSync()) continue;
+          final re = _globPartToRegExp(part);
+          for (final ent in dir.listSync()) {
+            if (ent is! Directory) continue;
+            final name = p.basename(ent.path);
+            if (re.hasMatch(name)) next.add(ent.path);
+          }
+        } else {
+          next.add(p.join(base, part));
+        }
+      }
+      current = next;
+    }
+    return current;
+  }
+
+  static RegExp _globPartToRegExp(String pattern) {
+    final sb = StringBuffer('^');
+    for (var i = 0; i < pattern.length; i++) {
+      final ch = pattern[i];
+      if (ch == '*') {
+        sb.write(r'[^/\\]*');
+      } else if (r'.+?()[]{}|^$\'.contains(ch)) {
+        sb.write('\\$ch');
+      } else {
+        sb.write(ch);
+      }
+    }
+    sb.write(r'$');
+    return RegExp(sb.toString());
   }
 
   /// Walks upward from [projectRoot] looking for the nearest ancestor that

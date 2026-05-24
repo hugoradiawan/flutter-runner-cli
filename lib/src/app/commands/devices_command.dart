@@ -15,7 +15,7 @@ class DevicesCommand extends SlashCommand {
   String get summary => 'List devices or select one';
 
   @override
-  String get usage => '/devices [select <id>]';
+  String get usage => '/devices [select <id>|list]';
 
   @override
   List<String> get aliases => const ['dev'];
@@ -29,7 +29,11 @@ class DevicesCommand extends SlashCommand {
       );
       return CommandResult.ok;
     }
-    if (args.isEmpty || args.first == 'list' || args.first == 'ls') {
+    if (args.isEmpty) {
+      _openPicker(state);
+      return CommandResult.ok;
+    }
+    if (args.first == 'list' || args.first == 'ls') {
       _printList(state);
       return CommandResult.ok;
     }
@@ -44,6 +48,17 @@ class DevicesCommand extends SlashCommand {
     }
     state.visibleTranscript.warn('Usage: $usage');
     return CommandResult.ok;
+  }
+
+  void _openPicker(AppState state) {
+    final list = state.deviceManager!.devices;
+    if (list.isEmpty) {
+      state.visibleTranscript.warn(
+        'No devices found. Try /emulators to launch one or connect a device.',
+      );
+      return;
+    }
+    state.setDevicePicker(list);
   }
 
   void _printList(AppState state) {

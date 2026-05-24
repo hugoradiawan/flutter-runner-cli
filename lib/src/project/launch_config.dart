@@ -79,6 +79,18 @@ class LaunchConfigParser {
       final deviceId = raw['deviceId']?.toString();
       final mode = raw['flutterMode']?.toString();
       final flavor = raw['flavor']?.toString();
+      // Dart Code's `args` is documented as "args for the Dart program
+      // entry-point" (i.e. after `--` to `flutter run`), but in practice
+      // almost every launch.json in the wild puts Flutter CLI flags there
+      // (`--flavor`, `--debug`, etc.). Pushing those after `--` makes them
+      // program args, which means Flutter never sees the flag, the build
+      // succeeds at the default variant, then the tool fails to locate the
+      // expected APK. To match real-world usage we treat `args` as more
+      // Flutter flags and append them to `toolArgs`.
+      final toolArgs = <String>[
+        ...substList(raw['toolArgs']),
+        ...substList(raw['args']),
+      ];
       out.add(LaunchEntry(
         name: name,
         program: program,
@@ -86,8 +98,8 @@ class LaunchConfigParser {
         deviceId: deviceId,
         flutterMode: mode,
         flavor: flavor,
-        args: substList(raw['args']),
-        toolArgs: substList(raw['toolArgs']),
+        args: const <String>[],
+        toolArgs: toolArgs,
       ));
     }
     return out;

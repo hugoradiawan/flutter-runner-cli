@@ -37,6 +37,12 @@ class AppRunSession {
 
   Future<int> get exitCode => _process.exitCode;
 
+  /// Diagnostic line describing the most recent spawn (cwd + args). Populated
+  /// by [start] so callers can surface it to the user when a build fails in a
+  /// way that depends on path resolution (Gradle output discovery, pub
+  /// workspaces, etc.).
+  static String? lastSpawnDiagnostic;
+
   static Future<AppRunSession> start({
     required String projectRoot,
     required LaunchEntry entry,
@@ -47,17 +53,20 @@ class AppRunSession {
     final exe = flutterExecutable ??
         (Platform.isWindows ? 'flutter.bat' : 'flutter');
 
-    // Working directory: launch.json `cwd` wins, otherwise the project root.
-    final workingDir = entry.cwd != null && entry.cwd!.isNotEmpty
+    // Flutter requires the working directory to be the package root (where
+    // pubspec.yaml lives). Launching from a workspace ancestor breaks Gradle
+    // output discovery on Android ("Gradle build failed to produce an .apk
+    // file. It's likely that this file was generated under .../app/build,
+    // but the tool couldn't find it."). We resolve target to an absolute
+    // path using launch.json `cwd` (when set) or projectRoot, then always
+    // spawn from projectRoot.
+    final workingDir = projectRoot;
+    final launchBase = entry.cwd != null && entry.cwd!.isNotEmpty
         ? entry.cwd!
         : projectRoot;
-
-    // Target path: absolute as-is; otherwise relative to the working dir so
-    // that monorepo `cwd: ${workspaceFolder}/apps/client` + `program: lib/main.dart`
-    // resolves to `apps/client/lib/main.dart`.
     final target = p.isAbsolute(entry.program)
         ? entry.program
-        : entry.program;
+        : p.normalize(p.join(launchBase, entry.program));
 
     final args = <String>[
       'run',
@@ -71,6 +80,9 @@ class AppRunSession {
       ...entry.toolArgs,
       if (entry.args.isNotEmpty) ...['--', ...entry.args],
     ];
+
+    lastSpawnDiagnostic =
+        'spawn: cwd=$workingDir exe=$exe args=${args.join(' ')}';
 
     final process = await Process.start(
       exe,

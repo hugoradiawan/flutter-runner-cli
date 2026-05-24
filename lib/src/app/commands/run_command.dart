@@ -31,7 +31,7 @@ class RunCommand extends SlashCommand {
     final entries = _discover(state);
 
     if (entries.isEmpty) {
-      state.launchChoices = const <LaunchEntry>[];
+      state.clearPickers();
       state.visibleTranscript.warn(
         'No launch entries found. Add lib/main.dart or a .vscode/launch.json with type=dart.',
       );
@@ -40,7 +40,7 @@ class RunCommand extends SlashCommand {
 
     if (args.isEmpty) {
       // Hand the list to the TUI picker — buttons render above the input.
-      state.launchChoices = entries;
+      state.setLaunchPicker(entries);
       return CommandResult.ok;
     }
 
@@ -50,7 +50,7 @@ class RunCommand extends SlashCommand {
       return CommandResult.ok;
     }
 
-    state.launchChoices = const <LaunchEntry>[];
+    state.clearPickers();
     await controller.launchEntry(picked);
     return CommandResult.ok;
   }

@@ -119,6 +119,74 @@ environment:
       expect(result.project!.hasVsCodeFolder, isTrue);
     });
 
+    test('melos workspace auto-selects the lone Flutter app via packages globs', () {
+      // temp/pubspec.yaml (plain Dart, melos dev_dep, no `workspace:` key)
+      // temp/melos.yaml (packages: app, cores/*, features/*)
+      // temp/app/pubspec.yaml (Flutter app, lib/main_uat.dart)
+      // temp/cores/foo/pubspec.yaml (Flutter lib, no main)
+      // temp/features/bar/pubspec.yaml (Flutter lib, no main)
+      File(p.join(temp.path, 'pubspec.yaml')).writeAsStringSync('''
+name: youapp
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+dev_dependencies:
+  melos: ^6.0.0
+''');
+      File(p.join(temp.path, 'melos.yaml')).writeAsStringSync('''
+name: youapp
+packages:
+  - app
+  - cores/*
+  - features/*
+''');
+
+      final appDir = Directory(p.join(temp.path, 'app'))
+        ..createSync(recursive: true);
+      File(p.join(appDir.path, 'pubspec.yaml')).writeAsStringSync('''
+name: youapp2
+dependencies:
+  flutter:
+    sdk: flutter
+''');
+      Directory(p.join(appDir.path, 'lib')).createSync(recursive: true);
+      File(p.join(appDir.path, 'lib', 'main_uat.dart'))
+          .writeAsStringSync('void main() {}');
+
+      final coreDir = Directory(p.join(temp.path, 'cores', 'foo'))
+        ..createSync(recursive: true);
+      File(p.join(coreDir.path, 'pubspec.yaml')).writeAsStringSync('''
+name: foo_core
+environment:
+  flutter: ">=3.0.0"
+dependencies:
+  flutter:
+    sdk: flutter
+''');
+
+      final featDir = Directory(p.join(temp.path, 'features', 'bar'))
+        ..createSync(recursive: true);
+      File(p.join(featDir.path, 'pubspec.yaml')).writeAsStringSync('''
+name: bar_feature
+dependencies:
+  flutter:
+    sdk: flutter
+''');
+
+      final result = ProjectDetector.detect(startDir: temp.path);
+      expect(result.isOk, isTrue, reason: result.error);
+      expect(result.project!.name, 'youapp2');
+      expect(result.project!.root, appDir.absolute.path);
+    });
+
+    test('fails with helpful message when no workspace and no melos.yaml', () {
+      File(p.join(temp.path, 'pubspec.yaml')).writeAsStringSync(
+        'name: pure_dart\nenvironment:\n  sdk: ^3.0.0\n',
+      );
+      final result = ProjectDetector.detect(startDir: temp.path);
+      expect(result.isOk, isFalse);
+      expect(result.error, contains('melos.yaml'));
+    });
+
     test('reports ambiguity when a workspace has multiple Flutter apps', () {
       File(p.join(temp.path, 'pubspec.yaml')).writeAsStringSync('''
 name: ws

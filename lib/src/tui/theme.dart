@@ -21,6 +21,8 @@ class FrunTheme {
     required this.buttonStyle,
     required this.buttonStopStyle,
     required this.pickerChipStyle,
+    required this.pickerEmulatorChipStyle,
+    required this.pickerDeviceChipStyle,
     required this.linkHighlightStyle,
     required this.selectionStyle,
     required this.visualLineStyle,
@@ -47,6 +49,8 @@ class FrunTheme {
   final Style buttonStyle;
   final Style buttonStopStyle;
   final Style pickerChipStyle;
+  final Style pickerEmulatorChipStyle;
+  final Style pickerDeviceChipStyle;
   final Style linkHighlightStyle;
   final Style selectionStyle;
   final Style visualLineStyle;
@@ -101,6 +105,12 @@ class FrunTheme {
         pickerChipStyle: const Style(isBold: true)
             .backgroundColor256(22)
             .foregroundColor256(231),
+        pickerEmulatorChipStyle: const Style(isBold: true)
+            .backgroundColor256(25)
+            .foregroundColor256(231),
+        pickerDeviceChipStyle: const Style(isBold: true)
+            .backgroundColor256(53)
+            .foregroundColor256(231),
         linkHighlightStyle: const Style(isBold: true)
             .backgroundColor256(240)
             .foregroundColor256(226),
@@ -153,6 +163,12 @@ class FrunTheme {
             .foregroundColor256(231),
         pickerChipStyle: const Style(isBold: true)
             .backgroundColor256(22)
+            .foregroundColor256(231),
+        pickerEmulatorChipStyle: const Style(isBold: true)
+            .backgroundColor256(24)
+            .foregroundColor256(231),
+        pickerDeviceChipStyle: const Style(isBold: true)
+            .backgroundColor256(91)
             .foregroundColor256(231),
         linkHighlightStyle: const Style(isBold: true)
             .backgroundColor256(229)

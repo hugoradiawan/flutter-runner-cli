@@ -81,6 +81,8 @@ class RunController {
         entry: entry,
         deviceId: deviceId,
       );
+      final diag = AppRunSession.lastSpawnDiagnostic;
+      if (diag != null) tab.transcript.system(diag);
       tab.session = session;
       tab.eventsSub = session.events.listen((e) => _onEvent(tab, e));
       // Capture the session in the callback so a late exit from an older
