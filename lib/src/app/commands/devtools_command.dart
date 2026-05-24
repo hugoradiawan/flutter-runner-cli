@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import '../../config/config.dart';
 import '../app_state.dart';
 import 'command.dart';
 
@@ -42,14 +41,16 @@ class DevToolsCommand extends SlashCommand {
     final base = 'http://$host:$port/';
     final full = vmUri == null
         ? base
-        : '$base?uri=${Uri.encodeComponent(vmUri)}';
+        : '$base?uri=${Uri.encodeComponent(vmUri)}&page=inspector';
     state.runController.session?.devToolsUri = full;
     state.visibleTranscript.success('DevTools: $full');
 
-    final autoOpen = state.config.openDevtoolsOnLaunch;
-    if (autoOpen == FrunDevToolsAutoOpen.always) {
-      _open(full, state);
-    }
+    state.inspectorBridge.attach(state);
+    state.visibleTranscript.system(
+      'Inspector bridge ON — leaf clicks in DevTools open in ${state.config.ide.id}.',
+    );
+
+    _open(full, state);
     return CommandResult.ok;
   }
 

@@ -2,6 +2,7 @@ import '../config/config.dart';
 import '../daemon/flutter_daemon.dart';
 import '../devices/device_manager.dart';
 import '../ide/ide_launcher.dart';
+import '../ide/inspector_bridge.dart';
 import '../project/launch_config.dart';
 import '../project/project_detector.dart';
 import '../vm/isolate_manager.dart';
@@ -47,6 +48,7 @@ class AppState {
   late final RunController runController = RunController(this);
   late final IsolateManager isolateManager = IsolateManager();
   late final IdeLauncher ideLauncher = IdeLauncher();
+  late final InspectorBridge inspectorBridge = InspectorBridge();
   bool daemonReady = false;
   String? daemonError;
 

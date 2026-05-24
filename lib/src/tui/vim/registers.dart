@@ -43,16 +43,15 @@ class RegisterBank {
     return _byName[name] ?? RegisterEntry.empty;
   }
 
-  /// Record a yank into [name] (defaults to unnamed).
+  /// Record a yank into [name] (defaults to unnamed). Mirrors to the OS
+  /// clipboard unconditionally, matching `set clipboard=unnamedplus`.
   void yank(String text, RangeKind kind, {String name = '"'}) {
     final entry = RegisterEntry(text, kind);
     _setNamed(name, entry, append: _isUppercase(name));
     _byName['"'] = entry;
     _byName['0'] = entry;
-    if (name == '+' || name == '*') {
-      _clipboardCache = entry;
-      unawaited(_writer(text));
-    }
+    _clipboardCache = entry;
+    unawaited(_writer(text));
   }
 
   /// Record a delete into [name] (defaults to unnamed). Rotates 1..9 and

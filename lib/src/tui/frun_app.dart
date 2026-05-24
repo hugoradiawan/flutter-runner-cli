@@ -13,6 +13,7 @@ import '../config/config.dart';
 import '../ide/source_location.dart';
 import '../project/launch_config.dart';
 import '../version.dart';
+import 'clipboard.dart';
 import 'hit_regions.dart';
 import 'input_controller.dart';
 import 'theme.dart';
@@ -125,6 +126,14 @@ final class FrunModel extends TeaModel {
   int _transcriptScroll = 0;
   int _focusedLinkIndex = -1;
 
+  // Mouse-drag selection state. `_mouseAnchor` is captured on left-click
+  // inside the transcript body when no hit-region intercepts; the selection
+  // itself is materialised on the first MouseMotionMsg so a plain click
+  // doesn't strand a zero-width range.
+  bool _mouseSelecting = false;
+  Pos? _mouseAnchor;
+  bool _mouseDragged = false;
+
   // Cached layout state, refreshed each view() call.
   List<_VisibleLink> _visibleLinks = const <_VisibleLink>[];
   List<_DisplayRow> _lastDisplayRows = const <_DisplayRow>[];
@@ -174,6 +183,16 @@ final class FrunModel extends TeaModel {
 
     if (msg is MouseClickMsg) {
       _onMouseClick(msg.mouse);
+      return (this, null);
+    }
+
+    if (msg is MouseMotionMsg) {
+      _onMouseMotion(msg.mouse);
+      return (this, null);
+    }
+
+    if (msg is MouseReleaseMsg) {
+      _onMouseRelease(msg.mouse);
       return (this, null);
     }
 
@@ -569,8 +588,77 @@ final class FrunModel extends TeaModel {
 
   void _onMouseClick(Mouse mouse) {
     final msg = _hits.hit(mouse.x, mouse.y);
-    if (msg == null) return;
-    update(msg);
+    if (msg != null) {
+      update(msg);
+      return;
+    }
+    if (mouse.button != MouseButton.left) return;
+    if (!_isInsideBody(mouse)) return;
+    final pos = _mouseToPos(mouse);
+    if (pos == null) return;
+    _mouseAnchor = pos;
+    _mouseSelecting = true;
+    _mouseDragged = false;
+  }
+
+  void _onMouseMotion(Mouse mouse) {
+    if (!_mouseSelecting) return;
+    final anchor = _mouseAnchor;
+    if (anchor == null) return;
+    final pos = _mouseToPos(mouse);
+    if (pos == null) return;
+    if (!_tc.active) {
+      _tc.enter(initialRow: anchor.row, initialCol: anchor.col);
+      _vimState.mode = VimMode.normal;
+    }
+    _tc.cursor = pos;
+    _tc.visualKind = VimMode.visualChar;
+    _tc.selection = Range(anchor, _tc.cursor, RangeKind.charwise);
+    _mouseDragged = true;
+  }
+
+  void _onMouseRelease(Mouse mouse) {
+    if (!_mouseSelecting) return;
+    final dragged = _mouseDragged;
+    _mouseSelecting = false;
+    _mouseAnchor = null;
+    _mouseDragged = false;
+    if (!dragged) return;
+    final sel = _tc.selection;
+    if (sel != null) {
+      final text = _tc.textInRange(sel);
+      if (text.isNotEmpty) {
+        unawaited(copyToClipboard(text));
+        state.visibleTranscript.system('Copied ${text.length} chars.');
+      }
+    }
+    if (state.config.editorMode != FrunEditorMode.vim) {
+      _tc.exit();
+      _vimState.mode = VimMode.insert;
+    }
+  }
+
+  bool _isInsideBody(Mouse mouse) {
+    if (mouse.y < _lastBodyY || mouse.y >= _lastBodyY + _lastBodyHeight) {
+      return false;
+    }
+    if (mouse.x < 0 || mouse.x >= _width) return false;
+    return true;
+  }
+
+  /// Maps a terminal cell to a (display-row, col) inside the visible
+  /// transcript window. Returns null when the click lands on an empty
+  /// transcript or outside the laid-out rows.
+  Pos? _mouseToPos(Mouse mouse) {
+    if (_displayRowsText.isEmpty) return null;
+    final offset = mouse.y - _lastBodyY;
+    final maxRow = (_lastVisibleEnd - 1).clamp(0, _displayRowsText.length - 1);
+    final minRow = _lastVisibleStart.clamp(0, _displayRowsText.length - 1);
+    final row = (_lastVisibleStart + offset).clamp(minRow, maxRow);
+    final line = _displayRowsText[row];
+    final maxCol = line.isEmpty ? 0 : line.length - 1;
+    final col = mouse.x.clamp(0, maxCol);
+    return Pos(row, col);
   }
 
   void _onMouseWheel(Mouse mouse) {

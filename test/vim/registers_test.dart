@@ -35,6 +35,21 @@ void main() {
       expect(r.read('0').text, '');
     });
 
+    test('default yank also writes to OS clipboard', () async {
+      var captured = '';
+      final r = RegisterBank(
+        writer: (s) async {
+          captured = s;
+          return true;
+        },
+        reader: () async => null,
+      );
+      r.yank('hello', RangeKind.charwise);
+      await Future<void>.delayed(Duration.zero);
+      expect(captured, 'hello');
+      expect(r.read('+').text, 'hello');
+    });
+
     test('clipboard register writes through', () async {
       var captured = '';
       final r = RegisterBank(
