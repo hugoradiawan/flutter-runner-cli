@@ -5,10 +5,16 @@
 Greenfield repo (`flutter-runner-cli`) currently has only `.gitattributes`. The goal is to build an open-source Dart package that publishes a `frun` executable: a TUI app that gives Flutter developers the same workflow a VS Code Flutter extension provides — device picking, launching, hot reload/restart, DevTools, isolate inspection, jump-to-source — but inside a terminal, with no AI features. Look-and-feel inspiration: Claude Code's TUI (persistent input line, scrollable transcript, slash commands, status footer).
 
 Confirmed design decisions (this session):
-- **TUI library:** `utopia_tui` (mature components, panels/lists/tabs/progress/themes, easy for OSS contributors to extend).
+- **TUI library:** `dart_tui` (Tea-style Model/Msg/Cmd, Canvas painter,
+  mouse + alt-screen, easy for OSS contributors to extend).
 - **Config:** global only at `~/.config/frun/config.yaml` (Windows: `%APPDATA%\frun\config.yaml`).
 - **`/run` discovery:** parse `.vscode/launch.json` (`type: dart`) AND auto-detect `lib/**main*.dart` files with a `main()`.
 - **Open-in-IDE:** shell out to the configured IDE CLI (`code -g file:line:col`, `zed file:line:col`). DTD integration deferred.
+
+> Status: milestones 1–11 in the list below are implemented in `lib/src/`.
+> The TUI now also supports concurrent `flutter run` sessions as a tab
+> strip (see `app/run_controller.dart`, `app/run_tab.dart`) — every `/run`
+> opens or focuses a tab, and file saves hot-reload every running tab.
 
 ## Goals
 
@@ -35,7 +41,7 @@ Layered, with the TUI as a thin renderer over a service layer:
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│ TUI shell (utopia_tui)                                    │
+│ TUI shell (dart_tui)                                      │
 │   panels: Transcript · Status · Devices · Isolates · Cmd  │
 └──────────────────────────────────────────────────────────┘
                        │ events / view-model
@@ -55,7 +61,7 @@ Each external integration is wrapped behind a Dart interface so tests can swap i
 
 | Concern | Package |
 |---|---|
-| TUI | `utopia_tui` |
+| TUI | `dart_tui` |
 | CLI parsing | `args` |
 | Flutter daemon JSON-RPC | spawn `flutter daemon` + `flutter run --machine`, custom JSON-RPC client over stdio (the daemon framing is line-delimited `[{...}]`) |
 | VM service | `vm_service` (official) |
@@ -66,28 +72,41 @@ Each external integration is wrapped behind a Dart interface so tests can swap i
 | Logging | `logging` |
 | Testing | `test`, `mocktail` |
 
-Pin `meta`, `collection` at whatever `utopia_tui` requires.
+Pin `meta`, `collection` at whatever `dart_tui` requires.
 
 ## Project Structure
 
 ```
 flutter-runner-cli/
   bin/
-    frun.dart                    # entry — wires DI, starts TUI
+    frun.dart                    # CLI entry — args parsing, calls runFrun()
   lib/
+    frun.dart                    # public library entry — runFrun()
     src/
+      version.dart               # frunVersion constant
       app/
         app_state.dart           # global observable state
+        transcript.dart          # transcript buffer + line models
+        link_extractor.dart      # path:line[:col] regex extractor
+        run_controller.dart      # owns RunTab list (multi-device tabs)
+        run_tab.dart             # one concurrent flutter run session
         commands/                # slash-command handlers
+          command.dart           # SlashCommand + CommandResult
+          command_registry.dart
           run_command.dart
+          reload_command.dart    # /reload, /restart, /stop
           devices_command.dart
           emulators_command.dart
           devtools_command.dart
-          restart_command.dart
+          isolates_command.dart
+          inspect_command.dart
+          status_command.dart    # toggles status panel
           config_command.dart
+          clear_command.dart
+          quit_command.dart
           help_command.dart
       config/
-        config.dart              # model
+        config.dart              # model + enums
         config_store.dart        # load/save YAML at ~/.config/frun/
       project/
         project_detector.dart    # find pubspec, .vscode, lib/main*.dart
@@ -102,53 +121,71 @@ flutter-runner-cli/
         emulator_manager.dart
       vm/
         isolate_manager.dart     # vm_service wrapper, pause/resume/step
-        stack_formatter.dart
       watcher/
         dart_file_watcher.dart   # debounce, ignores .dart_tool/build/
       ide/
         ide_launcher.dart        # code/zed CLI dispatch
         source_location.dart
+        inspector_bridge.dart    # VM-service inspector selection → IDE
       tui/
-        shell.dart               # top-level layout
-        panels/
-          transcript_panel.dart
-          status_panel.dart
-          devices_panel.dart
-          isolates_panel.dart
-          input_panel.dart
-        input/
-          editor.dart            # normal vs vim mode
-          key_router.dart
+        frun_app.dart            # top-level TeaModel (layout, paint, input)
         theme.dart
+        input_controller.dart    # normal-mode prompt buffer
+        transcript_cursor.dart   # vim cursor over the rendered transcript
+        hit_regions.dart         # mouse hit-test table
+        clipboard.dart           # OSC52 + system clipboard helpers
+        vim/                     # engine, motions, operators, text objects,
+                                 # marks, jumplist, registers, ex parser, …
   test/
-    ...
+    ...                          # commands, config, daemon, launch_config,
+                                 # link_extractor, ide_launcher, vim/, …
+  tool/
+    reinstall.dart               # nukes + reactivates the pub-global snapshot
   pubspec.yaml                   # declares `executables: { frun: frun }`
   README.md
+  CHANGELOG.md
   LICENSE                        # MIT (OSS-friendly)
 ```
 
 ## TUI Layout
 
 ```
-┌─ frun · my_app ──────────────────────────  device: iPhone 15 · debug ──┐
-│                                                                        │
-│ Transcript (scrollable; logs, command output, daemon events)           │
-│                                                                        │
-├── Isolates ─────────────────┬── Status ─────────────────────────────── │
-│ ● main           running    │ Hot reload: on save                      │
-│ ● worker-1       paused     │ DevTools:  http://127.0.0.1:9100/?uri=…  │
-│ ○ image-decode   exited     │ VM service: ws://127.0.0.1:xxxx/         │
-├─────────────────────────────┴────────────────────────────────────────── │
-│ > /run_                                                                │
-└────────────────────────────────────────────────────────────────────────┘
-   r reload · R restart · d devtools · i inspect · q quit                 
+┌─ frun · my_app ──────────────────────────────────────────────────────────┐
+│ Transcript (full-width, borderless; logs, command output, daemon events) │
+│                                                                          │
+│ ─ Status (optional, toggled by /status) ──────────────────────────────── │
+│ Device:    iPhone 15 sim                                                 │
+│ Launch:    dev                                                           │
+│ VM service: ws://127.0.0.1:54331/…                                       │
+│ DevTools:  http://127.0.0.1:9100/?uri=…                                  │
+│                                                                          │
+│ ─ Launch picker (only while open) ──────────────────────────────────── x │
+│ ┌─────────────────────────────────────────────────────────────────────┐  │
+│ │  [ 0] dev   debug · emulator-5554                                   │  │
+│ │  [ 1] prod  release                                                 │  │
+│ └─────────────────────────────────────────────────────────────────────┘  │
+│ [ 1: dev · emulator-5554 ][ r ][ R ][ S ]  [+ Run]    my_app  dev:emul…  │
+│ > /run_                                                                  │
+│ ↑↓ scroll · ^↑↓ half · esc cursor · click tabs · ^t next tab · ^c quit   │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Transcript panel** scrollable, color-coded (info/warn/error), wrap-aware, supports clickable-ish source links via key navigation (Tab through links → Enter opens in IDE).
-- **Isolates panel** rendered from VM service `getVM`/`streamListen(Isolate)`; updates on pause/resume events.
-- **Status panel** always shows: selected device, current launch config, DevTools URI (or "—"), VM service URI, hot-reload-on-save toggle.
-- **Input panel** persistent at the bottom; slash-command completion popover; editor mode pulled from config.
-- **Keybindings footer** reflects current focus & mode.
+- **Transcript panel** full-width, scrollable, color-coded
+  (info/warn/error), wrap-aware. `Tab` cycles `file.dart:line[:col]` links,
+  `Enter` opens the focused one. Mouse clicks on links and clickable lines
+  are handled too. With vim mode, `Esc` over an empty prompt enters a
+  transcript cursor mode with `hjkl`, visual selection, yank, and search.
+- **Status panel** optional; `/status` toggles a 5-row block under the
+  transcript with device, launch, VM-service and DevTools URIs.
+- **Launch picker** opens above the prompt when `/run` runs with no
+  argument; chips are clickable, `x` (or `Esc`) closes it.
+- **Tab strip** above the prompt — one tab per concurrent `flutter run`.
+  Click labels to switch; per-tab `r` / `R` / `S` buttons on the active
+  tab. Far right shows `{project}  dev:{id}  ide:{id}  tabs:N`.
+- **Input prompt** persistent; multi-line in vim mode; slash/`:` command
+  completion shown in the footer hint.
+- **Footer / status bar** reflects current mode + relevant hints
+  (suggestions, link nav, picker, ex/search drafts, cursor mode).
 
 ## Feature Modules — implementation notes
 
@@ -161,12 +198,12 @@ flutter-runner-cli/
   ```yaml
   ide: vscode              # vscode | zed
   editor_mode: normal      # normal | vim
-  theme: dark              # passthrough to utopia_tui themes
+  theme: dark              # dark | light — frun FrunTheme
   hot_reload_on_save: true
   default_device_id: null  # remembered across sessions
   open_devtools_on_launch: ask  # always | never | ask
   ```
-- `ConfigStore.load()` creates the file with defaults if absent. `/config` slash-command opens an inline form (utopia_tui form components) to edit and save.
+- `ConfigStore.load()` creates the file with defaults if absent. `/config show`, `/config path`, and `/config set <key> <value>` read/write the YAML in place via `yaml_edit` (no full rewrite).
 
 ### 3. Flutter daemon client (`lib/src/daemon/`)
 - Spawn `flutter daemon` once per session for device/emulator discovery.
@@ -242,7 +279,7 @@ flutter-runner-cli/
 ### 14. Slash-command system
 - Central `CommandRegistry` keyed by name; each command declares `name`, `summary`, `usage`, `aliases`, `run(args, ctx)`.
 - Input panel shows fuzzy-matched completions while typing `/`.
-- Built-in set: `/run`, `/restart`, `/reload`, `/devices`, `/emulators`, `/devtools`, `/inspect`, `/isolates`, `/config`, `/clear`, `/help`, `/quit`.
+- Built-in set: `/run`, `/restart`, `/reload`, `/stop`, `/devices`, `/emulators`, `/devtools`, `/inspect`, `/isolates`, `/status`, `/config`, `/clear`, `/help`, `/quit`. Vim ex mode (`:cmd`) routes through the same registry.
 
 ### 15. Vim mode (input panel)
 - `editor.dart` exposes an `InputController` with `mode: insert | normal | visual`.
@@ -251,7 +288,7 @@ flutter-runner-cli/
 
 ### 16. Cross-platform notes
 - Use `Platform.isWindows` to switch line endings, ANSI handling, and path style.
-- On Windows, enable ANSI via `enableWindowsAnsiSupport()` (utopia_tui handles, but confirm).
+- On Windows, ANSI is required: `runFrun()` refuses to start if `stdout.supportsAnsiEscapes` is false (use Windows Terminal / PowerShell 7+).
 - Use `path.context` consistently — never string-concatenate paths.
 - Process spawning uses `runInShell: false` everywhere except for `code.cmd`/batch files on Windows.
 
@@ -264,18 +301,19 @@ flutter-runner-cli/
 
 ## Milestones (suggested PR slicing)
 
-1. **Skeleton** — `pubspec.yaml` declaring `frun` executable, `bin/frun.dart` prints "hello", CI (analyze + test), MIT LICENSE, README. *Verify:* `dart pub global activate --source path .` then `frun` prints hello.
-2. **Config + project detection + TUI shell** — empty panels render; `/help`, `/quit`, `/config` work. *Verify:* run in any Flutter repo and outside one; ensure outside-Flutter exits cleanly.
-3. **Daemon client + devices** — persistent daemon, `/devices`, status panel updates. *Verify:* plug in an iOS sim or Android emulator; observe live add/remove.
-4. **Emulators** — `/emulators`, launch + auto-select; create-flow for Android.
-5. **Launch + run lifecycle + transcript logs + file watcher + hot reload** — `/run` flow end-to-end with reload-on-save. *Verify:* launch counter app, edit `lib/main.dart`, see reload happen.
-6. **DevTools integration** — `/devtools`, URL in status, optional auto-open.
-7. **VM service / isolate panel** — list, status, pause/resume/step/kill; stack-frame open in IDE.
-8. **Widget inspector → IDE** — `/inspect` mode and selection navigation.
-9. **Error-link Tab navigation in Transcript**.
-10. **Vim mode**.
-11. **Windows polish** — ANSI, `code.cmd`, path tests on a Windows runner in CI.
-12. **Docs + GIFs + pub.dev publish**.
+1. **Skeleton** — `pubspec.yaml` declaring `frun` executable, `bin/frun.dart` prints "hello", CI (analyze + test), MIT LICENSE, README. ✅
+2. **Config + project detection + TUI shell** — empty panels render; `/help`, `/quit`, `/config` work. ✅
+3. **Daemon client + devices** — persistent daemon, `/devices`, status panel updates. ✅
+4. **Emulators** — `/emulators`, launch + auto-select; create-flow for Android. ✅
+5. **Launch + run lifecycle + transcript logs + file watcher + hot reload** — `/run` flow end-to-end with reload-on-save. ✅
+6. **DevTools integration** — `/devtools`, URL in status, optional auto-open, inspector bridge attached. ✅
+7. **VM service / isolate panel** — list, status, pause/resume/step/kill; stack-frame open in IDE. ✅
+8. **Widget inspector → IDE** — `/inspect` mode and selection navigation; DevTools-side selection covered via polling. ✅
+9. **Error-link Tab navigation in Transcript**. ✅ (plus mouse clicks)
+10. **Vim mode** — insert / normal / visual{char,line,block} / op-pending / replace / search / ex; transcript cursor mode; tab navigation (`gt` / `gT` / `Ngt`). ✅
+11. **Multi-device tabs** — `/run` opens a tab per launch+device; shared file watcher; per-tab buttons (`r` / `R` / `S`); clickable launch picker. ✅ (added after the original list)
+12. **Windows polish** — ANSI, `code.cmd`, path tests on a Windows runner in CI.
+13. **Docs + GIFs + pub.dev publish**.
 
 Each milestone is independently releasable; the package is usable from milestone 5 onward.
 
