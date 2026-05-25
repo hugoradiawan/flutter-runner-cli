@@ -23,6 +23,7 @@ import 'src/app/commands/status_command.dart';
 import 'src/config/config_store.dart';
 import 'src/daemon/flutter_daemon.dart';
 import 'src/devices/device_manager.dart';
+import 'src/platform/windows_console.dart';
 import 'src/project/project_detector.dart';
 import 'src/tui/frun_app.dart';
 
@@ -43,6 +44,8 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     );
     return 64;
   }
+  // Disable QuickEdit on the legacy console host so mouse events flow through.
+  final restoreConsole = prepareWindowsConsoleForMouse();
   final workingDir = cwd ?? Directory.current.path;
   final detection = ProjectDetector.detect(startDir: workingDir);
   if (!detection.isOk) {
@@ -91,7 +94,11 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   // immediately. Any failure is surfaced in the transcript.
   unawaited(_bootDaemon(state));
 
-  await program.run(tuiApp);
+  try {
+    await program.run(tuiApp);
+  } finally {
+    restoreConsole();
+  }
   await state.runController.stopAll();
   await state.isolateManager.disconnect();
   await state.daemon?.shutdown();

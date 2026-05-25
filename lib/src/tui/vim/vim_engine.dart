@@ -117,6 +117,18 @@ class VimEngine {
   // ── Mode transitions ─────────────────────────────────────────────────────
 
   void _enterNormal(VimBuffer buffer) {
+    // Finalize an in-progress insert session for dot-repeat.
+    if (_state.mode == VimMode.insert && _state.insertEntry != null) {
+      final captured = _state.insertCapture?.toString() ?? '';
+      _state.lastAction
+        ..clear()
+        ..kind = LastActionKind.insertSession
+        ..insertEntry = _state.insertEntry!
+        ..insertText = captured
+        ..count = 1;
+    }
+    _state.insertEntry = null;
+    _state.insertCapture = null;
     buffer.exitInsertMode();
     final c = buffer.cursor;
     final len = buffer.rowLength(c.row);
@@ -133,12 +145,31 @@ class VimEngine {
     buffer.onModeChanged(VimMode.normal);
   }
 
-  void _enterInsert(VimBuffer buffer) {
-    if (!buffer.isEditable) return;
+  /// [pushUndo] controls whether a snapshot is captured. Pass false when the
+  /// caller already pushed before its own mutation (e.g. `o`, `c{motion}`).
+  void _enterInsert(VimBuffer buffer, {String? entry, bool pushUndo = true}) {
+    if (!buffer.isEditable) {
+      // Read-only buffer (transcript cursor): `i` exits the cursor and
+      // refocuses the editable input prompt. enterInsertMode() pops the
+      // surface; the active-buffer computation in the host picks input
+      // on the next tick.
+      buffer.enterInsertMode();
+      _state.mode = VimMode.insert;
+      _state.visualAnchor = null;
+      buffer.selection = null;
+      buffer.visualKind = VimMode.normal;
+      buffer.onModeChanged(VimMode.insert);
+      return;
+    }
+    if (pushUndo && _state.mode != VimMode.insert) buffer.pushUndo();
     _state.mode = VimMode.insert;
     _state.visualAnchor = null;
     buffer.selection = null;
     buffer.visualKind = VimMode.normal;
+    if (entry != null) {
+      _state.insertEntry = entry;
+      _state.insertCapture = StringBuffer();
+    }
     buffer.enterInsertMode();
     buffer.onModeChanged(VimMode.insert);
   }
@@ -288,8 +319,14 @@ class VimEngine {
 
     // r{ch} replace.
     if (_state.pendingReplaceChar) {
+      buffer.pushUndo();
       Operators.replaceChar(buffer, ch);
       _state.pendingReplaceChar = false;
+      _state.lastAction
+        ..clear()
+        ..kind = LastActionKind.replaceChar
+        ..replaceCharCh = ch
+        ..count = 1;
       return;
     }
 
@@ -437,7 +474,7 @@ class VimEngine {
       case 'y':
         break;
       case 'r':
-        // redo — not implemented (no undo stack); intentional no-op.
+        buffer.redo();
         break;
       case 'c':
         if (_isVisual()) {
@@ -547,34 +584,41 @@ class VimEngine {
 
       // Edits / operators ──────────────────────────────────────────────────
       case 'i':
-        _enterInsert(buffer);
+        _enterInsert(buffer, entry: 'i');
       case 'I':
         buffer.cursor = Pos(buffer.cursor.row, buffer.firstNonBlankCol(buffer.cursor.row));
-        _enterInsert(buffer);
+        _enterInsert(buffer, entry: 'I');
       case 'a':
         final c = buffer.cursor;
         final len = buffer.rowLength(c.row);
         if (len > 0 && c.col < len) buffer.cursor = Pos(c.row, c.col + 1);
-        _enterInsert(buffer);
+        _enterInsert(buffer, entry: 'a');
       case 'A':
         buffer.cursor = Pos(buffer.cursor.row, buffer.rowLength(buffer.cursor.row));
-        _enterInsert(buffer);
+        _enterInsert(buffer, entry: 'A');
       case 'o':
         if (buffer.isMultiLine && buffer.isEditable) {
+          buffer.pushUndo();
           final r = buffer.cursor.row;
           buffer.insertAt(Pos(r + 1, 0), '\n');
           buffer.cursor = Pos(r + 1, 0);
+          _enterInsert(buffer, entry: 'o', pushUndo: false);
+        } else {
+          _enterInsert(buffer, entry: 'o');
         }
-        _enterInsert(buffer);
       case 'O':
         if (buffer.isMultiLine && buffer.isEditable) {
+          buffer.pushUndo();
           final r = buffer.cursor.row;
           buffer.insertAt(Pos(r, 0), '\n');
           buffer.cursor = Pos(r, 0);
+          _enterInsert(buffer, entry: 'O', pushUndo: false);
+        } else {
+          _enterInsert(buffer, entry: 'O');
         }
-        _enterInsert(buffer);
       case 'x':
         if (buffer.isEditable) {
+          buffer.pushUndo();
           for (var i = 0; i < count; i++) {
             final c = buffer.cursor;
             if (c.col < buffer.rowLength(c.row)) {
@@ -582,9 +626,11 @@ class VimEngine {
               Operators.delete(buffer, range, _state.registers, register: reg);
             }
           }
+          _captureSingleEdit('x', count, reg);
         }
       case 'X':
         if (buffer.isEditable) {
+          buffer.pushUndo();
           for (var i = 0; i < count; i++) {
             final c = buffer.cursor;
             if (c.col > 0) {
@@ -593,69 +639,86 @@ class VimEngine {
               Operators.delete(buffer, range, _state.registers, register: reg);
             }
           }
+          _captureSingleEdit('X', count, reg);
         }
       case 's':
         if (buffer.isEditable) {
+          buffer.pushUndo();
           final c = buffer.cursor;
           final range = Range(c, c, RangeKind.charwise);
           Operators.delete(buffer, range, _state.registers, register: reg);
-          _enterInsert(buffer);
+          _enterInsert(buffer, entry: 's', pushUndo: false);
         }
       case 'S':
         if (buffer.isEditable) {
+          buffer.pushUndo();
           final r = buffer.cursor.row;
           final range = Range(Pos(r, 0), Pos(r, buffer.rowLength(r)),
               RangeKind.linewise);
           Operators.delete(buffer, range, _state.registers, register: reg);
-          _enterInsert(buffer);
+          _enterInsert(buffer, entry: 'S', pushUndo: false);
         }
       case 'D':
         if (buffer.isEditable) {
+          buffer.pushUndo();
           final c = buffer.cursor;
           final len = buffer.rowLength(c.row);
           if (len > 0) {
             final range = Range(c, Pos(c.row, len - 1), RangeKind.charwise);
             Operators.delete(buffer, range, _state.registers, register: reg);
           }
+          _captureSingleEdit('D', count, reg);
         }
       case 'C':
         if (buffer.isEditable) {
+          buffer.pushUndo();
           final c = buffer.cursor;
           final len = buffer.rowLength(c.row);
           if (len > 0) {
             final range = Range(c, Pos(c.row, len - 1), RangeKind.charwise);
             Operators.delete(buffer, range, _state.registers, register: reg);
           }
-          _enterInsert(buffer);
+          _enterInsert(buffer, entry: 'C', pushUndo: false);
         }
       case 'Y':
         _yankCurrentLine(buffer, count, reg);
       case 'p':
+        buffer.pushUndo();
         Operators.paste(buffer, _state.registers.read(reg), before: false);
+        _captureSingleEdit('p', count, reg);
       case 'P':
+        buffer.pushUndo();
         Operators.paste(buffer, _state.registers.read(reg), before: true);
+        _captureSingleEdit('P', count, reg);
       case 'r':
         _state.pendingReplaceChar = true;
       case 'R':
+        buffer.pushUndo();
         _state.mode = VimMode.replace;
         buffer.onModeChanged(VimMode.replace);
       case 'J':
-        Operators.joinLines(buffer, count);
+        if (buffer.isEditable) {
+          buffer.pushUndo();
+          Operators.joinLines(buffer, count);
+          _captureSingleEdit('J', count, reg);
+        }
       case '~':
         if (buffer.isEditable) {
+          buffer.pushUndo();
           final c = buffer.cursor;
           final range = Range(c, c, RangeKind.charwise);
           Operators.toggleCase(buffer, range);
           if (c.col + 1 < buffer.rowLength(c.row)) {
             buffer.cursor = Pos(c.row, c.col + 1);
           }
+          _captureSingleEdit('~', count, reg);
         }
       case 'u':
-        // No undo stack — intentional no-op for now.
-        break;
+        if (buffer.undo()) {
+          // OK
+        }
       case '.':
-        // No dot-repeat — out of scope per plan.
-        break;
+        _replayLastAction(buffer);
       case 'v':
         _toggleVisual(buffer, VimMode.visualChar);
       case 'V':
@@ -732,7 +795,16 @@ class VimEngine {
   void _resolveOperatorMotion(String ch, VimBuffer buffer, int count, String reg) {
     // `dd` / `yy` / `cc` — operator doubled = whole line(s).
     if (ch == _state.pendingOperator) {
-      _applyLinewiseOperator(buffer, _state.pendingOperator, count, reg);
+      final op = _state.pendingOperator;
+      _applyLinewiseOperator(buffer, op, count, reg);
+      if (op != 'y') {
+        _state.lastAction
+          ..clear()
+          ..kind = LastActionKind.operatorDouble
+          ..operator = op
+          ..count = count
+          ..register = reg;
+      }
       _state.pendingOperator = '';
       _state.pendingCount = 0;
       _state.pendingRegister = '';
@@ -781,8 +853,19 @@ class VimEngine {
     }
 
     final op = _state.pendingOperator;
+    final motionCount = count;
     final range = _rangeFromMotion(buffer.cursor, motion);
     _runOperator(op, buffer, range, reg);
+    if (op != 'y') {
+      _state.lastAction
+        ..clear()
+        ..kind = LastActionKind.operatorMotion
+        ..operator = op
+        ..motion = ch
+        ..count = 1
+        ..motionCount = motionCount
+        ..register = reg;
+    }
     _state.pendingOperator = '';
     _state.pendingCount = 0;
     _state.pendingRegister = '';
@@ -860,12 +943,14 @@ class VimEngine {
   }
 
   void _runOperator(String op, VimBuffer buffer, Range range, String reg) {
+    // yank is the only non-mutating operator; everything else snapshots.
+    if (op != 'y' && op != '=') buffer.pushUndo();
     switch (op) {
       case 'd':
         Operators.delete(buffer, range, _state.registers, register: reg);
       case 'c':
         Operators.change(buffer, range, _state.registers, register: reg);
-        _enterInsert(buffer);
+        _enterInsert(buffer, entry: 'c', pushUndo: false);
       case 'y':
         Operators.yank(buffer, range, _state.registers, register: reg);
       case '>':
@@ -986,5 +1071,149 @@ class VimEngine {
     if (ls == null || ls.pattern.isEmpty) return;
     final dir = forward ? ls.forward : !ls.forward;
     _runSearch(ls.pattern, dir, buffer);
+  }
+
+  // ── Dot-repeat ───────────────────────────────────────────────────────────
+
+  void _captureSingleEdit(String key, int count, String reg) {
+    _state.lastAction
+      ..clear()
+      ..kind = LastActionKind.singleEdit
+      ..singleEdit = key
+      ..count = count
+      ..register = reg;
+  }
+
+  /// Replay [_state.lastAction]. Insertion sessions reinsert captured text
+  /// programmatically rather than re-entering live insert mode.
+  void _replayLastAction(VimBuffer buffer) {
+    final a = _state.lastAction;
+    if (a.kind == LastActionKind.none) return;
+    if (!buffer.isEditable && a.kind != LastActionKind.none) return;
+    switch (a.kind) {
+      case LastActionKind.none:
+        return;
+      case LastActionKind.operatorMotion:
+        _state.pendingOperator = a.operator;
+        _state.pendingCount = a.motionCount;
+        _state.pendingRegister = a.register == '"' ? '' : a.register;
+        _resolveOperatorMotion(a.motion, buffer, a.motionCount, a.register);
+      case LastActionKind.operatorDouble:
+        _applyLinewiseOperator(buffer, a.operator, a.count, a.register);
+      case LastActionKind.singleEdit:
+        _replaySingleEdit(buffer, a);
+      case LastActionKind.replaceChar:
+        buffer.pushUndo();
+        Operators.replaceChar(buffer, a.replaceCharCh);
+      case LastActionKind.insertSession:
+        _replayInsertSession(buffer, a);
+    }
+  }
+
+  void _replaySingleEdit(VimBuffer buffer, LastAction a) {
+    final count = a.count;
+    final reg = a.register;
+    buffer.pushUndo();
+    switch (a.singleEdit) {
+      case 'x':
+        for (var i = 0; i < count; i++) {
+          final c = buffer.cursor;
+          if (c.col < buffer.rowLength(c.row)) {
+            Operators.delete(buffer, Range(c, c, RangeKind.charwise),
+                _state.registers, register: reg);
+          }
+        }
+      case 'X':
+        for (var i = 0; i < count; i++) {
+          final c = buffer.cursor;
+          if (c.col > 0) {
+            Operators.delete(
+                buffer,
+                Range(Pos(c.row, c.col - 1), Pos(c.row, c.col - 1),
+                    RangeKind.charwise),
+                _state.registers,
+                register: reg);
+          }
+        }
+      case 'D':
+        final c = buffer.cursor;
+        final len = buffer.rowLength(c.row);
+        if (len > 0) {
+          Operators.delete(
+              buffer,
+              Range(c, Pos(c.row, len - 1), RangeKind.charwise),
+              _state.registers,
+              register: reg);
+        }
+      case 'J':
+        Operators.joinLines(buffer, count);
+      case 'p':
+        Operators.paste(buffer, _state.registers.read(reg), before: false);
+      case 'P':
+        Operators.paste(buffer, _state.registers.read(reg), before: true);
+      case '~':
+        final c = buffer.cursor;
+        Operators.toggleCase(buffer, Range(c, c, RangeKind.charwise));
+        if (c.col + 1 < buffer.rowLength(c.row)) {
+          buffer.cursor = Pos(c.row, c.col + 1);
+        }
+    }
+  }
+
+  void _replayInsertSession(VimBuffer buffer, LastAction a) {
+    buffer.pushUndo();
+    // Reposition cursor matching the original entry key.
+    switch (a.insertEntry) {
+      case 'I':
+        buffer.cursor =
+            Pos(buffer.cursor.row, buffer.firstNonBlankCol(buffer.cursor.row));
+      case 'a':
+        final c = buffer.cursor;
+        final len = buffer.rowLength(c.row);
+        if (len > 0 && c.col < len) buffer.cursor = Pos(c.row, c.col + 1);
+      case 'A':
+        buffer.cursor =
+            Pos(buffer.cursor.row, buffer.rowLength(buffer.cursor.row));
+      case 'o':
+        if (buffer.isMultiLine) {
+          final r = buffer.cursor.row;
+          buffer.insertAt(Pos(r + 1, 0), '\n');
+          buffer.cursor = Pos(r + 1, 0);
+        }
+      case 'O':
+        if (buffer.isMultiLine) {
+          final r = buffer.cursor.row;
+          buffer.insertAt(Pos(r, 0), '\n');
+          buffer.cursor = Pos(r, 0);
+        }
+      case 's':
+        final c = buffer.cursor;
+        Operators.delete(buffer, Range(c, c, RangeKind.charwise),
+            _state.registers, register: a.register);
+      case 'S':
+        final r = buffer.cursor.row;
+        Operators.delete(
+            buffer,
+            Range(Pos(r, 0), Pos(r, buffer.rowLength(r)), RangeKind.linewise),
+            _state.registers,
+            register: a.register);
+      case 'C':
+        final c = buffer.cursor;
+        final len = buffer.rowLength(c.row);
+        if (len > 0) {
+          Operators.delete(buffer,
+              Range(c, Pos(c.row, len - 1), RangeKind.charwise),
+              _state.registers, register: a.register);
+        }
+      case 'i':
+      case 'c':
+        break;
+    }
+    if (a.insertText.isNotEmpty) {
+      buffer.insertAt(buffer.cursor, a.insertText);
+    }
+    // Land cursor at the end of the inserted text minus one (vim semantics).
+    final c = buffer.cursor;
+    if (c.col > 0) buffer.cursor = Pos(c.row, c.col - 1);
   }
 }

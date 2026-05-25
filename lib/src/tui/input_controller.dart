@@ -34,6 +34,12 @@ class InputController extends VimBuffer {
   List<String> _lines = <String>[''];
   Pos _cursor = const Pos(0, 0);
 
+  // ── Undo / redo history ──────────────────────────────────────────────────
+
+  final List<_Snap> _undoStack = <_Snap>[];
+  final List<_Snap> _redoStack = <_Snap>[];
+  static const int _maxHistory = 200;
+
   // ── Mode + config ────────────────────────────────────────────────────────
 
   late VimMode _mode;
@@ -439,4 +445,41 @@ class InputController extends VimBuffer {
 
   @override
   bool tryCommandSubmit() => _lines.length == 1;
+
+  @override
+  void pushUndo() {
+    _undoStack.add(_Snap(List<String>.from(_lines), _cursor));
+    if (_undoStack.length > _maxHistory) _undoStack.removeAt(0);
+    _redoStack.clear();
+  }
+
+  @override
+  bool undo() {
+    if (_undoStack.isEmpty) return false;
+    _redoStack.add(_Snap(List<String>.from(_lines), _cursor));
+    final s = _undoStack.removeLast();
+    _lines = List<String>.from(s.lines);
+    if (_lines.isEmpty) _lines = <String>[''];
+    _cursor = _clampPos(s.cursor);
+    _selection = null;
+    return true;
+  }
+
+  @override
+  bool redo() {
+    if (_redoStack.isEmpty) return false;
+    _undoStack.add(_Snap(List<String>.from(_lines), _cursor));
+    final s = _redoStack.removeLast();
+    _lines = List<String>.from(s.lines);
+    if (_lines.isEmpty) _lines = <String>[''];
+    _cursor = _clampPos(s.cursor);
+    _selection = null;
+    return true;
+  }
+}
+
+class _Snap {
+  const _Snap(this.lines, this.cursor);
+  final List<String> lines;
+  final Pos cursor;
 }

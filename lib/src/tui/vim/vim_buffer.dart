@@ -96,6 +96,18 @@ abstract class VimBuffer {
   /// stop processing; false if the engine should treat Enter as a no-op edit.
   bool tryCommandSubmit() => false;
 
+  /// Capture current state for undo. Engine calls this before any mutating
+  /// command in normal/visual mode and before entering insert sessions.
+  /// Read-only buffers no-op.
+  void pushUndo() {}
+
+  /// Pop the previous state from the undo stack and apply it; current state
+  /// is pushed to redo. Returns true if a snapshot was popped.
+  bool undo() => false;
+
+  /// Inverse of [undo]. Returns true if a snapshot was popped.
+  bool redo() => false;
+
   /// Where `gg` / `G` should land for `^` (first non-blank col on row).
   int firstNonBlankCol(int row) {
     final s = lineAt(row);

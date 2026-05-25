@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:dart_tui/dart_tui.dart';
@@ -150,6 +151,11 @@ final class FrunModel extends TeaModel {
   bool _mouseSelecting = false;
   Pos? _mouseAnchor;
   bool _mouseDragged = false;
+  // Captured at click-time so release can restore the prior input/cursor
+  // mode regardless of whether the user was in vim normal, insert, or the
+  // non-vim editor mode when the drag began.
+  VimMode? _mousePriorVimMode;
+  bool _mousePriorTcActive = false;
 
   // Cached layout state, refreshed each view() call.
   List<_VisibleLink> _visibleLinks = const <_VisibleLink>[];
@@ -168,10 +174,14 @@ final class FrunModel extends TeaModel {
 
   @override
   Cmd? init() {
-    state.transcript.system('frun $frunVersion — type /help for commands.');
+    state.transcript.system('frun $frunVersion — type help for commands.');
     state.transcript.info('Project: ${state.project.name} (${state.project.root})');
     if (state.project.hasVsCodeFolder) {
-      state.transcript.info('Detected .vscode/ → launch configs available via /run.');
+      state.transcript.info('Detected .vscode/ → launch configs available via run.');
+    }
+    if (state.config.editorMode == FrunEditorMode.vim) {
+      _vimState.mode = VimMode.normal;
+      state.transcript.info('Vim mode active — press i to type commands.');
     }
     return null;
   }
@@ -187,6 +197,10 @@ final class FrunModel extends TeaModel {
       if (state.config.editorMode == FrunEditorMode.normal) {
         _tc.exit();
         _vimState.mode = VimMode.insert;
+      } else {
+        // Switched into vim editor mode — start in normal.
+        _tc.exit();
+        _vimState.mode = VimMode.normal;
       }
     }
 
@@ -196,7 +210,23 @@ final class FrunModel extends TeaModel {
       return (this, null);
     }
 
-    if (msg is TickMsg) return (this, null);
+    if (msg is TickMsg) {
+      // Windows ConPTY does not deliver SIGWINCH; dart_tui's resize watcher
+      // never fires. Poll stdout dimensions and request a size refresh when
+      // they change so the layout reflows on terminal resize.
+      if (Platform.isWindows && stdout.hasTerminal) {
+        try {
+          final w = stdout.terminalColumns;
+          final h = stdout.terminalLines;
+          if (w != _width || h != _height) {
+            return (this, () async => requestWindowSize());
+          }
+        } catch (_) {
+          // ignore — fall through
+        }
+      }
+      return (this, null);
+    }
 
     if (msg is MouseClickMsg) {
       _onMouseClick(msg.mouse);
@@ -241,7 +271,7 @@ final class FrunModel extends TeaModel {
     } else if (msg is StopTabMsg) {
       unawaited(state.runController.stopTabByIndex(msg.index));
     } else if (msg is RunButtonMsg) {
-      _input.setText('/run');
+      _input.setText('run');
       _submit();
     } else if (msg is TranscriptLineClickMsg) {
       msg.action();
@@ -259,7 +289,7 @@ final class FrunModel extends TeaModel {
       if (msg.index >= 0 && msg.index < emulators.length) {
         final picked = emulators[msg.index];
         state.clearPickers();
-        _input.setText('/emulators launch ${picked.id}');
+        _input.setText('emulators launch ${picked.id}');
         _submit();
       }
     } else if (msg is CloseEmulatorPickerMsg) {
@@ -269,7 +299,7 @@ final class FrunModel extends TeaModel {
       if (msg.index >= 0 && msg.index < devices.length) {
         final picked = devices[msg.index];
         state.clearPickers();
-        _input.setText('/devices select ${picked.id}');
+        _input.setText('devices select ${picked.id}');
         _submit();
       }
     } else if (msg is CloseDevicePickerMsg) {
@@ -289,12 +319,37 @@ final class FrunModel extends TeaModel {
   void _onKey(KeyMsg event) {
     final ke = event.keyEvent;
 
-    // Ctrl+C → graceful quit, matching legacy behaviour.
+    // Ctrl-G acts as a universal "Esc" alias.
+    //
+    // Windows ConPTY drops the bare 0x1B byte for the Esc key (dart_tui's
+    // 10 ms lone-escape timer gets cancelled by follow-up input chunks),
+    // and Ctrl-C is hijacked by PowerShell/cmd as SIGINT before it reaches
+    // stdin — so Ctrl-G is the only chord guaranteed to flow through on
+    // Windows. It mirrors Esc behaviour exactly.
+    if (ke.code == KeyCode.rune &&
+        ke.modifiers.contains(KeyMod.ctrl) &&
+        (ke.text == 'g' || ke.text == 'G')) {
+      final m = _vimState.mode;
+      if (state.config.editorMode == FrunEditorMode.vim) {
+        if (m == VimMode.insert && _input.text.isEmpty && !_tc.active) {
+          _enterTranscriptCursor();
+          return;
+        }
+        if (m != VimMode.normal) {
+          _vim.handle(KeyPressMsg(const TeaKey(code: KeyCode.escape)), _activeBuffer);
+          return;
+        }
+      }
+      // Normal editor mode (no vim) — clear input as a soft cancel.
+      _input.clear();
+      return;
+    }
+
+    // Ctrl+C → graceful quit, matching legacy behaviour. On Windows the host
+    // shell usually consumes this before we see it, but on POSIX it arrives.
     if (ke.code == KeyCode.rune &&
         ke.modifiers.contains(KeyMod.ctrl) &&
         (ke.text == 'c' || ke.text == 'C')) {
-      // In a vim sub-mode (visual/op-pending/ex/search) Ctrl-C cancels back
-      // to normal rather than quitting; only quit when "really at rest".
       final m = _vimState.mode;
       if (state.config.editorMode == FrunEditorMode.vim &&
           m != VimMode.insert &&
@@ -408,11 +463,36 @@ final class FrunModel extends TeaModel {
 
   void _insertIntoActive(KeyMsg event) {
     if (_activeBuffer is InputController) {
+      _captureForDotRepeat(event);
       final action = _input.insertKey(event);
       if (action == InputAction.submit) _submit();
       return;
     }
     // Read-only buffers (transcript/tab) ignore raw insert input.
+  }
+
+  /// Mirror typed runes into the vim engine's active insert-session capture
+  /// buffer so `.` can replay the last insertion.
+  void _captureForDotRepeat(KeyMsg event) {
+    final cap = _vimState.insertCapture;
+    if (cap == null) return;
+    final ke = event.keyEvent;
+    if (ke.modifiers.contains(KeyMod.ctrl) ||
+        ke.modifiers.contains(KeyMod.alt)) {
+      return;
+    }
+    switch (ke.code) {
+      case KeyCode.rune:
+        if (ke.text.isNotEmpty && ke.text != '\n' && ke.text != '\r') {
+          cap.write(ke.text);
+        }
+      case KeyCode.space:
+        cap.write(' ');
+      case KeyCode.tab:
+        cap.write('  ');
+      default:
+        break;
+    }
   }
 
   VimBuffer get _activeBuffer => _tc.active ? _tc : _input;
@@ -639,8 +719,18 @@ final class FrunModel extends TeaModel {
   // ── Mouse handling ─────────────────────────────────────────────────────
 
   void _onMouseClick(Mouse mouse) {
+    // Some terminals route wheel ticks as click events; forward to the wheel
+    // handler so scroll works either way.
+    if (mouse.button == MouseButton.wheelUp ||
+        mouse.button == MouseButton.wheelDown) {
+      _onMouseWheel(mouse);
+      return;
+    }
     final msg = _hits.hit(mouse.x, mouse.y);
-    if (msg != null) {
+    // The body registers a TickWakeMsg hit so any pointer activity wakes the
+    // renderer; it must NOT preempt drag-to-select. Skip it here and fall
+    // through to anchor selection.
+    if (msg != null && msg is! TickWakeMsg) {
       update(msg);
       return;
     }
@@ -651,6 +741,8 @@ final class FrunModel extends TeaModel {
     _mouseAnchor = pos;
     _mouseSelecting = true;
     _mouseDragged = false;
+    _mousePriorVimMode = _vimState.mode;
+    _mousePriorTcActive = _tc.active;
   }
 
   void _onMouseMotion(Mouse mouse) {
@@ -672,10 +764,21 @@ final class FrunModel extends TeaModel {
   void _onMouseRelease(Mouse mouse) {
     if (!_mouseSelecting) return;
     final dragged = _mouseDragged;
+    final priorMode = _mousePriorVimMode ?? VimMode.insert;
+    final priorTcActive = _mousePriorTcActive;
     _mouseSelecting = false;
     _mouseAnchor = null;
     _mouseDragged = false;
-    if (!dragged) return;
+    _mousePriorVimMode = null;
+    if (!dragged) {
+      // Plain click — if we hadn't already been in transcript cursor mode,
+      // don't strand the user there.
+      if (!priorTcActive && _tc.active) {
+        _tc.exit();
+        _vimState.mode = priorMode;
+      }
+      return;
+    }
     final sel = _tc.selection;
     if (sel != null) {
       final text = _tc.textInRange(sel);
@@ -684,9 +787,9 @@ final class FrunModel extends TeaModel {
         state.visibleTranscript.system('Copied ${text.length} chars.');
       }
     }
-    if (state.config.editorMode != FrunEditorMode.vim) {
+    if (!priorTcActive) {
       _tc.exit();
-      _vimState.mode = VimMode.insert;
+      _vimState.mode = priorMode;
     }
   }
 
@@ -714,9 +817,9 @@ final class FrunModel extends TeaModel {
   }
 
   void _onMouseWheel(Mouse mouse) {
-    if (mouse.y < _lastBodyY || mouse.y >= _lastBodyY + _lastBodyHeight) {
-      return;
-    }
+    // Scroll regardless of pointer Y — when the user reaches for the wheel
+    // they want the transcript to move, even if the cursor is hovering over
+    // the input prompt or footer.
     switch (mouse.button) {
       case MouseButton.wheelUp:
         _scrollBy(3);
@@ -784,8 +887,8 @@ final class FrunModel extends TeaModel {
     _focusedLinkIndex = -1;
     if (line.isEmpty) return;
 
-    // `:cmd` typed in insert mode → route through ex parser so users get the
-    // same vim-style alias surface they'd see by pressing `:` in normal mode.
+    // `:cmd` is reserved for the vim ex parser — routes through the same
+    // alias surface used by `:` from normal mode.
     if (line.startsWith(':')) {
       final cmd = ExParser.parse(line.substring(1));
       if (cmd == null) {
@@ -796,23 +899,17 @@ final class FrunModel extends TeaModel {
       return;
     }
 
-    if (!line.startsWith('/')) {
-      state.visibleTranscript
-          .warn('Commands start with "/" or ":". Try /help.');
-      return;
-    }
-
-    final parts = line.substring(1).split(RegExp(r'\s+'));
-    final name = parts.first;
+    final parts = line.split(RegExp(r'\s+'));
+    final name = parts.first.toLowerCase();
     final args = parts.length > 1 ? parts.sublist(1) : const <String>[];
     final command = registry.lookup(name);
     if (command == null) {
-      state.visibleTranscript.error('Unknown command: /$name');
+      state.visibleTranscript.error('Unknown command: $name. Type help.');
       return;
     }
     state.visibleTranscript.system('> $line');
     command.run(args, state).then(_handleResult).catchError((Object e, _) {
-      state.visibleTranscript.error('Command /$name failed: $e');
+      state.visibleTranscript.error('Command $name failed: $e');
     });
   }
 
@@ -886,13 +983,11 @@ final class FrunModel extends TeaModel {
   }
 
   bool _shouldShowHardwareCursor() {
-    if (_tc.active) return false;
-    if (_vimState.mode == VimMode.exCmd || _vimState.mode == VimMode.search) {
-      return false;
-    }
-    return state.config.editorMode == FrunEditorMode.normal ||
-        _vimState.mode == VimMode.insert ||
-        _vimState.mode == VimMode.replace;
+    // dart_tui 1.2.0's renderer does not honor Cursor.x/y — it only toggles
+    // visibility. Returning true would leave the hardware cursor parked at
+    // wherever the last cell write landed (usually the footer). We draw a
+    // software cursor in _paintInput / _paintTranscript instead.
+    return false;
   }
 
   int _computeInputHeight() {
@@ -1160,7 +1255,7 @@ final class FrunModel extends TeaModel {
       if (idx < 0 || idx >= state.emulatorChoices.length) return;
       final picked = state.emulatorChoices[idx];
       state.clearPickers();
-      _input.setText('/emulators launch ${picked.id}');
+      _input.setText('emulators launch ${picked.id}');
       _submit();
       return;
     }
@@ -1168,7 +1263,7 @@ final class FrunModel extends TeaModel {
       if (idx < 0 || idx >= state.deviceChoices.length) return;
       final picked = state.deviceChoices[idx];
       state.clearPickers();
-      _input.setText('/devices select ${picked.id}');
+      _input.setText('devices select ${picked.id}');
       _submit();
       return;
     }
@@ -1180,7 +1275,7 @@ final class FrunModel extends TeaModel {
         kind: _PickerKind.launch,
         itemCount: state.launchChoices.length,
         header: ' Run: pick an entry — click or press esc to close',
-        moreHintFormat: '/run <index|name>',
+        moreHintFormat: 'run <index|name>',
       );
     }
     if (state.emulatorChoices.isNotEmpty) {
@@ -1188,7 +1283,7 @@ final class FrunModel extends TeaModel {
         kind: _PickerKind.emulator,
         itemCount: state.emulatorChoices.length,
         header: ' Emulators: pick to launch — click or press esc to close',
-        moreHintFormat: '/emulators launch <id>',
+        moreHintFormat: 'emulators launch <id>',
       );
     }
     if (state.deviceChoices.isNotEmpty) {
@@ -1196,7 +1291,7 @@ final class FrunModel extends TeaModel {
         kind: _PickerKind.device,
         itemCount: state.deviceChoices.length,
         header: ' Devices: pick to select — click or press esc to close',
-        moreHintFormat: '/devices select <id>',
+        moreHintFormat: 'devices select <id>',
       );
     }
     return null;
@@ -1584,6 +1679,10 @@ final class FrunModel extends TeaModel {
         visible = visible.substring(visible.length - usable);
       }
       canvas.paint(prefix.length, y, visible);
+      final cx = prefix.length + visible.length;
+      if (cx < width) {
+        canvas.paint(cx, y, theme.cursorStyle.render(' '), zIndex: 2);
+      }
       return;
     }
 
@@ -1612,14 +1711,13 @@ final class FrunModel extends TeaModel {
       final clipped = visible.length > usable ? visible.substring(0, usable) : visible;
       canvas.paint(prompt.length, yRow, clipped);
 
-      // Software cursor for vim normal/visual.
-      if (state.config.editorMode == FrunEditorMode.vim &&
-          r == cur.row &&
+      // Software cursor — covers every mode that focuses the input buffer.
+      // (Hardware cursor disabled because dart_tui 1.2.0 ignores Cursor.x/y.)
+      final showSoftCursor = r == cur.row &&
           !_tc.active &&
-          (_vimState.mode == VimMode.normal ||
-              _vimState.mode == VimMode.visualChar ||
-              _vimState.mode == VimMode.visualLine ||
-              _vimState.mode == VimMode.visualBlock)) {
+          _vimState.mode != VimMode.exCmd &&
+          _vimState.mode != VimMode.search;
+      if (showSoftCursor) {
         final cx = prompt.length + cursorOffset;
         if (cx < width) {
           final ch = cursorOffset < visible.length ? visible[cursorOffset] : ' ';
@@ -1631,22 +1729,24 @@ final class FrunModel extends TeaModel {
 
   void _paintFooter(Canvas canvas, FrunTheme theme, int width, int y) {
     final inputText = _input.text;
-    final suggestions = inputText.startsWith('/')
-        ? registry
-            .suggestions(inputText.substring(1).split(' ').first)
+    final firstToken =
+        inputText.isEmpty ? '' : inputText.split(RegExp(r'\s')).first;
+    final suggestions = firstToken.isEmpty
+        ? ''
+        : registry
+            .suggestions(firstToken)
             .take(6)
-            .map((c) => '/${c.name}')
-            .join('  ')
-        : '';
+            .map((c) => c.name)
+            .join('  ');
 
     final tabHint = state.runController.tabs.length >= 2 ? ' · ^t next tab' : '';
     final String left;
     if (state.launchChoices.isNotEmpty) {
-      left = 'launch picker · 0-9 pick · click chip · /run <index|name> · esc cancel';
+      left = 'launch picker · 0-9 pick · click chip · run <index|name> · esc cancel';
     } else if (state.emulatorChoices.isNotEmpty) {
-      left = 'emulator picker · 0-9 launch · click chip · /emulators launch <id> · esc cancel';
+      left = 'emulator picker · 0-9 launch · click chip · emulators launch <id> · esc cancel';
     } else if (state.deviceChoices.isNotEmpty) {
-      left = 'device picker · 0-9 select · click chip · /devices select <id> · esc cancel';
+      left = 'device picker · 0-9 select · click chip · devices select <id> · esc cancel';
     } else if (_vimState.mode == VimMode.search) {
       left = 'search: enter run · esc cancel';
     } else if (_vimState.mode == VimMode.exCmd) {
@@ -1663,7 +1763,7 @@ final class FrunModel extends TeaModel {
           ? 'link ${_focusedLinkIndex + 1}/${_visibleLinks.length}: enter open · tab cycle$tabHint'
           : 'tab: focus link (${_visibleLinks.length}) · ↑↓ scroll$tabHint';
     } else {
-      left = '↑↓ scroll · ^↑↓ half · esc cursor · click tabs$tabHint · ^c quit';
+      left = '↑↓ scroll · ^↑↓ half · esc/^g cursor · click tabs$tabHint · ^c quit';
     }
 
     final modeLabel = state.config.editorMode == FrunEditorMode.vim

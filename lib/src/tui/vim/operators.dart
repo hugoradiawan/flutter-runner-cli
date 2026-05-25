@@ -117,16 +117,33 @@ class Operators {
       // Implemented as: split current line at row boundary, insert new lines.
       b.insertAt(Pos(insertRow, 0), text);
       b.cursor = Pos(insertRow, b.firstNonBlankCol(insertRow));
-    } else {
-      final at = before ? p : Pos(p.row, p.col + 1);
-      b.insertAt(at, entry.text);
-      // Vim leaves the cursor on the last char of the pasted text.
-      final lines = entry.text.split('\n');
-      if (lines.length == 1) {
-        b.cursor = Pos(at.row, at.col + entry.text.length - 1);
-      } else {
-        b.cursor = Pos(at.row + lines.length - 1, lines.last.length - 1);
+      return;
+    }
+    if (entry.kind == RangeKind.blockwise) {
+      // Stripe each yanked row as a column starting at the cursor.
+      final rows = entry.text.split('\n');
+      final col = before ? p.col : p.col + 1;
+      for (var i = 0; i < rows.length; i++) {
+        final targetRow = p.row + i;
+        if (targetRow >= b.lineCount) break;
+        final line = b.lineAt(targetRow);
+        if (line.length < col) {
+          // Pad with spaces up to insertion column.
+          b.insertAt(Pos(targetRow, line.length), ' ' * (col - line.length));
+        }
+        b.insertAt(Pos(targetRow, col), rows[i]);
       }
+      b.cursor = Pos(p.row, col);
+      return;
+    }
+    final at = before ? p : Pos(p.row, p.col + 1);
+    b.insertAt(at, entry.text);
+    // Vim leaves the cursor on the last char of the pasted text.
+    final lines = entry.text.split('\n');
+    if (lines.length == 1) {
+      b.cursor = Pos(at.row, at.col + entry.text.length - 1);
+    } else {
+      b.cursor = Pos(at.row + lines.length - 1, lines.last.length - 1);
     }
   }
 
