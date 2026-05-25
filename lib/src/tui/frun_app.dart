@@ -345,11 +345,24 @@ final class FrunModel extends TeaModel {
       return;
     }
 
-    // Ctrl+C → graceful quit, matching legacy behaviour. On Windows the host
-    // shell usually consumes this before we see it, but on POSIX it arrives.
+    // Ctrl+C — copy active selection if one exists; otherwise graceful quit.
+    // On Windows the host shell usually consumes this before we see it, but on
+    // POSIX it arrives.
     if (ke.code == KeyCode.rune &&
         ke.modifiers.contains(KeyMod.ctrl) &&
         (ke.text == 'c' || ke.text == 'C')) {
+      if (_tc.active && _tc.selection != null) {
+        final sel = _tc.selection!;
+        final text = _tc.textInRange(sel);
+        if (text.isNotEmpty) {
+          unawaited(copyToClipboard(text));
+          state.visibleTranscript.system('Copied ${text.length} chars.');
+        }
+        _tc.selection = null;
+        _tc.exit();
+        _vimState.mode = VimMode.insert;
+        return;
+      }
       final m = _vimState.mode;
       if (state.config.editorMode == FrunEditorMode.vim &&
           m != VimMode.insert &&
@@ -771,26 +784,16 @@ final class FrunModel extends TeaModel {
     _mouseDragged = false;
     _mousePriorVimMode = null;
     if (!dragged) {
-      // Plain click — if we hadn't already been in transcript cursor mode,
-      // don't strand the user there.
+      // Plain click — clear any selection and exit cursor mode if not previously active.
+      _tc.selection = null;
       if (!priorTcActive && _tc.active) {
         _tc.exit();
         _vimState.mode = priorMode;
       }
       return;
     }
-    final sel = _tc.selection;
-    if (sel != null) {
-      final text = _tc.textInRange(sel);
-      if (text.isNotEmpty) {
-        unawaited(copyToClipboard(text));
-        state.visibleTranscript.system('Copied ${text.length} chars.');
-      }
-    }
-    if (!priorTcActive) {
-      _tc.exit();
-      _vimState.mode = priorMode;
-    }
+    // Drag complete — keep selection highlighted so user can adjust it, then
+    // press Ctrl+C to copy. Cursor mode stays active for keyboard adjustment.
   }
 
   bool _isInsideBody(Mouse mouse) {
@@ -1755,7 +1758,8 @@ final class FrunModel extends TeaModel {
       final matchInfo = _tc.matches.isEmpty
           ? ''
           : ' · match ${_tc.activeMatchIndex + 1}/${_tc.matches.length}';
-      left = 'cursor mode · hjkl move · v/V/^v select · y yank · / search · n/N next$matchInfo · esc exit';
+      final copyHint = _tc.selection != null ? ' · ^c copy' : '';
+      left = 'cursor mode · hjkl move · v/V/^v select · y yank · / search · n/N next$matchInfo$copyHint · esc exit';
     } else if (suggestions.isNotEmpty) {
       left = 'suggest: $suggestions';
     } else if (_visibleLinks.isNotEmpty) {
