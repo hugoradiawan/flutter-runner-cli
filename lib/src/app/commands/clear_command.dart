@@ -9,7 +9,7 @@ class ClearCommand extends SlashCommand {
   String get summary => 'Clear the transcript';
 
   @override
-  List<String> get aliases => const ['cls'];
+  List<String> get aliases => const ['cls', 'c'];
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
