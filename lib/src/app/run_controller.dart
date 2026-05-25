@@ -104,11 +104,22 @@ class RunController {
   void _ensureWatcher() {
     if (!state.config.hotReloadOnSave) return;
     if (_watcher != null) return;
-    final watcher = DartFileWatcher(root: state.project.libDir);
+    // Watch the repo/workspace root so monorepo feature packages are included.
+    final root = state.project.watchRoot;
+    state.visibleTranscript.system('File watcher started on $root');
+    final watcher = DartFileWatcher(
+      root: root,
+      onFileChanged: (path) {
+        state.visibleTranscript.system('[watcher] changed: $path');
+      },
+      onWatcherError: (e) {
+        state.visibleTranscript.warn('[watcher] error: $e');
+      },
+    );
     watcher.start();
     watcher.onChange.listen((_) {
       if (tabs.every((t) => !t.isRunning)) return;
-      state.transcript.system('File changed — hot reloading all tabs.');
+      state.visibleTranscript.system('File changed — hot reloading all tabs.');
       unawaited(hotReloadAll());
     });
     _watcher = watcher;
