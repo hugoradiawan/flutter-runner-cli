@@ -241,6 +241,33 @@ class AppRunSession {
     _close();
   }
 
+  Future<void> detach() async {
+    if (_disposed) return;
+    final id = appId;
+    if (id != null) {
+      try {
+        await _request('app.detach', <String, Object?>{'appId': id});
+      } catch (_) {}
+    }
+    _closeWithoutKill();
+  }
+
+  void _closeWithoutKill() {
+    if (_disposed) return;
+    _disposed = true;
+    unawaited(_stdoutSub?.cancel());
+    unawaited(_stderrSub?.cancel());
+    _stdoutSub = null;
+    _stderrSub = null;
+    for (final completer in _pending.values) {
+      if (!completer.isCompleted) {
+        completer.completeError(StateError('flutter run detached'));
+      }
+    }
+    _pending.clear();
+    _events.close();
+  }
+
   void _close() {
     if (_disposed) return;
     _disposed = true;

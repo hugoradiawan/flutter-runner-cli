@@ -22,7 +22,7 @@ class HelpCommand extends SlashCommand {
     for (final cmd in registry.all) {
       final aliasPart =
           cmd.aliases.isEmpty ? '' : ' (aliases: ${cmd.aliases.join(', ')})';
-      state.visibleTranscript.info('  /${cmd.name.padRight(10)} ${cmd.summary}$aliasPart');
+      state.visibleTranscript.info('  ${cmd.name.padRight(11)} ${cmd.summary}$aliasPart');
     }
     return CommandResult.ok;
   }

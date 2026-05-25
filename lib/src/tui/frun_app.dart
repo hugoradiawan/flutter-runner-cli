@@ -903,16 +903,16 @@ final class FrunModel extends TeaModel {
     }
 
     final parts = line.split(RegExp(r'\s+'));
-    final name = parts.first.toLowerCase();
+    final rawName = parts.first;
     final args = parts.length > 1 ? parts.sublist(1) : const <String>[];
-    final command = registry.lookup(name);
+    final command = registry.lookup(rawName) ?? registry.lookup(rawName.toLowerCase());
     if (command == null) {
-      state.visibleTranscript.error('Unknown command: $name. Type help.');
+      state.visibleTranscript.error('Unknown command: $rawName. Type help.');
       return;
     }
     state.visibleTranscript.system('> $line');
     command.run(args, state).then(_handleResult).catchError((Object e, _) {
-      state.visibleTranscript.error('Command $name failed: $e');
+      state.visibleTranscript.error('Command $rawName failed: $e');
     });
   }
 

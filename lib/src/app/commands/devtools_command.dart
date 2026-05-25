@@ -13,7 +13,7 @@ class DevToolsCommand extends SlashCommand {
   String get summary => 'Serve DevTools and print its URL';
 
   @override
-  List<String> get aliases => const ['dt'];
+  List<String> get aliases => const ['dt', 'v'];
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {

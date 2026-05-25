@@ -228,6 +228,35 @@ class RunController {
     await _disposeWatcherIfIdle();
   }
 
+  Future<void> detachActive() async {
+    final tab = activeTab;
+    if (tab == null) return;
+    await _detachTab(tab);
+    final removedIndex = tabs.indexOf(tab);
+    if (removedIndex >= 0) tabs.removeAt(removedIndex);
+    if (tabs.isEmpty) {
+      _activeIndex = -1;
+    } else if (_activeIndex >= tabs.length) {
+      _activeIndex = tabs.length - 1;
+    }
+    await _disposeWatcherIfIdle();
+  }
+
+  Future<void> _detachTab(RunTab tab) async {
+    final s = tab.session;
+    if (s != null) {
+      tab.transcript.system('Detaching from app…');
+      try {
+        await s.detach();
+      } catch (e) {
+        tab.transcript.warn('Detach reported error: $e');
+      }
+    }
+    await tab.eventsSub?.cancel();
+    tab.eventsSub = null;
+    tab.session = null;
+  }
+
   Future<void> stopAll() async {
     if (tabs.isEmpty) return;
     final snapshot = List<RunTab>.from(tabs);

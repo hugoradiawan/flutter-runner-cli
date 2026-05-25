@@ -70,6 +70,8 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     ..register(ReloadCommand(state.runController))
     ..register(RestartCommand(state.runController))
     ..register(StopCommand(state.runController))
+    ..register(DetachCommand(state.runController))
+    ..register(PerformanceOverlayCommand(state.runController))
     ..register(IsolatesCommand(state.isolateManager, state.ideLauncher))
     ..register(InspectCommand())
     ..register(StatusCommand());

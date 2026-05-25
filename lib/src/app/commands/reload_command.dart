@@ -50,7 +50,10 @@ class StopCommand extends SlashCommand {
   String get name => 'stop';
 
   @override
-  String get summary => 'Stop the active tab (or `/stop all` for every tab)';
+  String get summary => 'Stop the active tab (or `stop all` for every tab)';
+
+  @override
+  List<String> get aliases => const ['q'];
 
   @override
   String get usage => '/stop [all]';
@@ -61,6 +64,70 @@ class StopCommand extends SlashCommand {
       await controller.stopAll();
     } else {
       await controller.stopActive();
+    }
+    return CommandResult.ok;
+  }
+}
+
+class DetachCommand extends SlashCommand {
+  DetachCommand(this.controller);
+  final RunController controller;
+
+  @override
+  String get name => 'detach';
+
+  @override
+  String get summary => 'Detach from app (keeps app running, disconnects tool)';
+
+  @override
+  List<String> get aliases => const ['d'];
+
+  @override
+  Future<CommandResult> run(List<String> args, AppState state) async {
+    if (controller.activeTab?.session == null) {
+      state.visibleTranscript.warn('No app running.');
+      return CommandResult.ok;
+    }
+    await controller.detachActive();
+    state.visibleTranscript.success('Detached — app continues running.');
+    return CommandResult.ok;
+  }
+}
+
+class PerformanceOverlayCommand extends SlashCommand {
+  PerformanceOverlayCommand(this.controller);
+  final RunController controller;
+
+  bool _enabled = false;
+
+  @override
+  String get name => 'perf';
+
+  @override
+  String get summary => 'Toggle performance overlay';
+
+  @override
+  List<String> get aliases => const ['P'];
+
+  @override
+  Future<CommandResult> run(List<String> args, AppState state) async {
+    final session = controller.activeTab?.session;
+    if (session == null) {
+      state.visibleTranscript.warn('No app running.');
+      return CommandResult.ok;
+    }
+    _enabled = !_enabled;
+    try {
+      await session.callServiceExtension(
+        'ext.flutter.showPerformanceOverlay',
+        <String, Object?>{'enabled': _enabled},
+      );
+      state.visibleTranscript.success(
+        'Performance overlay ${_enabled ? 'ON' : 'OFF'}.',
+      );
+    } catch (e) {
+      _enabled = !_enabled;
+      state.visibleTranscript.error('Toggle failed: $e');
     }
     return CommandResult.ok;
   }

@@ -9,7 +9,7 @@ class QuitCommand extends SlashCommand {
   String get summary => 'Exit frun';
 
   @override
-  List<String> get aliases => const ['q', 'exit'];
+  List<String> get aliases => const ['exit'];
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
