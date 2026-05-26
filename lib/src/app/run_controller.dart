@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+
+import 'package:vm_service/vm_service.dart' as vm;
 
 import '../daemon/app_session.dart';
 import '../daemon/daemon_messages.dart';
@@ -23,6 +26,7 @@ class RunController {
   int _nextTabId = 1;
 
   DartFileWatcher? _watcher;
+  StreamSubscription<vm.Event>? _extensionSub;
 
   RunTab? get activeTab =>
       (_activeIndex >= 0 && _activeIndex < tabs.length) ? tabs[_activeIndex] : null;
@@ -313,20 +317,51 @@ class RunController {
         if (uri != null) tab.transcript.info('DevTools: $uri');
       case 'app.log':
         final raw = event.params['log']?.toString() ?? '';
-        if (raw.isEmpty) return;
-        if (event.params['error'] == true) {
-          tab.transcript.error(raw);
-        } else {
-          tab.transcript.info(raw);
+        final stack = event.params['stackTrace']?.toString() ?? '';
+        if (raw.isEmpty && stack.isEmpty) return;
+        final isError = event.params['error'] == true;
+        if (raw.isNotEmpty) {
+          if (isError) {
+            tab.transcript.error(raw);
+          } else {
+            tab.transcript.info(raw);
+          }
+        }
+        if (stack.isNotEmpty) {
+          if (isError) {
+            tab.transcript.error(stack);
+          } else {
+            tab.transcript.info(stack);
+          }
         }
       case 'app.progress':
         final msg = event.params['message']?.toString() ?? '';
         if (msg.isNotEmpty) tab.transcript.system(msg);
       case 'app.stop':
+        final err = event.params['error']?.toString() ?? '';
+        final trace = event.params['trace']?.toString() ?? '';
+        if (err.isNotEmpty) tab.transcript.error(err);
+        if (trace.isNotEmpty) tab.transcript.error(trace);
         tab.transcript.system('App stopped.');
         if (tab == activeTab) {
-          unawaited(state.isolateManager.disconnect());
+          unawaited(_disconnectIsolates());
         }
+      case 'daemon.logMessage':
+        final msg = event.params['message']?.toString() ?? '';
+        if (msg.isEmpty) return;
+        final level = event.params['level']?.toString() ?? 'info';
+        switch (level) {
+          case 'error':
+            tab.transcript.error(msg);
+          case 'warning':
+            tab.transcript.warn(msg);
+          case 'status':
+            tab.transcript.system(msg);
+          default:
+            tab.transcript.info(msg);
+        }
+      default:
+        tab.transcript.debug('${event.name}: ${event.params}');
     }
   }
 
@@ -336,9 +371,99 @@ class RunController {
       state.transcript.system(
         'VM service connected (${state.isolateManager.isolates.length} isolates).',
       );
+      await _extensionSub?.cancel();
+      _extensionSub =
+          state.isolateManager.extensionEvents.listen(_onExtensionEvent);
     } catch (e) {
       state.transcript.warn('VM service connect failed: $e');
     }
+  }
+
+  Future<void> _disconnectIsolates() async {
+    await _extensionSub?.cancel();
+    _extensionSub = null;
+    await state.isolateManager.disconnect();
+  }
+
+  void _onExtensionEvent(vm.Event event) {
+    if (event.extensionKind != 'Flutter.Error') return;
+    final tab = activeTab;
+    if (tab == null) return;
+    final data = event.extensionData?.data ?? const <String, dynamic>{};
+
+    final errorsSince = (data['errorsSinceReload'] as num?)?.toInt() ?? 0;
+    final library = data['library']?.toString() ?? 'Flutter framework';
+
+    final buf = StringBuffer()
+      ..writeln('══ Exception caught by $library'
+          '${errorsSince > 0 ? ' (error #${errorsSince + 1})' : ''} ══');
+
+    final description = data['description']?.toString() ?? '';
+    if (description.isNotEmpty) buf.writeln(description);
+
+    final exception = data['exception'];
+    if (exception is Map) {
+      final desc = exception['description']?.toString() ?? '';
+      final type = exception['type']?.toString() ?? '';
+      final value = exception['valueToString']?.toString() ??
+          exception['message']?.toString() ??
+          '';
+      final line = [type, value, desc]
+          .where((s) => s.isNotEmpty)
+          .toSet()
+          .join(': ');
+      if (line.isNotEmpty) buf.writeln(line);
+    } else if (exception is String && exception.isNotEmpty) {
+      buf.writeln(exception);
+    }
+
+    final context = data['context'];
+    if (context is Map) {
+      final desc = context['description']?.toString() ?? '';
+      if (desc.isNotEmpty) buf.writeln(desc);
+    } else if (context is String && context.isNotEmpty) {
+      buf.writeln(context);
+    }
+
+    final properties = data['properties'];
+    if (properties is List) {
+      for (final node in properties) {
+        if (node is Map) {
+          final desc = node['description']?.toString() ?? '';
+          final name = node['name']?.toString() ?? '';
+          if (desc.isEmpty && name.isEmpty) continue;
+          if (name.isNotEmpty && desc.isNotEmpty) {
+            buf.writeln('$name: $desc');
+          } else {
+            buf.writeln(desc.isNotEmpty ? desc : name);
+          }
+        }
+      }
+    }
+
+    final stack = data['stack'];
+    if (stack is List) {
+      for (final frame in stack) {
+        buf.writeln(frame.toString());
+      }
+    } else if (stack is String && stack.isNotEmpty) {
+      buf.writeln(stack);
+    }
+
+    // Fallback: if we extracted almost nothing, dump the raw payload so the
+    // user can still diagnose. Flutter's Flutter.Error schema varies by
+    // framework version — better verbose than blank.
+    final extracted = buf.length;
+    if (extracted < 200) {
+      buf.writeln('--- raw Flutter.Error payload ---');
+      try {
+        buf.writeln(const JsonEncoder.withIndent('  ').convert(data));
+      } catch (_) {
+        buf.writeln(data.toString());
+      }
+    }
+
+    tab.transcript.error(buf.toString().trimRight());
   }
 
   void _onProcessExit(RunTab tab, AppRunSession exitedSession, int code) {
@@ -349,7 +474,7 @@ class RunController {
     tab.transcript.system('flutter run exited (code $code).');
     tab.session = null;
     if (tab == activeTab) {
-      unawaited(state.isolateManager.disconnect());
+      unawaited(_disconnectIsolates());
     }
   }
 }
