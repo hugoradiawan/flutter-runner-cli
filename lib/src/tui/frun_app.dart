@@ -11,6 +11,7 @@ import '../app/link_extractor.dart';
 import '../app/run_tab.dart';
 import '../app/transcript.dart';
 import '../config/config.dart';
+import '../config/history_store.dart';
 import '../ide/source_location.dart';
 import '../version.dart';
 import 'clipboard.dart';
@@ -136,6 +137,7 @@ final class FrunModel extends TeaModel {
   final void Function() onQuit;
 
   final InputController _input;
+  final HistoryStore _historyStore = HistoryStore();
   late final TranscriptCursor _tc;
   final HitRegions _hits = HitRegions();
   final VimState _vimState = VimState();
@@ -178,6 +180,7 @@ final class FrunModel extends TeaModel {
 
   @override
   Cmd? init() {
+    _input.loadHistory(_historyStore.load());
     state.transcript.system('frun $frunVersion — type help for commands.');
     state.transcript.info('Project: ${state.project.name} (${state.project.root})');
     if (state.project.hasVsCodeFolder) {
@@ -473,6 +476,30 @@ final class FrunModel extends TeaModel {
         _vimState.mode == VimMode.insert) {
       unawaited(_openFocusedLink());
       return;
+    }
+
+    // History navigation: vim insert mode, Up/Down at buffer boundaries.
+    if (state.config.editorMode == FrunEditorMode.vim &&
+        _vimState.mode == VimMode.insert &&
+        !_tc.active) {
+      if (ke.code == KeyCode.up && ke.modifiers.isEmpty &&
+          _input.cursor.row == 0) {
+        if (_input.navigateHistory(-1)) return;
+      } else if (ke.code == KeyCode.down && ke.modifiers.isEmpty &&
+          _input.cursor.row == _input.lineCount - 1) {
+        if (_input.navigateHistory(1)) return;
+      }
+    }
+
+    // History navigation: normal editor mode, Up/Down at buffer boundaries.
+    if (state.config.editorMode == FrunEditorMode.normal) {
+      if (ke.code == KeyCode.up && ke.modifiers.isEmpty &&
+          _input.cursor.row == 0) {
+        if (_input.navigateHistory(-1)) return;
+      } else if (ke.code == KeyCode.down && ke.modifiers.isEmpty &&
+          _input.cursor.row == _input.lineCount - 1) {
+        if (_input.navigateHistory(1)) return;
+      }
     }
 
     // Vim editor mode → engine first.
@@ -913,10 +940,13 @@ final class FrunModel extends TeaModel {
 
   void _submit() {
     final line = _input.text.trim();
+    _input.resetHistoryNavigation();
     _input.clear();
     _transcriptScroll = 0;
     _focusedLinkIndex = -1;
     if (line.isEmpty) return;
+    _input.pushHistory(line);
+    _historyStore.save(_input.cmdHistory.toList());
 
     // `:cmd` is reserved for the vim ex parser — routes through the same
     // alias surface used by `:` from normal mode.
@@ -1264,7 +1294,7 @@ final class FrunModel extends TeaModel {
   static const int _maxInfoBarRows = 6;
   static const int _maxPickerRows = 12;
   static const int _pickerIndent = 2;
-  static const String _runLabel = 'run';
+  static const String _runButtonLabel = ' ► ';
   static const String _pickerCloseLabel = ' x ';
 
   String _rightInfoText() {
@@ -1544,7 +1574,7 @@ final class FrunModel extends TeaModel {
   (List<List<_TabSegment>>, int) _layoutTabRows(int width) {
     final tabs = state.runController.tabs;
     final activeIndex = state.runController.activeIndex;
-    final rowWidth = math.max(10, width - _runLabel.length - 1);
+    final rowWidth = math.max(10, width);
 
     final segs = <_TabSegment>[];
     for (var i = 0; i < tabs.length; i++) {
@@ -1588,8 +1618,6 @@ final class FrunModel extends TeaModel {
     final bottomY = y + height - 1;
 
     if (tabs.isEmpty) {
-      canvas.paint(0, bottomY, theme.buttonStyle.render(_runLabel), zIndex: 1);
-      _hits.add(x: 0, y: bottomY, w: _runLabel.length, h: 1, msg: const RunButtonMsg());
       return;
     }
 
@@ -1599,13 +1627,7 @@ final class FrunModel extends TeaModel {
       final isLastRow = r == rowCount - 1;
       final row = rows[r];
       final rowY = y + r;
-      // run button anchored at x=0 on last row; tabs follow
-      var x = isLastRow ? _runLabel.length + 1 : 0;
-
-      if (isLastRow) {
-        canvas.paint(0, rowY, theme.buttonStyle.render(_runLabel), zIndex: 1);
-        _hits.add(x: 0, y: rowY, w: _runLabel.length, h: 1, msg: const RunButtonMsg());
-      }
+      var x = 0;
 
       for (var idx = 0; idx < row.length; idx++) {
         final seg = row[idx];
@@ -1743,8 +1765,12 @@ final class FrunModel extends TeaModel {
       final line = lines[r];
       if (r == 0) {
         canvas.paint(1, yRow, theme.promptStyle.render(prompt));
-        // Right info on first row, right-aligned before closing border
-        final rightX = width - 1 - rightInfo.length;
+        // Run button at far right inside border
+        final btnX = width - 1 - _runButtonLabel.length;
+        canvas.paint(btnX, yRow, theme.buttonStyle.render(_runButtonLabel), zIndex: 1);
+        _hits.add(x: btnX, y: yRow, w: _runButtonLabel.length, h: 1, msg: const RunButtonMsg());
+        // Right info shifted left to make room for button
+        final rightX = btnX - rightInfo.length;
         if (rightX > 1 + prompt.length) {
           canvas.paint(rightX, yRow, theme.dimStyle.render(rightInfo));
         }

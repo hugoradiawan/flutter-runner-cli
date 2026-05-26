@@ -40,6 +40,13 @@ class InputController extends VimBuffer {
   final List<_Snap> _redoStack = <_Snap>[];
   static const int _maxHistory = 200;
 
+  // ── Command history ──────────────────────────────────────────────────────
+
+  final List<String> _cmdHistory = <String>[];
+  int _historyIndex = -1;
+  String _historySaved = '';
+  static const int _maxCmdHistory = 500;
+
   // ── Mode + config ────────────────────────────────────────────────────────
 
   late VimMode _mode;
@@ -78,6 +85,58 @@ class InputController extends VimBuffer {
       _editorMode == FrunEditorMode.normal ||
       _mode == VimMode.insert ||
       _mode == VimMode.replace;
+
+  // ── Command history API ──────────────────────────────────────────────────
+
+  List<String> get cmdHistory => List<String>.unmodifiable(_cmdHistory);
+
+  void loadHistory(List<String> entries) {
+    _cmdHistory
+      ..clear()
+      ..addAll(entries);
+    if (_cmdHistory.length > _maxCmdHistory) {
+      _cmdHistory.removeRange(0, _cmdHistory.length - _maxCmdHistory);
+    }
+  }
+
+  void pushHistory(String cmd) {
+    if (cmd.isEmpty) return;
+    if (_cmdHistory.isNotEmpty && _cmdHistory.last == cmd) return;
+    _cmdHistory.add(cmd);
+    if (_cmdHistory.length > _maxCmdHistory) _cmdHistory.removeAt(0);
+  }
+
+  void resetHistoryNavigation() {
+    _historyIndex = -1;
+    _historySaved = '';
+  }
+
+  /// Navigate history. delta=-1 older (up), delta=+1 newer (down).
+  /// Returns true when navigation occurred; caller should skip default handling.
+  bool navigateHistory(int delta) {
+    if (_cmdHistory.isEmpty) return false;
+    if (_historyIndex == -1) {
+      if (delta > 0) return false;
+      _historySaved = text;
+      _historyIndex = _cmdHistory.length - 1;
+      setText(_cmdHistory[_historyIndex]);
+      return true;
+    }
+    if (delta < 0) {
+      if (_historyIndex > 0) _historyIndex--;
+      setText(_cmdHistory[_historyIndex]);
+      return true;
+    }
+    _historyIndex++;
+    if (_historyIndex >= _cmdHistory.length) {
+      _historyIndex = -1;
+      setText(_historySaved);
+      _historySaved = '';
+      return true;
+    }
+    setText(_cmdHistory[_historyIndex]);
+    return true;
+  }
 
   // ── External buffer mutations (callable from button handlers) ────────────
 
