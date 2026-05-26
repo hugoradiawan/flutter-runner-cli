@@ -162,6 +162,7 @@ final class FrunModel extends TeaModel {
   // non-vim editor mode when the drag began.
   VimMode? _mousePriorVimMode;
   bool _mousePriorTcActive = false;
+  int _autoScrollDirection = 0; // -1 = toward newer (down), +1 = toward older (up), 0 = none
 
   // Cached layout state, refreshed each view() call.
   List<_VisibleLink> _visibleLinks = const <_VisibleLink>[];
@@ -218,6 +219,10 @@ final class FrunModel extends TeaModel {
     }
 
     if (msg is TickMsg) {
+      if (_autoScrollDirection != 0 && _mouseSelecting) {
+        _applyAutoScroll();
+        return (this, null);
+      }
       // Windows ConPTY does not deliver SIGWINCH; dart_tui's resize watcher
       // never fires. Poll stdout dimensions and request a size refresh when
       // they change so the layout reflows on terminal resize.
@@ -786,6 +791,39 @@ final class FrunModel extends TeaModel {
 
   // ── Mouse handling ─────────────────────────────────────────────────────
 
+  void _updateAutoScroll(int mouseY) {
+    if (!_mouseSelecting) {
+      _autoScrollDirection = 0;
+      return;
+    }
+    if (mouseY <= _lastBodyY) {
+      _autoScrollDirection = 1;
+    } else if (mouseY >= _lastBodyY + _lastBodyHeight - 1) {
+      _autoScrollDirection = -1;
+    } else {
+      _autoScrollDirection = 0;
+    }
+  }
+
+  void _applyAutoScroll() {
+    if (_autoScrollDirection == 0 || _mouseAnchor == null) return;
+    const speed = 3;
+    _scrollBy(_autoScrollDirection * speed);
+    final total = _displayRowsText.length;
+    final newEnd = (total - _transcriptScroll).clamp(0, total);
+    final newStart = (newEnd - _lastBodyHeight).clamp(0, total);
+    final Pos newCursor;
+    if (_autoScrollDirection > 0) {
+      newCursor = Pos(newStart, 0);
+    } else {
+      final r = (newEnd - 1).clamp(0, total - 1);
+      final line = r < total ? _displayRowsText[r] : '';
+      newCursor = Pos(r, line.isEmpty ? 0 : line.length - 1);
+    }
+    _tc.cursor = newCursor;
+    _tc.selection = Range(_mouseAnchor!, newCursor, RangeKind.charwise);
+  }
+
   void _onMouseClick(Mouse mouse) {
     // Some terminals route wheel ticks as click events; forward to the wheel
     // handler so scroll works either way.
@@ -806,6 +844,7 @@ final class FrunModel extends TeaModel {
     if (!_isInsideBody(mouse)) return;
     final pos = _mouseToPos(mouse);
     if (pos == null) return;
+    _autoScrollDirection = 0;
     _mouseAnchor = pos;
     _mouseSelecting = true;
     _mouseDragged = false;
@@ -827,10 +866,13 @@ final class FrunModel extends TeaModel {
     _tc.visualKind = VimMode.visualChar;
     _tc.selection = Range(anchor, _tc.cursor, RangeKind.charwise);
     _mouseDragged = true;
+    _updateAutoScroll(mouse.y);
+    if (_autoScrollDirection != 0) _applyAutoScroll();
   }
 
   void _onMouseRelease(Mouse mouse) {
     if (!_mouseSelecting) return;
+    _autoScrollDirection = 0;
     final dragged = _mouseDragged;
     final priorMode = _mousePriorVimMode ?? VimMode.insert;
     final priorTcActive = _mousePriorTcActive;
