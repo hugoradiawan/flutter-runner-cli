@@ -23,6 +23,9 @@ class FrunTheme {
     required this.pickerChipStyle,
     required this.pickerEmulatorChipStyle,
     required this.pickerDeviceChipStyle,
+    required this.pickerChipSelectedStyle,
+    required this.pickerEmulatorChipSelectedStyle,
+    required this.pickerDeviceChipSelectedStyle,
     required this.linkHighlightStyle,
     required this.selectionStyle,
     required this.visualLineStyle,
@@ -51,6 +54,9 @@ class FrunTheme {
   final Style pickerChipStyle;
   final Style pickerEmulatorChipStyle;
   final Style pickerDeviceChipStyle;
+  final Style pickerChipSelectedStyle;
+  final Style pickerEmulatorChipSelectedStyle;
+  final Style pickerDeviceChipSelectedStyle;
   final Style linkHighlightStyle;
   final Style selectionStyle;
   final Style visualLineStyle;
@@ -111,6 +117,15 @@ class FrunTheme {
         pickerDeviceChipStyle: const Style(isBold: true)
             .backgroundColor256(53)
             .foregroundColor256(231),
+        pickerChipSelectedStyle: const Style(isBold: true)
+            .backgroundColor256(34)
+            .foregroundColor256(255),
+        pickerEmulatorChipSelectedStyle: const Style(isBold: true)
+            .backgroundColor256(33)
+            .foregroundColor256(255),
+        pickerDeviceChipSelectedStyle: const Style(isBold: true)
+            .backgroundColor256(93)
+            .foregroundColor256(255),
         linkHighlightStyle: const Style(isBold: true)
             .backgroundColor256(240)
             .foregroundColor256(226),
@@ -170,6 +185,15 @@ class FrunTheme {
         pickerDeviceChipStyle: const Style(isBold: true)
             .backgroundColor256(91)
             .foregroundColor256(231),
+        pickerChipSelectedStyle: const Style(isBold: true)
+            .backgroundColor256(34)
+            .foregroundColor256(255),
+        pickerEmulatorChipSelectedStyle: const Style(isBold: true)
+            .backgroundColor256(33)
+            .foregroundColor256(255),
+        pickerDeviceChipSelectedStyle: const Style(isBold: true)
+            .backgroundColor256(93)
+            .foregroundColor256(255),
         linkHighlightStyle: const Style(isBold: true)
             .backgroundColor256(229)
             .foregroundColor256(94),

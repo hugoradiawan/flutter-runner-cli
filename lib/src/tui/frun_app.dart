@@ -144,6 +144,10 @@ final class FrunModel extends TeaModel {
   int _transcriptScroll = 0;
   int _focusedLinkIndex = -1;
 
+  int _pickerSelectedIndex = 0;
+  int _pickerScrollOffset = 0;
+  bool _pickerWasActive = false;
+
   // Mouse-drag selection state. `_mouseAnchor` is captured on left-click
   // inside the transcript body when no hit-region intercepts; the selection
   // itself is materialised on the first MouseMotionMsg so a plain click
@@ -311,6 +315,13 @@ final class FrunModel extends TeaModel {
       }
     }
 
+    final nowActive = state.hasActivePicker;
+    if (nowActive && !_pickerWasActive) {
+      _pickerSelectedIndex = 0;
+      _pickerScrollOffset = 0;
+    }
+    _pickerWasActive = nowActive;
+
     return (this, null);
   }
 
@@ -382,20 +393,37 @@ final class FrunModel extends TeaModel {
       return;
     }
 
-    // Keyboard pick: when a picker is active and the input is empty, digit
-    // keys 0-9 pick the matching entry. Lets users drive the picker without
-    // a mouse (some terminals swallow mouse events).
-    if (state.hasActivePicker &&
-        _input.text.isEmpty &&
-        ke.code == KeyCode.rune &&
-        !ke.modifiers.contains(KeyMod.ctrl) &&
-        !ke.modifiers.contains(KeyMod.alt) &&
-        ke.text.length == 1) {
-      final code = ke.text.codeUnitAt(0);
-      if (code >= 0x30 && code <= 0x39) {
-        _pickFromActivePicker(code - 0x30);
-        return;
+    // Picker keyboard handling: navigation, digit-pick, swallow everything else.
+    if (state.hasActivePicker) {
+      final count = _activePickerItemCount();
+      if (count > 0) {
+        final plain = ke.code == KeyCode.rune &&
+            !ke.modifiers.contains(KeyMod.ctrl) &&
+            !ke.modifiers.contains(KeyMod.alt);
+        final isUp = ke.code == KeyCode.up || (plain && ke.text == 'k');
+        final isDown = ke.code == KeyCode.down || (plain && ke.text == 'j');
+        if (isUp) {
+          _pickerSelectedIndex = (_pickerSelectedIndex - 1 + count) % count;
+          return;
+        }
+        if (isDown) {
+          _pickerSelectedIndex = (_pickerSelectedIndex + 1) % count;
+          return;
+        }
+        if (ke.code == KeyCode.enter) {
+          _pickFromActivePicker(_pickerSelectedIndex);
+          return;
+        }
+        if (plain && ke.text.length == 1) {
+          final code = ke.text.codeUnitAt(0);
+          if (code >= 0x30 && code <= 0x39) {
+            _pickFromActivePicker(code - 0x30);
+            return;
+          }
+        }
       }
+      // Swallow all other keys so they don't leak into the hidden input.
+      return;
     }
 
     // In vim mode, while engine is in ex/search, route everything to it.
@@ -943,12 +971,13 @@ final class FrunModel extends TeaModel {
     }
 
     final inputH = _computeInputHeight();
-    const footerH = 1;
+    final inputBorderH = inputH > 0 ? 2 : 0;
+    final totalInputH = inputH + inputBorderH;
     final infoBarH = _computeInfoBarHeight(w);
     final picker = _activePicker();
     final pickerH = _computePickerHeight(picker);
-    final statusH = state.showStatusPanel ? _statusHeight(h, infoBarH + pickerH + inputH) : 0;
-    final bodyH = h - inputH - footerH - statusH - infoBarH - pickerH;
+    final statusH = state.showStatusPanel ? _statusHeight(h, infoBarH + pickerH + totalInputH) : 0;
+    final bodyH = h - totalInputH - statusH - infoBarH - pickerH;
     _lastBodyHeight = bodyH;
     _lastBodyY = 0;
 
@@ -964,17 +993,16 @@ final class FrunModel extends TeaModel {
         theme,
         picker,
         w,
-        h - footerH - inputH - infoBarH - pickerH,
+        h - totalInputH - infoBarH - pickerH,
         pickerH,
       );
     }
-    _paintInfoBar(canvas, theme, w, h - footerH - inputH - infoBarH, infoBarH);
-    _paintInput(canvas, theme, w, h - footerH - inputH, inputH);
-    _paintFooter(canvas, theme, w, h - footerH);
+    _paintInfoBar(canvas, theme, w, h - totalInputH - infoBarH, infoBarH);
+    _paintInput(canvas, theme, w, h - totalInputH, inputH);
 
     final showCursor = _shouldShowHardwareCursor();
     final inputCursor = showCursor
-        ? _inputCursorPosition(w, h - footerH - inputH, inputH)
+        ? _inputCursorPosition(w, h - totalInputH + 1, inputH)
         : null;
 
     return View(
@@ -994,6 +1022,7 @@ final class FrunModel extends TeaModel {
   }
 
   int _computeInputHeight() {
+    if (state.hasActivePicker) return 0;
     if (_vimState.mode == VimMode.exCmd || _vimState.mode == VimMode.search) {
       return 1;
     }
@@ -1235,7 +1264,7 @@ final class FrunModel extends TeaModel {
   static const int _maxInfoBarRows = 6;
   static const int _maxPickerRows = 12;
   static const int _pickerIndent = 2;
-  static const String _runLabel = '[+ Run]';
+  static const String _runLabel = 'run';
   static const String _pickerCloseLabel = ' x ';
 
   String _rightInfoText() {
@@ -1244,6 +1273,24 @@ final class FrunModel extends TeaModel {
     return ' ${state.project.name}  '
         'dev:${state.selectedDeviceId ?? "—"}  '
         'ide:${state.config.ide.id}$tabsSegment ';
+  }
+
+  int _activePickerItemCount() {
+    if (state.launchChoices.isNotEmpty) return state.launchChoices.length;
+    if (state.emulatorChoices.isNotEmpty) return state.emulatorChoices.length;
+    if (state.deviceChoices.isNotEmpty) return state.deviceChoices.length;
+    return 0;
+  }
+
+  Style _pickerSelectedChipStyle(_PickerKind kind, FrunTheme theme) {
+    switch (kind) {
+      case _PickerKind.launch:
+        return theme.pickerChipSelectedStyle;
+      case _PickerKind.emulator:
+        return theme.pickerEmulatorChipSelectedStyle;
+      case _PickerKind.device:
+        return theme.pickerDeviceChipSelectedStyle;
+    }
   }
 
   void _pickFromActivePicker(int idx) {
@@ -1441,28 +1488,41 @@ final class FrunModel extends TeaModel {
     final innerH = innerEndY - innerStartY + 1;
     if (innerH <= 0) return;
     final maxVisible = (innerH + 1) ~/ 2;
-    final hidden = math.max(0, chips.length - maxVisible);
-    final visibleCount = hidden > 0
+    final totalHidden = math.max(0, chips.length - maxVisible);
+    final visibleCount = totalHidden > 0
         ? math.max(0, maxVisible - 1)
         : chips.length;
 
+    // Scroll to keep selected chip in view.
+    if (visibleCount > 0) {
+      if (_pickerSelectedIndex < _pickerScrollOffset) {
+        _pickerScrollOffset = _pickerSelectedIndex;
+      } else if (_pickerSelectedIndex >= _pickerScrollOffset + visibleCount) {
+        _pickerScrollOffset = _pickerSelectedIndex - visibleCount + 1;
+      }
+      _pickerScrollOffset =
+          _pickerScrollOffset.clamp(0, math.max(0, chips.length - visibleCount));
+    }
+
     final chipStyle = _pickerChipStyle(spec.kind, theme);
+    final selectedStyle = _pickerSelectedChipStyle(spec.kind, theme);
     for (var i = 0; i < visibleCount; i++) {
+      final chipIdx = _pickerScrollOffset + i;
+      if (chipIdx >= chips.length) break;
       final rowY = innerStartY + i * 2;
       if (rowY > innerEndY) break;
-      canvas.paint(
-        _pickerIndent,
-        rowY,
-        chipStyle.render(chips[i].text),
-      );
+      final style = chipIdx == _pickerSelectedIndex ? selectedStyle : chipStyle;
+      canvas.paint(_pickerIndent, rowY, style.render(chips[chipIdx].text));
       _hits.add(
         x: _pickerIndent,
         y: rowY,
-        w: chips[i].text.length,
+        w: chips[chipIdx].text.length,
         h: 1,
-        msg: _pickerPickMsg(spec.kind, chips[i].index),
+        msg: _pickerPickMsg(spec.kind, chips[chipIdx].index),
       );
     }
+    final hidden = math.max(0, chips.length - _pickerScrollOffset - visibleCount) +
+        _pickerScrollOffset;
     if (hidden > 0) {
       final rowY = innerStartY + visibleCount * 2;
       if (rowY <= innerEndY) {
@@ -1484,8 +1544,7 @@ final class FrunModel extends TeaModel {
   (List<List<_TabSegment>>, int) _layoutTabRows(int width) {
     final tabs = state.runController.tabs;
     final activeIndex = state.runController.activeIndex;
-    final rightInfoWidth = _rightInfoText().length;
-    final rowWidth = math.max(10, width - rightInfoWidth - 1);
+    final rowWidth = math.max(10, width - _runLabel.length - 1);
 
     final segs = <_TabSegment>[];
     for (var i = 0; i < tabs.length; i++) {
@@ -1521,27 +1580,16 @@ final class FrunModel extends TeaModel {
     final marker = t.isRunning ? '' : ' x';
     final labelText = ' ${tabIndex + 1}: $shortLabel$marker ';
     final buttonCount = isActive && t.isRunning ? activeButtons.length : 0;
-    return 1 + labelText.length + buttonCount * 3 + 1;
+    return labelText.length + buttonCount * 3;
   }
 
   void _paintInfoBar(Canvas canvas, FrunTheme theme, int width, int y, int height) {
     final tabs = state.runController.tabs;
-    final rightInfo = _rightInfoText();
-    final rightX = (width - rightInfo.length).clamp(0, width);
     final bottomY = y + height - 1;
-    canvas.paint(rightX, bottomY, theme.dimStyle.render(rightInfo));
 
     if (tabs.isEmpty) {
-      if (rightX >= _runLabel.length + 1) {
-        canvas.paint(0, bottomY, theme.buttonStyle.render(_runLabel), zIndex: 1);
-        _hits.add(
-          x: 0,
-          y: bottomY,
-          w: _runLabel.length,
-          h: 1,
-          msg: const RunButtonMsg(),
-        );
-      }
+      canvas.paint(0, bottomY, theme.buttonStyle.render(_runLabel), zIndex: 1);
+      _hits.add(x: 0, y: bottomY, w: _runLabel.length, h: 1, msg: const RunButtonMsg());
       return;
     }
 
@@ -1551,44 +1599,29 @@ final class FrunModel extends TeaModel {
       final isLastRow = r == rowCount - 1;
       final row = rows[r];
       final rowY = y + r;
-      final rowWidth = isLastRow ? rightX : width;
-      var x = 0;
+      // run button anchored at x=0 on last row; tabs follow
+      var x = isLastRow ? _runLabel.length + 1 : 0;
+
+      if (isLastRow) {
+        canvas.paint(0, rowY, theme.buttonStyle.render(_runLabel), zIndex: 1);
+        _hits.add(x: 0, y: rowY, w: _runLabel.length, h: 1, msg: const RunButtonMsg());
+      }
+
       for (var idx = 0; idx < row.length; idx++) {
         final seg = row[idx];
         if (idx > 0) x += 1;
-        if (x >= rowWidth) break;
-        final next = _paintTab(canvas, theme, x, rowY, rowWidth, seg.index,
-            seg.tab, seg.isActive);
+        if (x >= width) break;
+        final next = _paintTab(canvas, theme, x, rowY, width, seg.index, seg.tab, seg.isActive);
         if (next == x) break;
         x = next;
       }
 
-      if (isLastRow) {
-        if (hidden > 0) {
-          final chip = '+$hidden›';
-          if (x + 1 + chip.length <= rowWidth) {
-            x += 1;
-            canvas.paint(x, rowY, theme.dimStyle.render(chip));
-            _hits.add(
-              x: x,
-              y: rowY,
-              w: chip.length,
-              h: 1,
-              msg: const _CycleTabsForwardMsg(),
-            );
-            x += chip.length;
-          }
-        }
-        if (x + 1 + _runLabel.length <= rowWidth) {
+      if (isLastRow && hidden > 0) {
+        final chip = '+$hidden›';
+        if (x + 1 + chip.length <= width) {
           x += 1;
-          canvas.paint(x, rowY, theme.buttonStyle.render(_runLabel), zIndex: 1);
-          _hits.add(
-            x: x,
-            y: rowY,
-            w: _runLabel.length,
-            h: 1,
-            msg: const RunButtonMsg(),
-          );
+          canvas.paint(x, rowY, theme.dimStyle.render(chip));
+          _hits.add(x: x, y: rowY, w: chip.length, h: 1, msg: const _CycleTabsForwardMsg());
         }
       }
     }
@@ -1615,17 +1648,17 @@ final class FrunModel extends TeaModel {
     final allButtons = wantsButtons ? activeButtons : <_Button>[];
 
     final remaining = stripWidth - x;
-    if (remaining < 5) return x;
+    if (remaining < 3) return x;
 
     var displayLabel = label;
     var labelWidth = label.length;
     var buttons = allButtons;
     final reservedForButtons = buttons.length * 3;
 
-    if (1 + labelWidth + reservedForButtons + 1 > remaining) {
+    if (labelWidth + reservedForButtons > remaining) {
       buttons = const <_Button>[];
-      if (1 + labelWidth + 1 > remaining) {
-        final maxLabel = remaining - 2;
+      if (labelWidth > remaining) {
+        final maxLabel = remaining;
         if (maxLabel < 2) return x;
         final cutTo = math.min(label.length, maxLabel) - 1;
         if (cutTo < 1) return x;
@@ -1638,17 +1671,16 @@ final class FrunModel extends TeaModel {
         ? theme.activeTabStyle
         : (t.isRunning ? theme.inactiveTabStyle : theme.exitedTabStyle);
 
-    canvas.paint(x, y, theme.dimStyle.render('['));
-    canvas.paint(x + 1, y, tabStyle.render(displayLabel));
+    canvas.paint(x, y, tabStyle.render(displayLabel));
     _hits.add(
-      x: x + 1,
+      x: x,
       y: y,
       w: labelWidth,
       h: 1,
       msg: SetActiveTabMsg(tabIndex),
     );
 
-    var cursor = x + 1 + labelWidth;
+    var cursor = x + labelWidth;
 
     for (final b in buttons) {
       final style = b.isStop ? theme.buttonStopStyle : theme.buttonStyle;
@@ -1663,71 +1695,110 @@ final class FrunModel extends TeaModel {
       cursor += 3;
     }
 
-    canvas.paint(cursor, y, theme.dimStyle.render(']'));
-    return cursor + 2;
+    return cursor + 1;
   }
 
   void _paintInput(Canvas canvas, FrunTheme theme, int width, int y, int height) {
+    if (height <= 0) return;
+
+    // Borders: top at y, content at y+1..y+height, bottom at y+height+1
+    final horiz = '─' * (width - 2);
+    canvas.paint(0, y, theme.borderStyle.render('┌$horiz┐'));
+    canvas.paint(0, y + height + 1, theme.borderStyle.render('└$horiz┘'));
+    final contentY = y + 1;
+
     // Ex/search prompt: single row, prefix + draft.
-    if (_vimState.mode == VimMode.exCmd ||
-        _vimState.mode == VimMode.search) {
+    if (_vimState.mode == VimMode.exCmd || _vimState.mode == VimMode.search) {
+      canvas.paint(0, contentY, theme.borderStyle.render('│'));
+      canvas.paint(width - 1, contentY, theme.borderStyle.render('│'));
       final prefix = _promptForMode();
-      canvas.paint(0, y, theme.accentStyle.render(prefix));
+      canvas.paint(1, contentY, theme.accentStyle.render(prefix));
       final draft = _vimState.mode == VimMode.exCmd
           ? _vimState.exDraft
           : _vimState.searchDraft;
-      final usable = width - prefix.length;
+      final usable = width - 2 - prefix.length;
       var visible = draft;
       if (visible.length > usable) {
         visible = visible.substring(visible.length - usable);
       }
-      canvas.paint(prefix.length, y, visible);
-      final cx = prefix.length + visible.length;
-      if (cx < width) {
-        canvas.paint(cx, y, theme.cursorStyle.render(' '), zIndex: 2);
+      canvas.paint(1 + prefix.length, contentY, visible);
+      final cx = 1 + prefix.length + visible.length;
+      if (cx < width - 1) {
+        canvas.paint(cx, contentY, theme.cursorStyle.render(' '), zIndex: 2);
       }
       return;
     }
 
     final prompt = _promptForMode();
-    final usable = width - prompt.length;
+    final rightInfo = _rightInputInfo();
     final lines = _input.lines;
     final cur = _input.cursor;
     final rowsToPaint = math.min(lines.length, height);
 
     for (var r = 0; r < rowsToPaint; r++) {
-      final yRow = y + r;
-      final line = lines[r];
-      // Only paint prompt on the first row.
-      if (r == 0) {
-        canvas.paint(0, yRow, theme.promptStyle.render(prompt));
-      } else {
-        canvas.paint(0, yRow, theme.dimStyle.render('  '));
-      }
-      var visible = line;
-      var cursorOffset = (r == cur.row) ? cur.col : 0;
-      if (visible.length > usable) {
-        final start = (cursorOffset - usable + 1).clamp(0, visible.length);
-        visible = visible.substring(start);
-        cursorOffset -= start;
-      }
-      final clipped = visible.length > usable ? visible.substring(0, usable) : visible;
-      canvas.paint(prompt.length, yRow, clipped);
+      final yRow = contentY + r;
+      canvas.paint(0, yRow, theme.borderStyle.render('│'));
+      canvas.paint(width - 1, yRow, theme.borderStyle.render('│'));
 
-      // Software cursor — covers every mode that focuses the input buffer.
-      // (Hardware cursor disabled because dart_tui 1.2.0 ignores Cursor.x/y.)
-      final showSoftCursor = r == cur.row &&
-          !_tc.active &&
-          _vimState.mode != VimMode.exCmd &&
-          _vimState.mode != VimMode.search;
-      if (showSoftCursor) {
-        final cx = prompt.length + cursorOffset;
-        if (cx < width) {
-          final ch = cursorOffset < visible.length ? visible[cursorOffset] : ' ';
-          canvas.paint(cx, yRow, theme.cursorStyle.render(ch), zIndex: 2);
+      final line = lines[r];
+      if (r == 0) {
+        canvas.paint(1, yRow, theme.promptStyle.render(prompt));
+        // Right info on first row, right-aligned before closing border
+        final rightX = width - 1 - rightInfo.length;
+        if (rightX > 1 + prompt.length) {
+          canvas.paint(rightX, yRow, theme.dimStyle.render(rightInfo));
+        }
+        final usable = math.max(0, rightX - 1 - prompt.length);
+        var visible = line;
+        var cursorOffset = cur.col;
+        if (visible.length > usable) {
+          final start = (cursorOffset - usable + 1).clamp(0, visible.length);
+          visible = visible.substring(start);
+          cursorOffset -= start;
+        }
+        final clipped = visible.length > usable ? visible.substring(0, usable) : visible;
+        canvas.paint(1 + prompt.length, yRow, clipped);
+        final showSoftCursor = r == cur.row && !_tc.active;
+        if (showSoftCursor) {
+          final cx = 1 + prompt.length + cursorOffset;
+          if (cx < rightX) {
+            final ch = cursorOffset < visible.length ? visible[cursorOffset] : ' ';
+            canvas.paint(cx, yRow, theme.cursorStyle.render(ch), zIndex: 2);
+          }
+        }
+      } else {
+        canvas.paint(1, yRow, theme.dimStyle.render('  '));
+        final usable = math.max(0, width - 4); // │ + '  ' + text + │
+        var visible = line;
+        var cursorOffset = (r == cur.row) ? cur.col : 0;
+        if (visible.length > usable) {
+          final start = (cursorOffset - usable + 1).clamp(0, visible.length);
+          visible = visible.substring(start);
+          cursorOffset -= start;
+        }
+        final clipped = visible.length > usable ? visible.substring(0, usable) : visible;
+        canvas.paint(3, yRow, clipped);
+        final showSoftCursor = r == cur.row && !_tc.active;
+        if (showSoftCursor) {
+          final cx = 3 + cursorOffset;
+          if (cx < width - 1) {
+            final ch = cursorOffset < visible.length ? visible[cursorOffset] : ' ';
+            canvas.paint(cx, yRow, theme.cursorStyle.render(ch), zIndex: 2);
+          }
         }
       }
     }
+  }
+
+  String _rightInputInfo() {
+    final tabCount = state.runController.tabs.length;
+    final parts = <String>[
+      state.project.name,
+      state.selectedDeviceId ?? '—',
+      state.config.ide.id,
+      if (tabCount > 0) 'tabs:$tabCount',
+    ];
+    return ' ${parts.join('  ')} ';
   }
 
   void _paintFooter(Canvas canvas, FrunTheme theme, int width, int y) {
