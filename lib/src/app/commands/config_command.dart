@@ -10,7 +10,7 @@ import 'command.dart';
 ///   /config show            → same as above
 ///   /config path            → print where the config file lives
 ///   /config set `<k>` `<v>` → set a key and save
-class ConfigCommand extends SlashCommand {
+class ConfigCommand extends Command {
   ConfigCommand(this.store);
 
   final ConfigStore store;

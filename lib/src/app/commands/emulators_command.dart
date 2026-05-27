@@ -10,7 +10,7 @@ import 'command.dart';
 ///   /emulators                  → list
 ///   /emulators launch `<id>`    → launch an emulator and auto-select it
 ///   /emulators create [name]    → create a new Android emulator
-class EmulatorsCommand extends SlashCommand {
+class EmulatorsCommand extends Command {
   EmulatorsCommand({required this.configStore});
 
   final ConfigStore configStore;

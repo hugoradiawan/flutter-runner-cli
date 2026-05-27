@@ -12,7 +12,7 @@ import 'command.dart';
 ///   /run               → open the launch-entry button bar above the input
 ///   /run `<index>`     → launch by index from the discovered entries
 ///   /run `<name>`      → launch by entry name
-class RunCommand extends SlashCommand {
+class RunCommand extends Command {
   RunCommand(this.controller);
 
   final RunController controller;

@@ -6,7 +6,7 @@ import 'command.dart';
 
 /// `/devtools` — serve DevTools (via the persistent daemon) and print the URL
 /// pointing at the running app's VM service.
-class DevToolsCommand extends SlashCommand {
+class DevToolsCommand extends Command {
   @override
   String get name => 'devtools';
 

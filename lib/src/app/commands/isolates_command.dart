@@ -15,7 +15,7 @@ import 'command.dart';
 ///   /isolates step `<id>` [over|in|out]
 ///   /isolates kill `<id>`           → kill an isolate
 ///   /isolates stack `<id>`          → print the current stack (opens top frame in IDE)
-class IsolatesCommand extends SlashCommand {
+class IsolatesCommand extends Command {
   IsolatesCommand(this.manager, this.ide);
 
   final IsolateManager manager;

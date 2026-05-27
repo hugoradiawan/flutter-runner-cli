@@ -2,7 +2,7 @@ import '../app_state.dart';
 import '../run_controller.dart';
 import 'command.dart';
 
-class ReloadCommand extends SlashCommand {
+class ReloadCommand extends Command {
   ReloadCommand(this.controller);
   final RunController controller;
 
@@ -22,7 +22,7 @@ class ReloadCommand extends SlashCommand {
   }
 }
 
-class RestartCommand extends SlashCommand {
+class RestartCommand extends Command {
   RestartCommand(this.controller);
   final RunController controller;
 
@@ -42,7 +42,7 @@ class RestartCommand extends SlashCommand {
   }
 }
 
-class StopCommand extends SlashCommand {
+class StopCommand extends Command {
   StopCommand(this.controller);
   final RunController controller;
 
@@ -69,7 +69,7 @@ class StopCommand extends SlashCommand {
   }
 }
 
-class DetachCommand extends SlashCommand {
+class DetachCommand extends Command {
   DetachCommand(this.controller);
   final RunController controller;
 
@@ -94,7 +94,7 @@ class DetachCommand extends SlashCommand {
   }
 }
 
-class PerformanceOverlayCommand extends SlashCommand {
+class PerformanceOverlayCommand extends Command {
   PerformanceOverlayCommand(this.controller);
   final RunController controller;
 

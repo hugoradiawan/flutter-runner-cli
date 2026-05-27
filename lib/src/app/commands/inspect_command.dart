@@ -8,7 +8,7 @@ import 'command.dart';
 /// `ext.flutter.inspector.selection` event over the VM service. The shared
 /// [InspectorBridge] resolves its `creationLocation` and opens the matching
 /// source file in the user's IDE.
-class InspectCommand extends SlashCommand {
+class InspectCommand extends Command {
   InspectCommand();
 
   bool _enabled = false;

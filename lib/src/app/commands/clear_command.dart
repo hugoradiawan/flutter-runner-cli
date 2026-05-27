@@ -1,7 +1,7 @@
 import '../app_state.dart';
 import 'command.dart';
 
-class ClearCommand extends SlashCommand {
+class ClearCommand extends Command {
   @override
   String get name => 'clear';
 

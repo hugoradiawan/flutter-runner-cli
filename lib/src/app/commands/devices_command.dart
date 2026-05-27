@@ -3,7 +3,7 @@ import '../app_state.dart';
 import 'command.dart';
 
 /// `/devices` — list devices, or `/devices select <id>` to pick one.
-class DevicesCommand extends SlashCommand {
+class DevicesCommand extends Command {
   DevicesCommand({required this.configStore});
 
   final ConfigStore configStore;

@@ -2,7 +2,7 @@ import '../app_state.dart';
 import 'command.dart';
 import 'command_registry.dart';
 
-class HelpCommand extends SlashCommand {
+class HelpCommand extends Command {
   HelpCommand(this.registry);
 
   final CommandRegistry registry;

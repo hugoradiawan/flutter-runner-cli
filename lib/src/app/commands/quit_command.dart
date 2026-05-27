@@ -1,7 +1,7 @@
 import '../app_state.dart';
 import 'command.dart';
 
-class QuitCommand extends SlashCommand {
+class QuitCommand extends Command {
   @override
   String get name => 'quit';
 

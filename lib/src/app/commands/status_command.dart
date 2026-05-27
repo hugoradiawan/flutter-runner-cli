@@ -1,7 +1,7 @@
 import '../app_state.dart';
 import 'command.dart';
 
-class StatusCommand extends SlashCommand {
+class StatusCommand extends Command {
   @override
   String get name => 'status';
 

@@ -11,7 +11,7 @@ class CommandResult {
   static const quit = CommandResult(shouldQuit: true);
 }
 
-abstract class SlashCommand {
+abstract class Command {
   String get name;
   String get summary;
   String get usage => '/$name';
