@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import '../../ide/frun_notifier.dart';
 import '../app_state.dart';
 import 'command.dart';
 
@@ -22,6 +23,7 @@ class DevToolsCommand extends SlashCommand {
       state.visibleTranscript.warn('Flutter daemon not ready yet. Try again shortly.');
       return CommandResult.ok;
     }
+    state.notifier.notify(FrunNotifEvent.openingDevTools);
     Map<String, Object?> served;
     try {
       served = await daemon.serveDevTools();
@@ -50,6 +52,7 @@ class DevToolsCommand extends SlashCommand {
       'Inspector bridge ON — leaf clicks in DevTools open in ${state.config.ide.id}.',
     );
 
+    state.notifier.notify(FrunNotifEvent.devToolsReady, detail: full);
     _open(full, state);
     return CommandResult.ok;
   }

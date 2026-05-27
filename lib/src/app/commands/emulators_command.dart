@@ -1,5 +1,6 @@
 import '../../config/config_store.dart';
 import '../../devices/emulator_manager.dart';
+import '../../ide/frun_notifier.dart';
 import '../app_state.dart';
 import 'command.dart';
 
@@ -100,6 +101,7 @@ class EmulatorsCommand extends SlashCommand {
     AppState state,
   ) async {
     state.visibleTranscript.system('Launching emulator $id…');
+    state.notifier.notify(FrunNotifEvent.launchingEmulator, detail: 'Launching emulator $id…');
     try {
       final device = await manager.launchAndAwaitDevice(id);
       if (device == null) {
@@ -112,6 +114,7 @@ class EmulatorsCommand extends SlashCommand {
       final next = state.config.copyWith(defaultDeviceId: device.id);
       state.setConfig(next);
       configStore.save(next);
+      state.notifier.notify(FrunNotifEvent.emulatorReady, detail: 'Emulator ready: ${device.name}');
       state.visibleTranscript.success(
         'Emulator ready: ${device.name} (${device.id}). Selected.',
       );

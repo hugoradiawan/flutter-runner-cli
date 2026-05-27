@@ -26,6 +26,7 @@ void main() {
         root: temp.path,
         name: 'demo',
         workspaceRoot: temp.path,
+        watchRoot: temp.path,
         hasVsCodeFolder: false,
         hasZedFolder: false,
       ),

@@ -5,6 +5,7 @@ import 'package:vm_service/vm_service.dart' as vm;
 
 import '../daemon/app_session.dart';
 import '../daemon/daemon_messages.dart';
+import '../ide/frun_notifier.dart';
 import '../project/launch_config.dart';
 import '../watcher/dart_file_watcher.dart';
 import 'app_state.dart';
@@ -79,6 +80,7 @@ class RunController {
     tab.transcript.system(
       'Launching ${entry.name} on $deviceId (${entry.program})…',
     );
+    state.notifier.notifyTab(tab, FrunNotifEvent.appLaunching);
     try {
       final session = await AppRunSession.start(
         projectRoot: state.project.root,
@@ -139,8 +141,10 @@ class RunController {
     for (final tab in tabs) {
       final s = tab.session;
       if (s == null) continue;
+      state.notifier.notifyTab(tab, FrunNotifEvent.hotReloading);
       try {
         await s.hotReload();
+        state.notifier.notifyTab(tab, FrunNotifEvent.hotReloaded);
         tab.transcript.success('Hot reload requested.');
       } catch (e) {
         tab.transcript.error('Hot reload failed: $e');
@@ -156,8 +160,10 @@ class RunController {
       state.transcript.warn('No app running. Use /run first.');
       return;
     }
+    state.notifier.notifyTab(tab, FrunNotifEvent.hotReloading);
     try {
       await tab.session!.hotReload();
+      state.notifier.notifyTab(tab, FrunNotifEvent.hotReloaded);
       tab.transcript.success('Hot reload requested.');
     } catch (e) {
       tab.transcript.error('Hot reload failed: $e');
@@ -169,8 +175,10 @@ class RunController {
       state.transcript.warn('No app running. Use /run first.');
       return;
     }
+    state.notifier.notifyTab(tab, FrunNotifEvent.restarting);
     try {
       await tab.session!.hotRestart();
+      state.notifier.notifyTab(tab, FrunNotifEvent.restarted);
       tab.transcript.success('Hot restart requested.');
     } catch (e) {
       tab.transcript.error('Hot restart failed: $e');
@@ -304,6 +312,7 @@ class RunController {
     switch (event.name) {
       case 'app.start':
         tab.transcript.success('App started (appId=${event.params['appId']}).');
+        state.notifier.notifyTab(tab, FrunNotifEvent.appStarted);
       case 'app.debugPort':
         final ws = event.params['wsUri']?.toString();
         if (ws != null) {

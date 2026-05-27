@@ -1339,14 +1339,6 @@ final class FrunModel extends TeaModel {
   static const String _runButtonLabel = ' ► ';
   static const String _pickerCloseLabel = ' x ';
 
-  String _rightInfoText() {
-    final tabCount = state.runController.tabs.length;
-    final tabsSegment = tabCount > 0 ? '  tabs:$tabCount' : '';
-    return ' ${state.project.name}  '
-        'dev:${state.selectedDeviceId ?? "—"}  '
-        'ide:${state.config.ide.id}$tabsSegment ';
-  }
-
   int _activePickerItemCount() {
     if (state.launchChoices.isNotEmpty) return state.launchChoices.length;
     if (state.emulatorChoices.isNotEmpty) return state.emulatorChoices.length;
@@ -1657,7 +1649,6 @@ final class FrunModel extends TeaModel {
 
   void _paintInfoBar(Canvas canvas, FrunTheme theme, int width, int y, int height) {
     final tabs = state.runController.tabs;
-    final bottomY = y + height - 1;
 
     if (tabs.isEmpty) {
       return;
@@ -1867,77 +1858,6 @@ final class FrunModel extends TeaModel {
       if (tabCount > 0) 'tabs:$tabCount',
     ];
     return ' ${parts.join('  ')} ';
-  }
-
-  void _paintFooter(Canvas canvas, FrunTheme theme, int width, int y) {
-    final inputText = _input.text;
-    final firstToken =
-        inputText.isEmpty ? '' : inputText.split(RegExp(r'\s')).first;
-    final suggestions = firstToken.isEmpty
-        ? ''
-        : registry
-            .suggestions(firstToken)
-            .take(6)
-            .map((c) => c.name)
-            .join('  ');
-
-    final tabHint = state.runController.tabs.length >= 2 ? ' · ^t next tab' : '';
-    final String left;
-    if (state.launchChoices.isNotEmpty) {
-      left = 'launch picker · 0-9 pick · click chip · run <index|name> · esc cancel';
-    } else if (state.emulatorChoices.isNotEmpty) {
-      left = 'emulator picker · 0-9 launch · click chip · emulators launch <id> · esc cancel';
-    } else if (state.deviceChoices.isNotEmpty) {
-      left = 'device picker · 0-9 select · click chip · devices select <id> · esc cancel';
-    } else if (_vimState.mode == VimMode.search) {
-      left = 'search: enter run · esc cancel';
-    } else if (_vimState.mode == VimMode.exCmd) {
-      left = 'ex: enter run · esc cancel';
-    } else if (_tc.active) {
-      final matchInfo = _tc.matches.isEmpty
-          ? ''
-          : ' · match ${_tc.activeMatchIndex + 1}/${_tc.matches.length}';
-      final copyHint = _tc.selection != null ? ' · ^c copy' : '';
-      left = 'cursor mode · hjkl move · v/V/^v select · y yank · / search · n/N next$matchInfo$copyHint · esc exit';
-    } else if (suggestions.isNotEmpty) {
-      left = 'suggest: $suggestions';
-    } else if (_visibleLinks.isNotEmpty) {
-      left = _focusedLinkIndex >= 0
-          ? 'link ${_focusedLinkIndex + 1}/${_visibleLinks.length}: enter open · tab cycle$tabHint'
-          : 'tab: focus link (${_visibleLinks.length}) · ↑↓ scroll$tabHint';
-    } else {
-      left = '↑↓ scroll · ^↑↓ half · esc/^g cursor · click tabs$tabHint · ^c quit';
-    }
-
-    final modeLabel = state.config.editorMode == FrunEditorMode.vim
-        ? _vimModeLabel()
-        : 'normal mode';
-
-    final bar = ' ' * width;
-    canvas.paint(0, y, theme.statusBarStyle.render(bar));
-    final right = modeLabel;
-    final leftClipped = left.length > width - right.length - 2
-        ? left.substring(0, width - right.length - 2)
-        : left;
-    canvas.paint(0, y, theme.statusBarStyle.render(leftClipped));
-    canvas.paint(width - right.length, y, theme.statusBarStyle.render(right));
-  }
-
-  String _vimModeLabel() {
-    final base = _vimState.mode.label;
-    final pendingBits = <String>[];
-    if (_vimState.pendingRegister.length == 1) {
-      pendingBits.add('"${_vimState.pendingRegister}');
-    }
-    if (_vimState.pendingCount > 0) {
-      pendingBits.add(_vimState.pendingCount.toString());
-    }
-    if (_vimState.pendingOperator.isNotEmpty) {
-      pendingBits.add(_vimState.pendingOperator);
-    }
-    if (_tc.active) pendingBits.add('cursor');
-    final tail = pendingBits.isEmpty ? '' : ' ${pendingBits.join('')}';
-    return '$base$tail';
   }
 }
 

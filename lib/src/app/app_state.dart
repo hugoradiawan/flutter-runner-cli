@@ -2,6 +2,7 @@ import '../config/config.dart';
 import '../daemon/daemon_messages.dart';
 import '../daemon/flutter_daemon.dart';
 import '../devices/device_manager.dart';
+import '../ide/frun_notifier.dart';
 import '../ide/ide_launcher.dart';
 import '../ide/inspector_bridge.dart';
 import '../project/launch_config.dart';
@@ -50,6 +51,7 @@ class AppState {
   late final IsolateManager isolateManager = IsolateManager();
   late final IdeLauncher ideLauncher = IdeLauncher();
   late final InspectorBridge inspectorBridge = InspectorBridge();
+  final FrunNotifier notifier = const FrunNotifier();
   bool daemonReady = false;
   String? daemonError;
 

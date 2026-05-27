@@ -1,3 +1,4 @@
+import '../../ide/frun_notifier.dart';
 import '../app_state.dart';
 import 'command.dart';
 
@@ -30,6 +31,9 @@ class InspectCommand extends SlashCommand {
       return CommandResult.ok;
     }
     _enabled = !_enabled;
+    if (_enabled) {
+      state.notifier.notify(FrunNotifEvent.enteringInspect);
+    }
     try {
       await session.callServiceExtension(
         'ext.flutter.inspector.show',
@@ -42,11 +46,13 @@ class InspectCommand extends SlashCommand {
     }
     if (_enabled) {
       state.inspectorBridge.attach(state);
+      state.notifier.notify(FrunNotifEvent.inspectReady);
       state.visibleTranscript.success(
         'Inspector ON — tap widgets in the app to jump to source.',
       );
     } else {
       await state.inspectorBridge.detach();
+      state.notifier.notify(FrunNotifEvent.inspectReady, detail: 'Inspector OFF');
       state.visibleTranscript.success('Inspector OFF.');
     }
     return CommandResult.ok;
