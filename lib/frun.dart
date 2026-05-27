@@ -90,6 +90,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     state: state,
     registry: registry,
     onQuit: program.quit,
+    configStore: configStore,
   );
 
   // Kick the daemon off in the background so the TUI is interactive

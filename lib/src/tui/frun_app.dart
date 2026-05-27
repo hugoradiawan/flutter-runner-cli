@@ -11,6 +11,7 @@ import '../app/link_extractor.dart';
 import '../app/run_tab.dart';
 import '../app/transcript.dart';
 import '../config/config.dart';
+import '../config/config_store.dart';
 import '../config/history_store.dart';
 import '../ide/source_location.dart';
 import '../version.dart';
@@ -119,8 +120,13 @@ final class _CycleTabsForwardMsg extends Msg {
 ///   penultimate: input prompt (multi-line in vim mode)
 ///   last:        footer / hints
 final class FrunModel extends TeaModel {
-  FrunModel({required this.state, required this.registry, required this.onQuit})
-      : _input = InputController(editorMode: state.config.editorMode) {
+  FrunModel({
+    required this.state,
+    required this.registry,
+    required this.onQuit,
+    required ConfigStore configStore,
+  }) : _configStore = configStore,
+       _input = InputController(editorMode: state.config.editorMode) {
     _tc = TranscriptCursor(rowsProvider: () => _displayRowsText);
     _vim = VimEngine(
       state: _vimState,
@@ -136,7 +142,12 @@ final class FrunModel extends TeaModel {
   final CommandRegistry registry;
   final void Function() onQuit;
 
+  final ConfigStore _configStore;
   final InputController _input;
+
+  bool _configEditorActive = false;
+  int _configEditorRow = 0;
+  FrunConfig? _configDraft;
   final HistoryStore _historyStore = HistoryStore();
   late final TranscriptCursor _tc;
   final HitRegions _hits = HitRegions();
@@ -199,6 +210,13 @@ final class FrunModel extends TeaModel {
   @override
   (Model, Cmd?) update(Msg msg) {
     if (state.quitRequested) return (this, () => quit());
+
+    if (state.showConfigEditor && !_configEditorActive) {
+      state.showConfigEditor = false;
+      _configEditorActive = true;
+      _configEditorRow = 0;
+      _configDraft = state.config;
+    }
 
     if (_input.editorMode != state.config.editorMode) {
       _input.editorMode = state.config.editorMode;
@@ -348,6 +366,11 @@ final class FrunModel extends TeaModel {
     if (ke.code == KeyCode.rune &&
         ke.modifiers.contains(KeyMod.ctrl) &&
         (ke.text == 'g' || ke.text == 'G')) {
+      if (_configEditorActive) {
+        _configEditorActive = false;
+        _configDraft = null;
+        return;
+      }
       final m = _vimState.mode;
       if (state.config.editorMode == FrunEditorMode.vim) {
         if (m == VimMode.insert && _input.text.isEmpty && !_tc.active) {
@@ -398,6 +421,12 @@ final class FrunModel extends TeaModel {
     // mode so a stray Esc doesn't strand the picker on screen.
     if (ke.code == KeyCode.escape && state.hasActivePicker) {
       state.clearPickers();
+      return;
+    }
+
+    // Config editor swallows all keys while active.
+    if (_configEditorActive) {
+      _handleConfigEditorKey(event);
       return;
     }
 
@@ -531,6 +560,57 @@ final class FrunModel extends TeaModel {
     } else if (ke.code == KeyCode.rune) {
       _transcriptScroll = 0;
       _focusedLinkIndex = -1;
+    }
+  }
+
+  void _handleConfigEditorKey(KeyMsg event) {
+    final ke = event.keyEvent;
+    final isVim = state.config.editorMode == FrunEditorMode.vim;
+
+    if (ke.code == KeyCode.escape) {
+      _configEditorActive = false;
+      _configDraft = null;
+      return;
+    }
+
+    if (ke.code == KeyCode.enter) {
+      if (_configDraft != null) {
+        state.setConfig(_configDraft!);
+        _configStore.save(_configDraft!);
+      }
+      _configEditorActive = false;
+      _configDraft = null;
+      return;
+    }
+
+    final count = _configEditorEntries.length;
+    final plain = ke.code == KeyCode.rune &&
+        !ke.modifiers.contains(KeyMod.ctrl) &&
+        !ke.modifiers.contains(KeyMod.alt);
+
+    final isUp = ke.code == KeyCode.up ||
+        (plain && isVim && ke.text == 'k');
+    final isDown = ke.code == KeyCode.down ||
+        (plain && isVim && ke.text == 'j');
+    final isLeft = ke.code == KeyCode.left ||
+        (plain && isVim && ke.text == 'h');
+    final isRight = ke.code == KeyCode.right ||
+        (plain && isVim && ke.text == 'l');
+
+    if (isUp) {
+      _configEditorRow = (_configEditorRow - 1 + count) % count;
+      return;
+    }
+    if (isDown) {
+      _configEditorRow = (_configEditorRow + 1) % count;
+      return;
+    }
+    if ((isLeft || isRight) && _configDraft != null) {
+      final entry = _configEditorEntries[_configEditorRow];
+      if (entry.values.isNotEmpty) {
+        _configDraft = _cycleConfigValue(_configDraft!, entry.key, isRight ? 1 : -1);
+      }
+      return;
     }
   }
 
@@ -1048,8 +1128,9 @@ final class FrunModel extends TeaModel {
     final infoBarH = _computeInfoBarHeight(w);
     final picker = _activePicker();
     final pickerH = _computePickerHeight(picker);
-    final statusH = state.showStatusPanel ? _statusHeight(h, infoBarH + pickerH + totalInputH) : 0;
-    final bodyH = h - totalInputH - statusH - infoBarH - pickerH;
+    final configEditorH = _computeConfigEditorHeight();
+    final statusH = state.showStatusPanel ? _statusHeight(h, infoBarH + pickerH + totalInputH + configEditorH) : 0;
+    final bodyH = h - totalInputH - statusH - infoBarH - pickerH - configEditorH;
     _lastBodyHeight = bodyH;
     _lastBodyY = 0;
 
@@ -1067,6 +1148,15 @@ final class FrunModel extends TeaModel {
         w,
         h - totalInputH - infoBarH - pickerH,
         pickerH,
+      );
+    }
+    if (configEditorH > 0) {
+      _paintConfigEditor(
+        canvas,
+        theme,
+        w,
+        h - totalInputH - infoBarH - pickerH - configEditorH,
+        configEditorH,
       );
     }
     _paintInfoBar(canvas, theme, w, h - totalInputH - infoBarH, infoBarH);
@@ -1095,6 +1185,7 @@ final class FrunModel extends TeaModel {
 
   int _computeInputHeight() {
     if (state.hasActivePicker) return 0;
+    if (_configEditorActive) return 0;
     if (_vimState.mode == VimMode.exCmd || _vimState.mode == VimMode.search) {
       return 1;
     }
@@ -1598,6 +1689,126 @@ final class FrunModel extends TeaModel {
     }
   }
 
+  int _computeConfigEditorHeight() {
+    if (!_configEditorActive) return 0;
+    // header + top border + one row per entry + bottom border
+    return 1 + 1 + _configEditorEntries.length + 1;
+  }
+
+  static const _configEditorEntries = <_ConfigEditorEntry>[
+    _ConfigEditorEntry('ide', ['vscode', 'zed']),
+    _ConfigEditorEntry('editor_mode', ['normal', 'vim']),
+    _ConfigEditorEntry('theme', ['dark', 'light']),
+    _ConfigEditorEntry('hot_reload_on_save', ['true', 'false']),
+    _ConfigEditorEntry('default_device_id', []),
+    _ConfigEditorEntry('open_devtools_on_launch', ['ask', 'always', 'never']),
+  ];
+
+  String _configEditorEntryValue(FrunConfig c, String key) {
+    switch (key) {
+      case 'ide':
+        return c.ide.id;
+      case 'editor_mode':
+        return c.editorMode.id;
+      case 'theme':
+        return c.theme.id;
+      case 'hot_reload_on_save':
+        return c.hotReloadOnSave.toString();
+      case 'default_device_id':
+        return c.defaultDeviceId ?? '(none)';
+      case 'open_devtools_on_launch':
+        return c.openDevtoolsOnLaunch.id;
+      default:
+        return '';
+    }
+  }
+
+  FrunConfig _cycleConfigValue(FrunConfig c, String key, int delta) {
+    switch (key) {
+      case 'ide':
+        const vals = FrunIde.values;
+        final idx = (vals.indexOf(c.ide) + delta + vals.length) % vals.length;
+        return c.copyWith(ide: vals[idx]);
+      case 'editor_mode':
+        const vals = FrunEditorMode.values;
+        final idx = (vals.indexOf(c.editorMode) + delta + vals.length) % vals.length;
+        return c.copyWith(editorMode: vals[idx]);
+      case 'theme':
+        const vals = FrunThemeMode.values;
+        final idx = (vals.indexOf(c.theme) + delta + vals.length) % vals.length;
+        return c.copyWith(theme: vals[idx]);
+      case 'hot_reload_on_save':
+        return c.copyWith(hotReloadOnSave: !c.hotReloadOnSave);
+      case 'open_devtools_on_launch':
+        const vals = FrunDevToolsAutoOpen.values;
+        final idx = (vals.indexOf(c.openDevtoolsOnLaunch) + delta + vals.length) % vals.length;
+        return c.copyWith(openDevtoolsOnLaunch: vals[idx]);
+      default:
+        return c;
+    }
+  }
+
+  void _paintConfigEditor(
+    Canvas canvas,
+    FrunTheme theme,
+    int width,
+    int y,
+    int height,
+  ) {
+    if (height <= 0 || _configDraft == null) return;
+
+    final isVim = state.config.editorMode == FrunEditorMode.vim;
+    final hint = isVim
+        ? ' Config — jk navigate · hl cycle value · enter apply · esc discard'
+        : ' Config — ↑↓ navigate · ←→ cycle value · enter apply · esc discard';
+    final hintClipped = hint.length > width ? hint.substring(0, width) : hint;
+    canvas.paint(0, y, theme.dimStyle.render(hintClipped));
+
+    if (height < 3) return;
+
+    final topY = y + 1;
+    final bottomY = y + height - 1;
+    final horiz = '─' * (width - 2);
+    canvas.paint(0, topY, theme.borderStyle.render('┌$horiz┐'));
+    canvas.paint(0, bottomY, theme.borderStyle.render('└$horiz┘'));
+
+    for (var i = 0; i < _configEditorEntries.length; i++) {
+      final rowY = topY + 1 + i;
+      if (rowY >= bottomY) break;
+      canvas.paint(0, rowY, theme.borderStyle.render('│'));
+      canvas.paint(width - 1, rowY, theme.borderStyle.render('│'));
+
+      final entry = _configEditorEntries[i];
+      final isSelected = i == _configEditorRow;
+      final currentVal = _configEditorEntryValue(_configDraft!, entry.key);
+
+      const keyWidth = 26;
+      const indicatorWidth = 2;
+      const innerGap = 1;
+      const valGap = 2;
+
+      final indicator = isSelected ? '► ' : '  ';
+      final keyPadded = entry.key.padRight(keyWidth);
+
+      const contentX = innerGap + indicatorWidth + keyWidth + valGap;
+
+      if (isSelected) {
+        canvas.paint(innerGap, rowY, theme.accentStyle.render(indicator + keyPadded));
+      } else {
+        canvas.paint(innerGap, rowY, indicator + keyPadded);
+      }
+
+      if (contentX < width - 1) {
+        if (isSelected && entry.values.isNotEmpty) {
+          final chip = '◄ $currentVal ►';
+          canvas.paint(contentX, rowY, theme.pickerChipSelectedStyle.render(chip));
+        } else {
+          canvas.paint(contentX, rowY, theme.dimStyle.render(currentVal));
+        }
+      }
+    }
+  }
+
   int _computeInfoBarHeight(int width) {
     final tabs = state.runController.tabs;
     if (tabs.isEmpty) return 1;
@@ -1904,4 +2115,10 @@ const activeButtons = <_Button>[
   _Button('R', RestartTabMsg.new),
   _Button('S', StopTabMsg.new, isStop: true),
 ];
+
+class _ConfigEditorEntry {
+  const _ConfigEditorEntry(this.key, this.values);
+  final String key;
+  final List<String> values;
+}
 

@@ -29,7 +29,7 @@ class ConfigCommand extends Command {
     final sub = args.isEmpty ? 'show' : args.first;
     switch (sub) {
       case 'show':
-        _show(state);
+        state.showConfigEditor = true;
         return CommandResult.ok;
       case 'path':
         state.visibleTranscript.info(store.path);
@@ -45,18 +45,6 @@ class ConfigCommand extends Command {
         state.visibleTranscript.warn('Unknown subcommand "$sub". $usage');
         return CommandResult.ok;
     }
-  }
-
-  void _show(AppState state) {
-    final c = state.config;
-    state.transcript
-      ..system('Config (${store.path}):')
-      ..info('  ide                       = ${c.ide.id}')
-      ..info('  editor_mode               = ${c.editorMode.id}')
-      ..info('  theme                     = ${c.theme.id}')
-      ..info('  hot_reload_on_save        = ${c.hotReloadOnSave}')
-      ..info('  default_device_id         = ${c.defaultDeviceId ?? "(none)"}')
-      ..info('  open_devtools_on_launch   = ${c.openDevtoolsOnLaunch.id}');
   }
 
   void _set(String key, String value, AppState state) {

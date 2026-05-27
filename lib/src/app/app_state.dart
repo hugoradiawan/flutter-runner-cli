@@ -62,6 +62,9 @@ class AppState {
   /// Whether the bottom status block is rendered. Toggled by `/status`.
   bool showStatusPanel = false;
 
+  /// Set to `true` by `/config` to trigger the interactive footer editor.
+  bool showConfigEditor = false;
+
   /// Active `/run` picker. When non-empty, the TUI renders a button bar of
   /// launch entries above the input line. Cleared after the user picks one
   /// or dismisses the picker.
