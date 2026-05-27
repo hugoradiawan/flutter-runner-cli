@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../config/config_store.dart';
 import '../../devices/emulator_manager.dart';
 import '../../ide/frun_notifier.dart';
@@ -60,11 +62,15 @@ class EmulatorsCommand extends Command {
   }
 
   Future<void> _openPicker(EmulatorManager manager, AppState state) async {
+    state.visibleTranscript.system('Fetching emulators…');
     try {
-      final emulators = await manager.list();
+      final emulators = await manager.list().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => const [],
+      );
       if (emulators.isEmpty) {
         state.visibleTranscript.warn(
-          'No emulators defined. Try `/emulators create [name]` (Android only).',
+          'No emulators found. Try `/emulators create [name]` (Android only).',
         );
         return;
       }
