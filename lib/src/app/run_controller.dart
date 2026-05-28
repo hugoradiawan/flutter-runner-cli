@@ -437,34 +437,47 @@ class RunController {
     final properties = data['properties'];
     if (properties is List) {
       for (final node in properties) {
-        if (node is Map) {
-          final desc = node['description']?.toString() ?? '';
-          final name = node['name']?.toString() ?? '';
-          if (desc.isEmpty && name.isEmpty) continue;
-          if (name.isNotEmpty && desc.isNotEmpty) {
-            buf.writeln('$name: $desc');
-          } else {
-            buf.writeln(desc.isNotEmpty ? desc : name);
-          }
-        }
+        _writeDiagNode(node, buf);
+      }
+    }
+
+    // Top-level children (some Flutter versions serialize the full DiagnosticsNode tree here).
+    final topChildren = data['children'];
+    if (topChildren is List) {
+      for (final node in topChildren) {
+        _writeDiagNode(node, buf);
       }
     }
 
     final stack = data['stack'];
     if (stack is List) {
       for (final frame in stack) {
-        buf.writeln(frame.toString());
+        if (frame is Map) {
+          _writeDiagNode(frame, buf);
+        } else {
+          buf.writeln(frame.toString());
+        }
       }
     } else if (stack is String && stack.isNotEmpty) {
       buf.writeln(stack);
+    } else if (stack is Map) {
+      final stackStr = stack['stackTrace']?.toString()
+          ?? stack['description']?.toString() ?? '';
+      if (stackStr.isNotEmpty) buf.writeln(stackStr);
+      final stackChildren = stack['children'];
+      if (stackChildren is List) {
+        for (final frame in stackChildren) {
+          _writeDiagNode(frame, buf);
+        }
+      }
     }
 
-    // Fallback: if we extracted almost nothing, dump the raw payload so the
-    // user can still diagnose. Flutter's Flutter.Error schema varies by
-    // framework version — better verbose than blank.
-    final extracted = buf.length;
-    if (extracted < 200) {
-      buf.writeln('--- raw Flutter.Error payload ---');
+    // If no stack frames were extracted, dump the raw payload so the user can
+    // see the full event data. Flutter's Flutter.Error schema varies by version
+    // — this helps diagnose what fields are actually present.
+    final hasStackFrames = buf.toString().contains(RegExp(r'#\d+\s'));
+    if (!hasStackFrames) {
+      buf.writeln('--- raw Flutter.Error payload (no stack frames extracted) ---');
       try {
         buf.writeln(const JsonEncoder.withIndent('  ').convert(data));
       } catch (_) {
@@ -473,6 +486,28 @@ class RunController {
     }
 
     tab.transcript.error(buf.toString().trimRight());
+  }
+
+  /// Recursively writes description/name of a DiagnosticsNode [node] and all
+  /// its children into [buf]. Stack trace nodes in Flutter.Error events store
+  /// the actual `#0  ...` frame lines as children, so recursion is required.
+  static void _writeDiagNode(Object? node, StringBuffer buf, {int depth = 0}) {
+    if (depth > 8 || node is! Map) return;
+    final desc = node['description']?.toString() ?? '';
+    final name = node['name']?.toString() ?? '';
+    if (name.isNotEmpty && desc.isNotEmpty && name != desc) {
+      buf.writeln('$name: $desc');
+    } else if (desc.isNotEmpty) {
+      buf.writeln(desc);
+    } else if (name.isNotEmpty) {
+      buf.writeln(name);
+    }
+    final children = node['children'];
+    if (children is List) {
+      for (final child in children) {
+        _writeDiagNode(child, buf, depth: depth + 1);
+      }
+    }
   }
 
   void _onProcessExit(RunTab tab, AppRunSession exitedSession, int code) {
