@@ -63,11 +63,21 @@ class EmulatorsCommand extends Command {
 
   Future<void> _openPicker(EmulatorManager manager, AppState state) async {
     state.visibleTranscript.system('Fetching emulators…');
+    bool timedOut = false;
     try {
       final emulators = await manager.list().timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => const [],
+        const Duration(seconds: 30),
+        onTimeout: () {
+          timedOut = true;
+          return const [];
+        },
       );
+      if (timedOut) {
+        state.visibleTranscript.warn(
+          'Emulator list timed out. Flutter daemon may be slow or Android SDK not configured.',
+        );
+        return;
+      }
       if (emulators.isEmpty) {
         state.visibleTranscript.warn(
           'No emulators found. Try `/emulators create [name]` (Android only).',
@@ -81,8 +91,22 @@ class EmulatorsCommand extends Command {
   }
 
   Future<void> _list(EmulatorManager manager, AppState state) async {
+    state.visibleTranscript.system('Fetching emulators…');
+    bool timedOut = false;
     try {
-      final emulators = await manager.list();
+      final emulators = await manager.list().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          timedOut = true;
+          return const [];
+        },
+      );
+      if (timedOut) {
+        state.visibleTranscript.warn(
+          'Emulator list timed out. Flutter daemon may be slow or Android SDK not configured.',
+        );
+        return;
+      }
       if (emulators.isEmpty) {
         state.visibleTranscript.warn(
           'No emulators defined. Try `/emulators create [name]` (Android only).',
