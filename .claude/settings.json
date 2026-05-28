@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "dart pub global activate --source path .",
+            "timeout": 60,
+            "statusMessage": "Reinstalling frun…"
+          }
+        ]
+      }
+    ]
+  }
+}
