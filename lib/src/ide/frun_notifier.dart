@@ -90,6 +90,9 @@ class FrunNotifier {
 \$nodes = \$t.GetElementsByTagName('text')
 \$nodes.Item(0).AppendChild(\$t.CreateTextNode('$title')) > \$null
 \$nodes.Item(1).AppendChild(\$t.CreateTextNode('$body')) > \$null
+\$audio = \$t.CreateElement('audio')
+\$audio.SetAttribute('silent', 'true')
+\$t.DocumentElement.AppendChild(\$audio) > \$null
 [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('frun').Show([Windows.UI.Notifications.ToastNotification]::new(\$t))
 ''';
 }

@@ -56,7 +56,8 @@ class InspectorBridge {
   Future<void> _handleSelectionEvent(vm.Event event, AppState state) async {
     final data = event.extensionData?.data ?? const <String, dynamic>{};
     final loc = _extractLocation(data);
-    if (loc != null) await _open(loc, state);
+    // User-driven tap — always open regardless of _primed state.
+    if (loc != null) await _open(loc, state, skipPrimingCheck: true);
   }
 
   Future<void> _pollSelection(AppState state) async {
@@ -70,7 +71,11 @@ class InspectorBridge {
     }
   }
 
-  Future<void> _open(_CreationLocation loc, AppState state) async {
+  Future<void> _open(
+    _CreationLocation loc,
+    AppState state, {
+    bool skipPrimingCheck = false,
+  }) async {
     final src = SourceLocation.fromVmServiceUri(
       loc.uri,
       projectRoot: state.project.root,
@@ -86,9 +91,9 @@ class InspectorBridge {
     final wasPrimed = _primed;
     _primed = true;
     _lastKey = key;
-    // First observation after attach is the *current* selection — don't open
-    // it; only open on subsequent changes.
-    if (!wasPrimed) return;
+    // First poll observation after attach is the pre-existing selection —
+    // skip it. User-driven Flutter.Selection events bypass this guard.
+    if (!wasPrimed && !skipPrimingCheck) return;
     await state.ideLauncher.open(src, state);
   }
 
