@@ -13,6 +13,7 @@ import '../app/transcript.dart';
 import '../config/config.dart';
 import '../config/config_store.dart';
 import '../config/history_store.dart';
+import '../devices/emulator_manager.dart';
 import '../ide/source_location.dart';
 import '../version.dart';
 import 'clipboard.dart';
@@ -160,6 +161,7 @@ final class FrunModel extends TeaModel {
   bool _configEditorActive = false;
   int _configEditorRow = 0;
   FrunConfig? _configDraft;
+  List<String> _cachedEmulatorIds = [];
   final HistoryStore _historyStore = HistoryStore();
   late final TranscriptCursor _tc;
   final HitRegions _hits = HitRegions();
@@ -228,6 +230,7 @@ final class FrunModel extends TeaModel {
       _configEditorActive = true;
       _configEditorRow = 0;
       _configDraft = state.config;
+      _fetchEmulatorIds();
     }
 
     if (_input.editorMode != state.config.editorMode) {
@@ -595,8 +598,35 @@ final class FrunModel extends TeaModel {
 
     if (ke.code == KeyCode.enter) {
       if (_configDraft != null) {
-        state.setConfig(_configDraft!);
-        _configStore.save(_configDraft!);
+        final draft = _configDraft!;
+        final deviceId = draft.defaultDeviceId;
+        if (deviceId == null) {
+          state.selectedDeviceId = null;
+          state.setConfig(draft);
+          _configStore.save(draft);
+        } else {
+          final devices = state.deviceManager?.devices ?? const [];
+          final directMatch = state.deviceManager?.byId(deviceId);
+          final avdMatch = devices.where((d) => d.emulatorId == deviceId).firstOrNull;
+          if (avdMatch != null) {
+            // AVD name selected but emulator already running — resolve to runtime device ID.
+            final fixed = draft.copyWith(defaultDeviceId: avdMatch.id);
+            state.selectedDeviceId = avdMatch.id;
+            state.setConfig(fixed);
+            _configStore.save(fixed);
+          } else if (directMatch == null && _cachedEmulatorIds.contains(deviceId)) {
+            // AVD not running — launch it, store runtime device ID once ready.
+            final stripped = draft.copyWith(clearDefaultDeviceId: true);
+            state.setConfig(stripped);
+            _configStore.save(stripped);
+            _launchEmulatorForConfig(deviceId);
+          } else {
+            // Direct device ID (connected or stored from previous session).
+            state.selectedDeviceId = deviceId;
+            state.setConfig(draft);
+            _configStore.save(draft);
+          }
+        }
       }
       _configEditorActive = false;
       _configDraft = null;
@@ -627,8 +657,14 @@ final class FrunModel extends TeaModel {
     }
     if ((isLeft || isRight) && _configDraft != null) {
       final entry = _configEditorEntries[_configEditorRow];
-      if (entry.values.isNotEmpty) {
+      if (entry.values.isNotEmpty || entry.isDynamic) {
         _configDraft = _cycleConfigValue(_configDraft!, entry.key, isRight ? 1 : -1);
+        if (entry.key == 'default_device_id') {
+          final id = _configDraft!.defaultDeviceId;
+          if (id == null || state.deviceManager?.byId(id) != null) {
+            state.selectedDeviceId = id;
+          }
+        }
       }
       return;
     }
@@ -1787,13 +1823,13 @@ final class FrunModel extends TeaModel {
   }
 
   static const _configEditorEntries = <_ConfigEditorEntry>[
-    _ConfigEditorEntry('ide', ['vscode', 'zed']),
-    _ConfigEditorEntry('editor_mode', ['normal', 'vim']),
-    _ConfigEditorEntry('theme', ['dark', 'light']),
-    _ConfigEditorEntry('hot_reload_on_save', ['true', 'false']),
-    _ConfigEditorEntry('default_device_id', []),
-    _ConfigEditorEntry('open_devtools_on_launch', ['ask', 'always', 'never']),
-    _ConfigEditorEntry('emulator_boot', ['quick', 'cold']),
+    _ConfigEditorEntry('ide', ['vscode', 'zed'], label: 'IDE'),
+    _ConfigEditorEntry('editor_mode', ['normal', 'vim'], label: 'Editor mode'),
+    _ConfigEditorEntry('theme', ['dark', 'light'], label: 'Theme'),
+    _ConfigEditorEntry('hot_reload_on_save', ['true', 'false'], label: 'Hot reload on save'),
+    _ConfigEditorEntry('default_device_id', [], label: 'Default device id', isDynamic: true),
+    _ConfigEditorEntry('open_devtools_on_launch', ['ask', 'always', 'never'], label: 'Open devtools on launch'),
+    _ConfigEditorEntry('emulator_boot', ['quick', 'cold'], label: 'Emulator boot'),
   ];
 
   String _configEditorEntryValue(FrunConfig c, String key) {
@@ -1833,6 +1869,23 @@ final class FrunModel extends TeaModel {
         return c.copyWith(theme: vals[idx]);
       case 'hot_reload_on_save':
         return c.copyWith(hotReloadOnSave: !c.hotReloadOnSave);
+      case 'default_device_id':
+        final devices = state.deviceManager?.devices ?? const [];
+        final deviceIds = devices.map((d) => d.id).toList();
+        final connectedAvdIds = devices
+            .where((d) => d.emulatorId != null)
+            .map((d) => d.emulatorId!)
+            .toSet();
+        final unconnectedAvdIds = _cachedEmulatorIds
+            .where((id) => !connectedAvdIds.contains(id));
+        final ids = ['(none)', ...deviceIds, ...unconnectedAvdIds];
+        final current = c.defaultDeviceId ?? '(none)';
+        final idx = ids.indexOf(current);
+        final newIdx = ((idx == -1 ? 0 : idx) + delta + ids.length) % ids.length;
+        final newId = ids[newIdx];
+        return newId == '(none)'
+            ? c.copyWith(clearDefaultDeviceId: true)
+            : c.copyWith(defaultDeviceId: newId);
       case 'open_devtools_on_launch':
         const vals = FrunDevToolsAutoOpen.values;
         final idx = (vals.indexOf(c.openDevtoolsOnLaunch) + delta + vals.length) % vals.length;
@@ -1843,6 +1896,43 @@ final class FrunModel extends TeaModel {
         return c.copyWith(emulatorBoot: vals[idx]);
       default:
         return c;
+    }
+  }
+
+  Future<void> _fetchEmulatorIds() async {
+    final daemon = state.daemon;
+    if (daemon == null) return;
+    try {
+      final emulators = await EmulatorManager(daemon)
+          .list()
+          .timeout(const Duration(seconds: 10));
+      _cachedEmulatorIds = emulators.map((e) => e.id).toList();
+    } catch (_) {}
+  }
+
+  Future<void> _launchEmulatorForConfig(String emulatorId) async {
+    final daemon = state.daemon;
+    if (daemon == null) return;
+    state.visibleTranscript.system('Launching emulator $emulatorId…');
+    try {
+      final coldBoot = state.config.emulatorBoot == FrunEmulatorBoot.cold;
+      final device = await EmulatorManager(daemon)
+          .launchAndAwaitDevice(emulatorId, coldBoot: coldBoot);
+      if (device == null) {
+        state.visibleTranscript.warn(
+          'Emulator $emulatorId launched but no device appeared within the timeout.',
+        );
+        return;
+      }
+      state.selectedDeviceId = device.id;
+      final next = state.config.copyWith(defaultDeviceId: device.id);
+      state.setConfig(next);
+      _configStore.save(next);
+      state.visibleTranscript.success(
+        'Emulator ready: ${device.name} (${device.id}). Selected.',
+      );
+    } catch (e) {
+      state.visibleTranscript.error('Failed to launch emulator $emulatorId: $e');
     }
   }
 
@@ -1886,7 +1976,7 @@ final class FrunModel extends TeaModel {
       const valGap = 2;
 
       final indicator = isSelected ? '► ' : '  ';
-      final keyPadded = entry.key.padRight(keyWidth);
+      final keyPadded = entry.displayLabel.padRight(keyWidth);
 
       const contentX = innerGap + indicatorWidth + keyWidth + valGap;
 
@@ -1897,7 +1987,7 @@ final class FrunModel extends TeaModel {
       }
 
       if (contentX < width - 1) {
-        if (isSelected && entry.values.isNotEmpty) {
+        if (isSelected && (entry.values.isNotEmpty || entry.isDynamic)) {
           final chip = '◄ $currentVal ►';
           canvas.paint(contentX, rowY, theme.pickerChipSelectedStyle.render(chip));
         } else {
@@ -2215,9 +2305,12 @@ const activeButtons = <_Button>[
 ];
 
 class _ConfigEditorEntry {
-  const _ConfigEditorEntry(this.key, this.values);
+  const _ConfigEditorEntry(this.key, this.values, {this.label, this.isDynamic = false});
   final String key;
   final List<String> values;
+  final String? label;
+  final bool isDynamic;
+  String get displayLabel => label ?? key;
 }
 
 /// Updates [active] SGR parameter list from a raw SGR parameter string
