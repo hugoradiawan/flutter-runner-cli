@@ -325,7 +325,7 @@ class RunController {
         final uri = event.params['wsUri'] ?? event.params['uri'];
         if (uri != null) tab.transcript.info('DevTools: $uri');
       case 'app.log':
-        final raw = event.params['log']?.toString() ?? '';
+        final raw = _stripLogcatPrefix(event.params['log']?.toString() ?? '');
         final stack = event.params['stackTrace']?.toString() ?? '';
         if (raw.isEmpty && stack.isEmpty) return;
         final isError = event.params['error'] == true;
@@ -373,6 +373,14 @@ class RunController {
         tab.transcript.debug('${event.name}: ${event.params}');
     }
   }
+
+  /// Android logcat tags each line with e.g. `I/flutter ( 7225): `. Strip it
+  /// so the transcript shows only the app's own log text.
+  static final _logcatPrefix =
+      RegExp(r'^[VDIWEF]/[^(]*\(\s*\d+\):\s?', multiLine: true);
+
+  static String _stripLogcatPrefix(String log) =>
+      log.replaceAll(_logcatPrefix, '');
 
   Future<void> _connectIsolates(String wsUri) async {
     try {
