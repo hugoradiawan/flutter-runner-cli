@@ -36,10 +36,13 @@ class _VisibleLink {
 /// several `_DisplayRow`s; [startCol] is the offset into the source line so
 /// the renderer can map link spans onto the right row.
 class _DisplayRow {
-  _DisplayRow(this.lineIndex, this.startCol, this.text);
+  _DisplayRow(this.lineIndex, this.startCol, this.text, {this.ansiPrefix = ''});
   final int lineIndex;
   final int startCol;
   final String text;
+  /// ANSI SGR codes active at the start of this row (accumulated from prior
+  /// wrapped chunks). Prepended during rendering so colours survive wraps.
+  final String ansiPrefix;
 }
 
 // ─── Domain messages dispatched by hit-regions and the entry layer ─────────
@@ -1282,7 +1285,7 @@ final class FrunModel extends TeaModel {
       final baseStyle = line.onClick != null
           ? theme.accentStyle
           : theme.forLevel(line.level);
-      canvas.paint(0, yRow, baseStyle.render(row.text));
+      canvas.paint(0, yRow, baseStyle.render(row.ansiPrefix + row.text));
 
       if (focused != null && focused.transcriptLineIndex == row.lineIndex) {
         final link = focused.link;
@@ -1365,12 +1368,55 @@ final class FrunModel extends TeaModel {
         out.add(_DisplayRow(i, 0, ''));
         continue;
       }
-      var pos = 0;
-      while (pos < text.length) {
-        final end = math.min(pos + width, text.length);
-        out.add(_DisplayRow(i, pos, text.substring(pos, end)));
-        pos = end;
+
+      var rawPos = 0;
+      var visCol = 0;
+      var chunkRawStart = 0;
+      var chunkAnsiPrefix = '';
+      final activeSgr = <String>[];
+
+      while (rawPos < text.length) {
+        // CSI escape sequence (ESC [)?  Consume atomically — zero visual cols.
+        if (text[rawPos] == '\x1b' &&
+            rawPos + 1 < text.length &&
+            text[rawPos + 1] == '[') {
+          final seqStart = rawPos;
+          rawPos += 2;
+          while (rawPos < text.length) {
+            final cu = text.codeUnitAt(rawPos);
+            rawPos++;
+            if (cu >= 0x40 && cu <= 0x7E) break; // CSI final byte
+          }
+          // Track SGR state so we can reopen colour on continuation rows.
+          if (rawPos > 0 && text[rawPos - 1] == 'm') {
+            _applyAnsiSgr(text.substring(seqStart + 2, rawPos - 1), activeSgr);
+          }
+          continue;
+        }
+
+        if (visCol == width) {
+          out.add(_DisplayRow(
+            i,
+            chunkRawStart,
+            text.substring(chunkRawStart, rawPos),
+            ansiPrefix: chunkAnsiPrefix,
+          ));
+          chunkRawStart = rawPos;
+          chunkAnsiPrefix =
+              activeSgr.isEmpty ? '' : '\x1b[${activeSgr.join(';')}m';
+          visCol = 0;
+        }
+
+        visCol++;
+        rawPos++;
       }
+
+      out.add(_DisplayRow(
+        i,
+        chunkRawStart,
+        text.substring(chunkRawStart),
+        ansiPrefix: chunkAnsiPrefix,
+      ));
     }
     return out;
   }
@@ -2120,5 +2166,38 @@ class _ConfigEditorEntry {
   const _ConfigEditorEntry(this.key, this.values);
   final String key;
   final List<String> values;
+}
+
+/// Updates [active] SGR parameter list from a raw SGR parameter string
+/// (the text between `\x1b[` and `m`, e.g. `'1;33'` or `'0'`).
+/// Handles reset codes, extended 256-colour, and truecolour sequences.
+void _applyAnsiSgr(String params, List<String> active) {
+  if (params.isEmpty || params == '0') {
+    active.clear();
+    return;
+  }
+  final parts = params.split(';');
+  var j = 0;
+  while (j < parts.length) {
+    final p = parts[j];
+    if (p == '0' || p.isEmpty) {
+      active.clear();
+      j++;
+    } else if ((p == '38' || p == '48') && j + 1 < parts.length) {
+      if (parts[j + 1] == '5' && j + 2 < parts.length) {
+        active.add('$p;5;${parts[j + 2]}');
+        j += 3;
+      } else if (parts[j + 1] == '2' && j + 4 < parts.length) {
+        active.add('$p;2;${parts[j + 2]};${parts[j + 3]};${parts[j + 4]}');
+        j += 5;
+      } else {
+        active.add(p);
+        j++;
+      }
+    } else {
+      active.add(p);
+      j++;
+    }
+  }
 }
 
