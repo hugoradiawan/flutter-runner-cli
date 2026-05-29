@@ -20,11 +20,10 @@ class TranscriptLine {
   final void Function()? onClick;
 }
 
-/// Append-only ring buffer of lines rendered in the transcript panel.
+/// Append-only log of lines rendered in the transcript panel.
 class Transcript {
-  Transcript({this.maxLines = 2000});
+  Transcript();
 
-  final int maxLines;
   final Queue<TranscriptLine> _lines = Queue<TranscriptLine>();
   int _revision = 0;
 
@@ -60,7 +59,7 @@ class Transcript {
           onClick: onClick,
         ),
       );
-      if (_lines.length > maxLines) _lines.removeFirst();
+
     }
     _revision++;
   }
