@@ -6,7 +6,7 @@ For releases — run through this in a real Flutter project on macOS and Windows
 - `dart pub get` succeeds.
 - `dart analyze` clean.
 - `dart test` green.
-- `dart pub global activate --source path .` installs `frun`.
+- `dart run tool/install.dart` installs `frun` (native exe on PATH).
 
 ## Outside a Flutter project
 - `frun` prints "No pubspec.yaml found…" and exits with code 64.

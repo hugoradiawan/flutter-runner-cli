@@ -1,14 +1,7 @@
-/// Force-rebuilds the global `frun` snapshot after a code change.
+/// Backwards-compatible alias for `tool/install.dart`.
 ///
-/// `dart pub global activate --source path` silently skips snapshot rebuilds
-/// when the pubspec hasn't changed, so source-only edits aren't picked up.
-/// This script deletes the cached snapshot first, then reactivates.
-///
-/// Run from anywhere:
-///   dart run /path/to/flutter-runner-cli/tool/reinstall.dart
-///
-/// Or, from inside this repo:
-///   dart run tool/reinstall.dart
+/// frun now installs as a standalone AOT executable (see install.dart). This
+/// shim keeps `dart run tool/reinstall.dart` working for existing muscle memory.
 library;
 
 import 'dart:io';
@@ -16,47 +9,12 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 void main() {
-  final repoRoot = _repoRoot();
-  final snapshotDir = Directory(
-    p.join(repoRoot, '.dart_tool', 'pub', 'bin', 'frun'),
-  );
-
-  if (snapshotDir.existsSync()) {
-    var deleted = 0;
-    for (final entity in snapshotDir.listSync()) {
-      if (entity is File && entity.path.contains('.snapshot')) {
-        entity.deleteSync();
-        deleted++;
-      }
-    }
-    stdout.writeln(
-      'Deleted $deleted stale snapshot(s) from ${snapshotDir.path}.',
-    );
-  } else {
-    stdout.writeln('No snapshot dir yet — first activation will create it.');
-  }
-
-  stdout.writeln('Reactivating frun from $repoRoot…');
-  // Use the same `dart` that's running this script. Avoids picking up a
-  // stale SDK (e.g. fvm default) that PATH resolves first when multiple
-  // dart installs are present.
+  final installScript = p.join(p.dirname(Platform.script.toFilePath()), 'install.dart');
   final result = Process.runSync(
     Platform.resolvedExecutable,
-    ['pub', 'global', 'activate', '--source', 'path', repoRoot],
+    ['run', installScript],
   );
   stdout.write(result.stdout);
   if ((result.stderr as String).isNotEmpty) stderr.write(result.stderr);
-  if (result.exitCode != 0) {
-    stderr.writeln('frun-reinstall failed (exit ${result.exitCode}).');
-    exit(result.exitCode);
-  }
-  stdout.writeln(
-    'Done. Run `frun` — first invocation will JIT-compile and cache a fresh snapshot.',
-  );
-}
-
-String _repoRoot() {
-  // tool/reinstall.dart lives at <repo>/tool/. Resolve via this script's URI.
-  final scriptPath = Platform.script.toFilePath();
-  return p.normalize(p.join(p.dirname(scriptPath), '..'));
+  exit(result.exitCode);
 }

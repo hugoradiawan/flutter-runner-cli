@@ -38,11 +38,14 @@ multi-device tabs, jump-to-source) are wired; UI polish keeps evolving.
 ```sh
 git clone https://github.com/hugoradiawan/flutter-runner-cli
 cd flutter-runner-cli
-dart pub get
-dart pub global activate --source path .
+dart run tool/install.dart
 ```
 
-Make sure `~/.pub-cache/bin` is on your `PATH`. Then in any Flutter project:
+`install.dart` compiles a standalone native executable to your pub-cache bin
+directory (`%LOCALAPPDATA%\Pub\Cache\bin` on Windows, `~/.pub-cache/bin`
+elsewhere) — so `frun` launches natively with no per-run dependency resolution.
+Make sure that directory is on your `PATH` (the script warns if it isn't). Then
+in any Flutter project:
 
 ```sh
 frun                # use the current directory
@@ -53,15 +56,19 @@ frun --version
 
 ### After pulling new code
 
-`dart pub global activate --source path` silently skips snapshot rebuilds
-when `pubspec.yaml` hasn't changed, so source-only edits aren't picked up.
-After a `git pull`, run:
+The native exe is a build artifact — it won't reflect source edits until you
+rebuild. After a `git pull` (or any local change), run:
 
 ```sh
-dart run tool/reinstall.dart
+dart run tool/install.dart
 ```
 
-That deletes the cached snapshot and reactivates frun in one shot.
+For a tight inner loop while hacking on frun itself, skip the build and run
+from source directly:
+
+```sh
+dart run bin/frun.dart
+```
 
 ## Slash commands
 
