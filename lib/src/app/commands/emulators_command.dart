@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../../config/config.dart';
 import '../../config/config_store.dart';
 import '../../devices/emulator_manager.dart';
 import '../../ide/frun_notifier.dart';
@@ -49,7 +50,9 @@ class EmulatorsCommand extends Command {
       return CommandResult.ok;
     }
     if (args.first == 'launch' && args.length >= 2) {
-      await _launch(manager, args[1], state);
+      final hasFlag = args.length >= 3 && (args[2] == 'cold' || args[2] == '--cold');
+      final coldBoot = hasFlag || state.config.emulatorBoot == FrunEmulatorBoot.cold;
+      await _launch(manager, args[1], state, coldBoot: coldBoot);
       return CommandResult.ok;
     }
     if (args.first == 'create') {
@@ -128,12 +131,14 @@ class EmulatorsCommand extends Command {
   Future<void> _launch(
     EmulatorManager manager,
     String id,
-    AppState state,
-  ) async {
-    state.visibleTranscript.system('Launching emulator $id…');
-    state.notifier.notify(FrunNotifEvent.launchingEmulator, detail: 'Launching emulator $id…');
+    AppState state, {
+    bool coldBoot = false,
+  }) async {
+    final bootLabel = coldBoot ? ' (cold boot)' : '';
+    state.visibleTranscript.system('Launching emulator $id$bootLabel…');
+    state.notifier.notify(FrunNotifEvent.launchingEmulator, detail: 'Launching emulator $id$bootLabel…');
     try {
-      final device = await manager.launchAndAwaitDevice(id);
+      final device = await manager.launchAndAwaitDevice(id, coldBoot: coldBoot);
       if (device == null) {
         state.visibleTranscript.warn(
           'Emulator $id launched but no device appeared within the timeout.',

@@ -103,6 +103,15 @@ final class CloseEmulatorPickerMsg extends Msg {
   const CloseEmulatorPickerMsg();
 }
 
+final class PickBootModeMsg extends Msg {
+  const PickBootModeMsg(this.index);
+  final int index;
+}
+
+final class CloseBootModePickerMsg extends Msg {
+  const CloseBootModePickerMsg();
+}
+
 final class PickDeviceMsg extends Msg {
   const PickDeviceMsg(this.index);
   final int index;
@@ -321,11 +330,19 @@ final class FrunModel extends TeaModel {
       final emulators = state.emulatorChoices;
       if (msg.index >= 0 && msg.index < emulators.length) {
         final picked = emulators[msg.index];
-        state.clearPickers();
-        _input.setText('emulators launch ${picked.id}');
-        _submit();
+        state.setBootModePicker(picked.id);
       }
     } else if (msg is CloseEmulatorPickerMsg) {
+      state.clearPickers();
+    } else if (msg is PickBootModeMsg) {
+      final pendingId = state.pendingEmulatorId;
+      if (pendingId != null) {
+        final coldBoot = msg.index == 1;
+        state.clearPickers();
+        _input.setText('emulators launch $pendingId${coldBoot ? ' cold' : ''}');
+        _submit();
+      }
+    } else if (msg is CloseBootModePickerMsg) {
       state.clearPickers();
     } else if (msg is PickDeviceMsg) {
       final devices = state.deviceChoices;
@@ -1479,6 +1496,7 @@ final class FrunModel extends TeaModel {
   int _activePickerItemCount() {
     if (state.launchChoices.isNotEmpty) return state.launchChoices.length;
     if (state.emulatorChoices.isNotEmpty) return state.emulatorChoices.length;
+    if (state.bootModeChoices.isNotEmpty) return state.bootModeChoices.length;
     if (state.deviceChoices.isNotEmpty) return state.deviceChoices.length;
     return 0;
   }
@@ -1488,6 +1506,7 @@ final class FrunModel extends TeaModel {
       case _PickerKind.launch:
         return theme.pickerChipSelectedStyle;
       case _PickerKind.emulator:
+      case _PickerKind.bootMode:
         return theme.pickerEmulatorChipSelectedStyle;
       case _PickerKind.device:
         return theme.pickerDeviceChipSelectedStyle;
@@ -1505,8 +1524,16 @@ final class FrunModel extends TeaModel {
     if (state.emulatorChoices.isNotEmpty) {
       if (idx < 0 || idx >= state.emulatorChoices.length) return;
       final picked = state.emulatorChoices[idx];
+      state.setBootModePicker(picked.id);
+      return;
+    }
+    if (state.bootModeChoices.isNotEmpty) {
+      if (idx < 0 || idx >= state.bootModeChoices.length) return;
+      final pendingId = state.pendingEmulatorId;
+      if (pendingId == null) return;
+      final coldBoot = idx == 1;
       state.clearPickers();
-      _input.setText('emulators launch ${picked.id}');
+      _input.setText('emulators launch $pendingId${coldBoot ? ' cold' : ''}');
       _submit();
       return;
     }
@@ -1537,6 +1564,15 @@ final class FrunModel extends TeaModel {
         moreHintFormat: 'emulators launch <id>',
       );
     }
+    if (state.bootModeChoices.isNotEmpty) {
+      final id = state.pendingEmulatorId ?? '';
+      return _PickerSpec(
+        kind: _PickerKind.bootMode,
+        itemCount: state.bootModeChoices.length,
+        header: ' Boot mode for $id — click or press esc to close',
+        moreHintFormat: 'emulators launch <id> [cold]',
+      );
+    }
     if (state.deviceChoices.isNotEmpty) {
       return _PickerSpec(
         kind: _PickerKind.device,
@@ -1553,6 +1589,7 @@ final class FrunModel extends TeaModel {
       case _PickerKind.launch:
         return theme.pickerChipStyle;
       case _PickerKind.emulator:
+      case _PickerKind.bootMode:
         return theme.pickerEmulatorChipStyle;
       case _PickerKind.device:
         return theme.pickerDeviceChipStyle;
@@ -1565,6 +1602,8 @@ final class FrunModel extends TeaModel {
         return PickLaunchEntryMsg(index);
       case _PickerKind.emulator:
         return PickEmulatorMsg(index);
+      case _PickerKind.bootMode:
+        return PickBootModeMsg(index);
       case _PickerKind.device:
         return PickDeviceMsg(index);
     }
@@ -1576,6 +1615,8 @@ final class FrunModel extends TeaModel {
         return const CloseLaunchPickerMsg();
       case _PickerKind.emulator:
         return const CloseEmulatorPickerMsg();
+      case _PickerKind.bootMode:
+        return const CloseBootModePickerMsg();
       case _PickerKind.device:
         return const CloseDevicePickerMsg();
     }
@@ -1598,6 +1639,10 @@ final class FrunModel extends TeaModel {
           if ((e.platformType ?? '').isNotEmpty) e.platformType!,
         ];
         return ' [$index] ${e.name}  ${tags.join(' · ')} ';
+      case _PickerKind.bootMode:
+        return index == 0
+            ? ' [0] Quick Boot  (resume saved state) '
+            : ' [1] Cold Boot   (fresh start) ';
       case _PickerKind.device:
         final d = state.deviceChoices[index];
         final tags = <String>[
@@ -1748,6 +1793,7 @@ final class FrunModel extends TeaModel {
     _ConfigEditorEntry('hot_reload_on_save', ['true', 'false']),
     _ConfigEditorEntry('default_device_id', []),
     _ConfigEditorEntry('open_devtools_on_launch', ['ask', 'always', 'never']),
+    _ConfigEditorEntry('emulator_boot', ['quick', 'cold']),
   ];
 
   String _configEditorEntryValue(FrunConfig c, String key) {
@@ -1764,6 +1810,8 @@ final class FrunModel extends TeaModel {
         return c.defaultDeviceId ?? '(none)';
       case 'open_devtools_on_launch':
         return c.openDevtoolsOnLaunch.id;
+      case 'emulator_boot':
+        return c.emulatorBoot.id;
       default:
         return '';
     }
@@ -1789,6 +1837,10 @@ final class FrunModel extends TeaModel {
         const vals = FrunDevToolsAutoOpen.values;
         final idx = (vals.indexOf(c.openDevtoolsOnLaunch) + delta + vals.length) % vals.length;
         return c.copyWith(openDevtoolsOnLaunch: vals[idx]);
+      case 'emulator_boot':
+        const vals = FrunEmulatorBoot.values;
+        final idx = (vals.indexOf(c.emulatorBoot) + delta + vals.length) % vals.length;
+        return c.copyWith(emulatorBoot: vals[idx]);
       default:
         return c;
     }
@@ -2134,7 +2186,7 @@ class _PickerChip {
   final String text;
 }
 
-enum _PickerKind { launch, emulator, device }
+enum _PickerKind { launch, emulator, bootMode, device }
 
 class _PickerSpec {
   const _PickerSpec({

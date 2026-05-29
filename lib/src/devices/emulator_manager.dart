@@ -19,6 +19,7 @@ class EmulatorManager {
   /// the daemon reports it. Times out after [timeout].
   Future<FlutterDevice?> launchAndAwaitDevice(
     String id, {
+    bool coldBoot = false,
     Duration timeout = const Duration(seconds: 90),
   }) async {
     final completer = Completer<FlutterDevice?>();
@@ -30,7 +31,7 @@ class EmulatorManager {
       }
     });
     try {
-      await _daemon.launchEmulator(id);
+      await _daemon.launchEmulator(id, coldBoot: coldBoot);
     } catch (e) {
       if (!completer.isCompleted) completer.completeError(e);
     }

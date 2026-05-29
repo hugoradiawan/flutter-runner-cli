@@ -70,6 +70,23 @@ enum FrunThemeMode {
   String get id => name;
 }
 
+enum FrunEmulatorBoot {
+  quick,
+  cold;
+
+  static FrunEmulatorBoot fromString(String? value) {
+    switch (value) {
+      case 'cold':
+        return FrunEmulatorBoot.cold;
+      case 'quick':
+      default:
+        return FrunEmulatorBoot.quick;
+    }
+  }
+
+  String get id => name;
+}
+
 class FrunConfig {
   FrunConfig({
     this.ide = FrunIde.vscode,
@@ -78,6 +95,7 @@ class FrunConfig {
     this.hotReloadOnSave = true,
     this.defaultDeviceId,
     this.openDevtoolsOnLaunch = FrunDevToolsAutoOpen.ask,
+    this.emulatorBoot = FrunEmulatorBoot.quick,
   });
 
   FrunIde ide;
@@ -86,6 +104,7 @@ class FrunConfig {
   bool hotReloadOnSave;
   String? defaultDeviceId;
   FrunDevToolsAutoOpen openDevtoolsOnLaunch;
+  FrunEmulatorBoot emulatorBoot;
 
   factory FrunConfig.fromMap(Map<dynamic, dynamic> map) {
     return FrunConfig(
@@ -97,6 +116,7 @@ class FrunConfig {
       openDevtoolsOnLaunch: FrunDevToolsAutoOpen.fromString(
         map['open_devtools_on_launch'] as String?,
       ),
+      emulatorBoot: FrunEmulatorBoot.fromString(map['emulator_boot'] as String?),
     );
   }
 
@@ -107,6 +127,7 @@ class FrunConfig {
     'hot_reload_on_save': hotReloadOnSave,
     'default_device_id': defaultDeviceId,
     'open_devtools_on_launch': openDevtoolsOnLaunch.id,
+    'emulator_boot': emulatorBoot.id,
   };
 
   FrunConfig copyWith({
@@ -117,6 +138,7 @@ class FrunConfig {
     String? defaultDeviceId,
     bool clearDefaultDeviceId = false,
     FrunDevToolsAutoOpen? openDevtoolsOnLaunch,
+    FrunEmulatorBoot? emulatorBoot,
   }) {
     return FrunConfig(
       ide: ide ?? this.ide,
@@ -127,6 +149,7 @@ class FrunConfig {
           ? null
           : (defaultDeviceId ?? this.defaultDeviceId),
       openDevtoolsOnLaunch: openDevtoolsOnLaunch ?? this.openDevtoolsOnLaunch,
+      emulatorBoot: emulatorBoot ?? this.emulatorBoot,
     );
   }
 }

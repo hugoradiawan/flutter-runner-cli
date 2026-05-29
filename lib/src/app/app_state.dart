@@ -77,14 +77,23 @@ class AppState {
   /// Active `/devices` picker.
   List<FlutterDevice> deviceChoices = const <FlutterDevice>[];
 
+  /// Emulator id waiting for boot mode selection.
+  String? pendingEmulatorId;
+
+  /// Boot mode picker choices — `['quick', 'cold']` when active, else empty.
+  List<String> bootModeChoices = const <String>[];
+
   bool get hasActivePicker =>
       launchChoices.isNotEmpty ||
       emulatorChoices.isNotEmpty ||
+      bootModeChoices.isNotEmpty ||
       deviceChoices.isNotEmpty;
 
   void clearPickers() {
     launchChoices = const <LaunchEntry>[];
     emulatorChoices = const <FlutterEmulator>[];
+    bootModeChoices = const <String>[];
+    pendingEmulatorId = null;
     deviceChoices = const <FlutterDevice>[];
   }
 
@@ -96,6 +105,12 @@ class AppState {
   void setEmulatorPicker(List<FlutterEmulator> emulators) {
     clearPickers();
     emulatorChoices = emulators;
+  }
+
+  void setBootModePicker(String emulatorId) {
+    clearPickers();
+    pendingEmulatorId = emulatorId;
+    bootModeChoices = const <String>['quick', 'cold'];
   }
 
   void setDevicePicker(List<FlutterDevice> devices) {
