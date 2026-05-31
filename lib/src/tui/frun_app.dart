@@ -1174,7 +1174,7 @@ final class FrunModel extends TeaModel {
       return View(
         content: canvas.render(),
         altScreen: true,
-        mouseMode: MouseMode.allMotion,
+        mouseMode: MouseMode.cellMotion,
       );
     }
 
@@ -1226,7 +1226,7 @@ final class FrunModel extends TeaModel {
     return View(
       content: canvas.render(),
       altScreen: true,
-      mouseMode: MouseMode.allMotion,
+      mouseMode: MouseMode.cellMotion,
       cursor: inputCursor,
     );
   }

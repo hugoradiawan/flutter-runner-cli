@@ -81,7 +81,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     programOptions: [
       withAltScreen(),
       withHideCursor(),
-      withMouseAllMotion(),
+      withMouseCellMotion(),
       withTickInterval(const Duration(milliseconds: 250)),
     ],
   );
