@@ -1,6 +1,7 @@
 enum FrunIde {
   vscode,
-  zed;
+  zed,
+  neovim;
 
   static FrunIde fromString(String? value) {
     switch (value) {
@@ -8,6 +9,8 @@ enum FrunIde {
         return FrunIde.vscode;
       case 'zed':
         return FrunIde.zed;
+      case 'neovim':
+        return FrunIde.neovim;
       default:
         return FrunIde.vscode;
     }
@@ -96,6 +99,7 @@ class FrunConfig {
     this.defaultDeviceId,
     this.openDevtoolsOnLaunch = FrunDevToolsAutoOpen.ask,
     this.emulatorBoot = FrunEmulatorBoot.quick,
+    this.nvimServer,
   });
 
   FrunIde ide;
@@ -105,6 +109,11 @@ class FrunConfig {
   String? defaultDeviceId;
   FrunDevToolsAutoOpen openDevtoolsOnLaunch;
   FrunEmulatorBoot emulatorBoot;
+
+  /// Explicit Neovim/Neovide RPC server address (socket or named pipe) for
+  /// `ide: neovim` jump-to-source. Null falls back to `$NVIM` from the
+  /// environment (set when frun runs inside an nvim `:terminal`).
+  String? nvimServer;
 
   factory FrunConfig.fromMap(Map<dynamic, dynamic> map) {
     return FrunConfig(
@@ -117,6 +126,7 @@ class FrunConfig {
         map['open_devtools_on_launch'] as String?,
       ),
       emulatorBoot: FrunEmulatorBoot.fromString(map['emulator_boot'] as String?),
+      nvimServer: map['nvim_server'] as String?,
     );
   }
 
@@ -128,6 +138,7 @@ class FrunConfig {
     'default_device_id': defaultDeviceId,
     'open_devtools_on_launch': openDevtoolsOnLaunch.id,
     'emulator_boot': emulatorBoot.id,
+    'nvim_server': nvimServer,
   };
 
   FrunConfig copyWith({
@@ -139,6 +150,8 @@ class FrunConfig {
     bool clearDefaultDeviceId = false,
     FrunDevToolsAutoOpen? openDevtoolsOnLaunch,
     FrunEmulatorBoot? emulatorBoot,
+    String? nvimServer,
+    bool clearNvimServer = false,
   }) {
     return FrunConfig(
       ide: ide ?? this.ide,
@@ -150,6 +163,7 @@ class FrunConfig {
           : (defaultDeviceId ?? this.defaultDeviceId),
       openDevtoolsOnLaunch: openDevtoolsOnLaunch ?? this.openDevtoolsOnLaunch,
       emulatorBoot: emulatorBoot ?? this.emulatorBoot,
+      nvimServer: clearNvimServer ? null : (nvimServer ?? this.nvimServer),
     );
   }
 }

@@ -53,6 +53,10 @@ class ConfigCommand extends Command {
     switch (key) {
       case 'ide':
         next = current.copyWith(ide: FrunIde.fromString(value));
+      case 'nvim_server':
+        next = value.isEmpty || value == 'null'
+            ? current.copyWith(clearNvimServer: true)
+            : current.copyWith(nvimServer: value);
       case 'editor_mode':
         next = current.copyWith(editorMode: FrunEditorMode.fromString(value));
       case 'theme':

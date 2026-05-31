@@ -127,12 +127,13 @@ Global YAML at `~/.config/frun/config.yaml` (or `%APPDATA%\frun\config.yaml`
 on Windows). Defaults:
 
 ```yaml
-ide: vscode                    # vscode | zed
+ide: vscode                    # vscode | zed | neovim
 editor_mode: normal            # normal | vim
 theme: dark                    # dark | light
 hot_reload_on_save: true
 default_device_id: null
 open_devtools_on_launch: ask   # always | never | ask
+nvim_server: null              # nvim/Neovide RPC addr (for ide: neovim); null → $NVIM
 ```
 
 Edit live with `/config set <key> <value>`. `/config path` prints the file
@@ -144,9 +145,35 @@ location; `/config show` dumps the current values.
 |-------|-------------------|
 | vscode | `code -g file:line:col` (Windows: `code.cmd`) |
 | zed    | `zed file:line:col` |
+| neovim | `nvim --server <addr> --remote-send …` into the running nvim/Neovide |
 
-The CLI must be on your `PATH`. For VS Code: open the Command Palette and
-run "Shell Command: Install 'code' command in PATH" once.
+For vscode/zed the CLI must be on your `PATH`. For VS Code: open the Command
+Palette and run "Shell Command: Install 'code' command in PATH" once.
+
+### Neovim / Neovide
+
+`ide: neovim` sends the jump to an **already-running** Neovim (or Neovide)
+instead of spawning a new editor. frun finds the instance's RPC server address
+this way, in order:
+
+1. The `nvim_server` config key, if set.
+2. The `$NVIM` env var — automatically set when frun runs inside an nvim or
+   Neovide `:terminal`. **This is the zero-config path: just run frun from a
+   `:terminal` and set `ide: neovim`.**
+3. The legacy `$NVIM_LISTEN_ADDRESS`.
+
+For a **standalone Neovide window** (frun in a separate OS terminal), start
+Neovide listening and point frun at it:
+
+```sh
+neovide -- --listen 127.0.0.1:6789
+# then, in frun:
+# /config set nvim_server 127.0.0.1:6789
+# /config set ide neovim
+```
+
+`nvim` must be on your `PATH`. If no server can be found, frun prints a hint
+instead of opening anything.
 
 ## Vim mode
 

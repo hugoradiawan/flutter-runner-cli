@@ -1823,7 +1823,7 @@ final class FrunModel extends TeaModel {
   }
 
   static const _configEditorEntries = <_ConfigEditorEntry>[
-    _ConfigEditorEntry('ide', ['vscode', 'zed'], label: 'IDE'),
+    _ConfigEditorEntry('ide', ['vscode', 'zed', 'neovim'], label: 'IDE'),
     _ConfigEditorEntry('editor_mode', ['normal', 'vim'], label: 'Editor mode'),
     _ConfigEditorEntry('theme', ['dark', 'light'], label: 'Theme'),
     _ConfigEditorEntry('hot_reload_on_save', ['true', 'false'], label: 'Hot reload on save'),

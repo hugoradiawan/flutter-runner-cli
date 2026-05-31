@@ -19,6 +19,27 @@ void main() {
       expect(spec.args, ['/abs/lib/main.dart:12:4']);
       expect(spec.runInShell, isFalse);
     });
+
+    test('builds remote-send for Neovim', () {
+      final spec = IdeLauncher.commandFor(
+        FrunIde.neovim,
+        loc,
+        nvimServer: r'\\.\pipe\nvim.1234.0',
+      );
+      expect(spec.executable, 'nvim');
+      expect(spec.args[0], '--server');
+      expect(spec.args[1], r'\\.\pipe\nvim.1234.0');
+      expect(spec.args[2], '--remote-send');
+      expect(spec.args[3], contains('cursor(12,4)'));
+      expect(spec.args[3], contains(':edit /abs/lib/main.dart'));
+      expect(spec.runInShell, isFalse);
+    });
+  });
+
+  group('FrunIde.fromString', () {
+    test('parses neovim', () {
+      expect(FrunIde.fromString('neovim'), FrunIde.neovim);
+    });
   });
 
   group('SourceLocation.fromVmServiceUri', () {
