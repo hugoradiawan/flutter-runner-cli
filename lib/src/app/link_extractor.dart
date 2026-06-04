@@ -27,12 +27,15 @@ class TranscriptLink {
 class LinkExtractor {
   // Match either:
   //   package:foo/bar/baz.dart:12:34
+  //   C:/Users/me/app/lib/x.dart:12:34   (Windows absolute, drive letter)
   //   lib/src/whatever.dart:12
   //   ./some/relative/path.dart:5:7
   //   /abs/path.dart:42
-  // We deliberately stay narrow: only ".dart" files.
+  // We deliberately stay narrow: only ".dart" files. The Windows-drive
+  // alternative comes before the generic one so the `C:` drive prefix is kept
+  // rather than the match starting after the colon.
   static final RegExp _re = RegExp(
-    r'(package:[a-zA-Z_][\w.]*\/[\w\-./]+\.dart|[\w./\-]+\.dart):(\d+)(?::(\d+))?',
+    r'(package:[a-zA-Z_][\w.]*\/[\w\-./]+\.dart|[A-Za-z]:[\w\-./\\]+\.dart|[\w./\-]+\.dart):(\d+)(?::(\d+))?',
   );
 
   static List<TranscriptLink> extract(String line) {

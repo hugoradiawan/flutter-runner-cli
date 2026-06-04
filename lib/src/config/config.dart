@@ -98,6 +98,7 @@ class FrunConfig {
     this.hotReloadOnSave = true,
     this.openDevtoolsOnLaunch = FrunDevToolsAutoOpen.ask,
     this.emulatorBoot = FrunEmulatorBoot.quick,
+    this.verboseErrors = false,
     this.nvimServer,
   });
 
@@ -107,6 +108,11 @@ class FrunConfig {
   bool hotReloadOnSave;
   FrunDevToolsAutoOpen openDevtoolsOnLaunch;
   FrunEmulatorBoot emulatorBoot;
+
+  /// When true, Flutter.Error events dump the full raw DiagnosticsNode payload
+  /// (pretty JSON) instead of the compact summary + trimmed stack. Off by
+  /// default; flip with `/config set verbose_errors true`.
+  bool verboseErrors;
 
   /// Explicit Neovim/Neovide RPC server address (socket or named pipe) for
   /// `ide: neovim` jump-to-source. Null falls back to `$NVIM` from the
@@ -123,6 +129,7 @@ class FrunConfig {
         map['open_devtools_on_launch'] as String?,
       ),
       emulatorBoot: FrunEmulatorBoot.fromString(map['emulator_boot'] as String?),
+      verboseErrors: (map['verbose_errors'] as bool?) ?? false,
       nvimServer: map['nvim_server'] as String?,
     );
   }
@@ -134,6 +141,7 @@ class FrunConfig {
     'hot_reload_on_save': hotReloadOnSave,
     'open_devtools_on_launch': openDevtoolsOnLaunch.id,
     'emulator_boot': emulatorBoot.id,
+    'verbose_errors': verboseErrors,
     'nvim_server': nvimServer,
   };
 
@@ -144,6 +152,7 @@ class FrunConfig {
     bool? hotReloadOnSave,
     FrunDevToolsAutoOpen? openDevtoolsOnLaunch,
     FrunEmulatorBoot? emulatorBoot,
+    bool? verboseErrors,
     String? nvimServer,
     bool clearNvimServer = false,
   }) {
@@ -154,6 +163,7 @@ class FrunConfig {
       hotReloadOnSave: hotReloadOnSave ?? this.hotReloadOnSave,
       openDevtoolsOnLaunch: openDevtoolsOnLaunch ?? this.openDevtoolsOnLaunch,
       emulatorBoot: emulatorBoot ?? this.emulatorBoot,
+      verboseErrors: verboseErrors ?? this.verboseErrors,
       nvimServer: clearNvimServer ? null : (nvimServer ?? this.nvimServer),
     );
   }

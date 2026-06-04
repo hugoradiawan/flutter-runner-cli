@@ -63,6 +63,8 @@ class ConfigCommand extends Command {
         next = current.copyWith(theme: FrunThemeMode.fromString(value));
       case 'hot_reload_on_save':
         next = current.copyWith(hotReloadOnSave: _parseBool(value));
+      case 'verbose_errors':
+        next = current.copyWith(verboseErrors: _parseBool(value));
       case 'open_devtools_on_launch':
         next = current.copyWith(
           openDevtoolsOnLaunch: FrunDevToolsAutoOpen.fromString(value),

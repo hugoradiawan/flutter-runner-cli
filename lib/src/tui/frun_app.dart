@@ -979,12 +979,16 @@ final class FrunModel extends TeaModel {
     _mouseDragged = false;
     _mousePriorVimMode = null;
     if (!dragged) {
-      // Plain click — clear any selection and exit cursor mode if not previously active.
+      // Plain click — if it landed on a file:line reference, jump to source.
+      final pos = _mouseToPos(mouse);
+      final openedLink = pos != null && _openLinkAtPos(pos);
+      // Clear any selection and exit cursor mode if not previously active.
       _tc.selection = null;
       if (!priorTcActive && _tc.active) {
         _tc.exit();
         _vimState.mode = priorMode;
       }
+      if (openedLink) unawaited(_openFocusedLink());
       return;
     }
     // Drag complete — keep selection highlighted so user can adjust it, then
@@ -1053,6 +1057,25 @@ final class FrunModel extends TeaModel {
     }
   }
 
+  /// Hit-tests a clicked transcript cell against the visible links. [pos] is a
+  /// (display-row, display-col) from [_mouseToPos]; it is mapped back to a
+  /// logical line offset via the row's [startCol] so links that wrap across
+  /// rows are still hittable. Sets [_focusedLinkIndex] and returns true on hit.
+  bool _openLinkAtPos(Pos pos) {
+    if (pos.row < 0 || pos.row >= _lastDisplayRows.length) return false;
+    final dr = _lastDisplayRows[pos.row];
+    final logicalCol = dr.startCol + pos.col;
+    for (var i = 0; i < _visibleLinks.length; i++) {
+      final vl = _visibleLinks[i];
+      if (vl.transcriptLineIndex != dr.lineIndex) continue;
+      if (logicalCol >= vl.link.start && logicalCol < vl.link.end) {
+        _focusedLinkIndex = i;
+        return true;
+      }
+    }
+    return false;
+  }
+
   Future<void> _openFocusedLink() async {
     if (_focusedLinkIndex < 0 || _focusedLinkIndex >= _visibleLinks.length) {
       return;
@@ -1074,6 +1097,11 @@ final class FrunModel extends TeaModel {
   }
 
   String _toFileUri(String pathLike) {
+    // Windows absolute path (`C:\…` or `C:/…`) — encode as a proper file URI so
+    // the drive letter survives. `/abs` and relative paths keep old behaviour.
+    if (RegExp(r'^[A-Za-z]:[\\/]').hasMatch(pathLike)) {
+      return Uri.file(pathLike, windows: true).toString();
+    }
     if (pathLike.startsWith('/')) return 'file://$pathLike';
     return 'file://${state.project.root}/$pathLike';
   }
@@ -1787,6 +1815,7 @@ final class FrunModel extends TeaModel {
     _ConfigEditorEntry('hot_reload_on_save', ['true', 'false'], label: 'Hot reload on save'),
     _ConfigEditorEntry('open_devtools_on_launch', ['ask', 'always', 'never'], label: 'Open devtools on launch'),
     _ConfigEditorEntry('emulator_boot', ['quick', 'cold'], label: 'Emulator boot'),
+    _ConfigEditorEntry('verbose_errors', ['false', 'true'], label: 'Verbose error logs'),
   ];
 
   String _configEditorEntryValue(FrunConfig c, String key) {
@@ -1803,6 +1832,8 @@ final class FrunModel extends TeaModel {
         return c.openDevtoolsOnLaunch.id;
       case 'emulator_boot':
         return c.emulatorBoot.id;
+      case 'verbose_errors':
+        return c.verboseErrors.toString();
       default:
         return '';
     }
@@ -1832,6 +1863,8 @@ final class FrunModel extends TeaModel {
         const vals = FrunEmulatorBoot.values;
         final idx = (vals.indexOf(c.emulatorBoot) + delta + vals.length) % vals.length;
         return c.copyWith(emulatorBoot: vals[idx]);
+      case 'verbose_errors':
+        return c.copyWith(verboseErrors: !c.verboseErrors);
       default:
         return c;
     }

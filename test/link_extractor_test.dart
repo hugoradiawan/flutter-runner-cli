@@ -34,6 +34,16 @@ void main() {
     expect(links, hasLength(3));
   });
 
+  test('keeps the Windows drive letter on absolute paths', () {
+    final links = LinkExtractor.extract(
+      'widget: C:/Users/me/app/lib/src/chat.page.dart:148:12 built',
+    );
+    expect(links, hasLength(1));
+    expect(links.single.uri, 'C:/Users/me/app/lib/src/chat.page.dart');
+    expect(links.single.line, 148);
+    expect(links.single.column, 12);
+  });
+
   test('ignores non-dart references', () {
     final links = LinkExtractor.extract('see README.md:10 for details');
     expect(links, isEmpty);
