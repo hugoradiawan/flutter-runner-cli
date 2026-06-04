@@ -39,10 +39,6 @@ class AppState {
     _config = next;
   }
 
-  /// Selected device id (set by `/devices` or remembered from config). Wired
-  /// in M3; lives here so M2 can render a status placeholder.
-  String? selectedDeviceId;
-
   /// Once the daemon has started, services are populated. Until then the
   /// status panel and `/devices` command surface a "starting" message.
   FlutterDaemon? daemon;
@@ -74,8 +70,12 @@ class AppState {
   /// picker is open at a time; opening one clears the others.
   List<FlutterEmulator> emulatorChoices = const <FlutterEmulator>[];
 
-  /// Active `/devices` picker.
-  List<FlutterDevice> deviceChoices = const <FlutterDevice>[];
+  /// Launch entry awaiting a run-target choice. Set when the user picks an
+  /// entry in the `/run` launch picker; cleared once a target is chosen.
+  LaunchEntry? pendingRunEntry;
+
+  /// Active `/run` target picker — connected devices plus offline emulators.
+  List<RunTarget> runTargetChoices = const <RunTarget>[];
 
   /// Emulator id waiting for boot mode selection.
   String? pendingEmulatorId;
@@ -87,14 +87,14 @@ class AppState {
       launchChoices.isNotEmpty ||
       emulatorChoices.isNotEmpty ||
       bootModeChoices.isNotEmpty ||
-      deviceChoices.isNotEmpty;
+      runTargetChoices.isNotEmpty;
 
   void clearPickers() {
     launchChoices = const <LaunchEntry>[];
     emulatorChoices = const <FlutterEmulator>[];
     bootModeChoices = const <String>[];
     pendingEmulatorId = null;
-    deviceChoices = const <FlutterDevice>[];
+    runTargetChoices = const <RunTarget>[];
   }
 
   void setLaunchPicker(List<LaunchEntry> entries) {
@@ -113,8 +113,43 @@ class AppState {
     bootModeChoices = const <String>['quick', 'cold'];
   }
 
-  void setDevicePicker(List<FlutterDevice> devices) {
+  void setRunTargetPicker(List<RunTarget> targets) {
     clearPickers();
-    deviceChoices = devices;
+    runTargetChoices = targets;
   }
+}
+
+/// A target the user can pick from the `/run` picker: a connected device, or an
+/// offline emulator that must be booted first ([needsBoot] = true).
+class RunTarget {
+  const RunTarget({
+    required this.id,
+    required this.name,
+    required this.platform,
+    required this.needsBoot,
+  });
+
+  /// Device id (connected target) or emulator id (offline target to boot).
+  final String id;
+  final String name;
+
+  /// Platform string for a device, or platformType for an emulator. May be ''.
+  final String platform;
+
+  /// `true` when [id] is an offline emulator that must be launched before run.
+  final bool needsBoot;
+
+  factory RunTarget.device(FlutterDevice d) => RunTarget(
+    id: d.id,
+    name: d.name,
+    platform: d.platform,
+    needsBoot: false,
+  );
+
+  factory RunTarget.emulator(FlutterEmulator e) => RunTarget(
+    id: e.id,
+    name: e.name,
+    platform: e.platformType ?? '',
+    needsBoot: true,
+  );
 }

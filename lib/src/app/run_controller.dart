@@ -3,8 +3,10 @@ import 'dart:convert';
 
 import 'package:vm_service/vm_service.dart' as vm;
 
+import '../config/config.dart';
 import '../daemon/app_session.dart';
 import '../daemon/daemon_messages.dart';
+import '../devices/emulator_manager.dart';
 import '../ide/frun_notifier.dart';
 import '../project/launch_config.dart';
 import '../watcher/dart_file_watcher.dart';
@@ -45,22 +47,80 @@ class RunController {
   /// Legacy "last entry" getter, kept for the status panel.
   LaunchEntry? get lastEntry => activeTab?.entry;
 
-  /// Resolve a launch entry's device and start (or focus) it. Mirrors the
-  /// device-resolution warnings the `/run` slash-command used to print, so
-  /// callers — slash-command, TUI picker, future scripted runs — all behave
-  /// identically.
-  Future<RunTab?> launchEntry(LaunchEntry entry) async {
-    final deviceId = entry.deviceId ?? state.selectedDeviceId;
-    if (deviceId == null) {
-      state.visibleTranscript.warn(
-        'No device for this entry. Use /devices first, or add `"deviceId": "<id>"` to the launch config.',
-      );
-      return null;
+  /// Stash [entry] as the pending run and open the run-target picker. The
+  /// picker lists connected devices (physical, running emulators, desktop and
+  /// web platforms) plus offline emulators that can be booted on demand. The
+  /// TUI renders it; picking a target calls [launchOnTarget].
+  Future<void> openRunTargetPicker(LaunchEntry entry) async {
+    state.pendingRunEntry = entry;
+
+    final devices = state.deviceManager?.devices ?? const [];
+    final connectedAvdIds = devices
+        .where((d) => d.emulatorId != null)
+        .map((d) => d.emulatorId!)
+        .toSet();
+
+    var emulators = const <FlutterEmulator>[];
+    final daemon = state.daemon;
+    if (daemon != null) {
+      try {
+        emulators = await EmulatorManager(daemon)
+            .list()
+            .timeout(const Duration(seconds: 10));
+      } catch (_) {}
     }
-    if (entry.deviceId != null && entry.deviceId != state.selectedDeviceId) {
-      state.visibleTranscript.system(
-        'Using deviceId "${entry.deviceId}" from launch config.',
+
+    final targets = <RunTarget>[
+      for (final d in devices) RunTarget.device(d),
+      for (final e in emulators)
+        if (!connectedAvdIds.contains(e.id)) RunTarget.emulator(e),
+    ];
+
+    if (targets.isEmpty) {
+      state.pendingRunEntry = null;
+      state.visibleTranscript.warn(
+        'No devices or emulators available. Connect a device or run /emulators create.',
       );
+      return;
+    }
+    state.setRunTargetPicker(targets);
+  }
+
+  /// Launch the pending run entry on [target]. Offline emulators are booted
+  /// first; once a device id is in hand, defers to [startOrFocus].
+  Future<RunTab?> launchOnTarget(RunTarget target) async {
+    final entry = state.pendingRunEntry;
+    state.pendingRunEntry = null;
+    state.clearPickers();
+    if (entry == null) return null;
+
+    String deviceId;
+    if (target.needsBoot) {
+      final daemon = state.daemon;
+      if (daemon == null) {
+        state.visibleTranscript.warn(
+          'Flutter daemon is still starting. Try /run again shortly.',
+        );
+        return null;
+      }
+      final coldBoot = state.config.emulatorBoot == FrunEmulatorBoot.cold;
+      state.visibleTranscript.system('Launching emulator ${target.id}…');
+      try {
+        final device = await EmulatorManager(daemon)
+            .launchAndAwaitDevice(target.id, coldBoot: coldBoot);
+        if (device == null) {
+          state.visibleTranscript.warn(
+            'Emulator ${target.id} launched but no device appeared within the timeout.',
+          );
+          return null;
+        }
+        deviceId = device.id;
+      } catch (e) {
+        state.visibleTranscript.error('Failed to launch emulator ${target.id}: $e');
+        return null;
+      }
+    } else {
+      deviceId = target.id;
     }
     return startOrFocus(entry, deviceId: deviceId);
   }

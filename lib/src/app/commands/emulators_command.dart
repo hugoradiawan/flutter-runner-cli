@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import '../../config/config.dart';
-import '../../config/config_store.dart';
 import '../../devices/emulator_manager.dart';
 import '../../ide/frun_notifier.dart';
 import '../app_state.dart';
@@ -14,9 +13,7 @@ import 'command.dart';
 ///   /emulators launch `<id>`    → launch an emulator and auto-select it
 ///   /emulators create [name]    → create a new Android emulator
 class EmulatorsCommand extends Command {
-  EmulatorsCommand({required this.configStore});
-
-  final ConfigStore configStore;
+  EmulatorsCommand();
 
   @override
   String get name => 'emulators';
@@ -145,13 +142,9 @@ class EmulatorsCommand extends Command {
         );
         return;
       }
-      state.selectedDeviceId = device.id;
-      final next = state.config.copyWith(defaultDeviceId: device.id);
-      state.setConfig(next);
-      configStore.save(next);
       state.notifier.notify(FrunNotifEvent.emulatorReady, detail: 'Emulator ready: ${device.name}');
       state.visibleTranscript.success(
-        'Emulator ready: ${device.name} (${device.id}). Selected.',
+        'Emulator ready: ${device.name} (${device.id}).',
       );
     } catch (e) {
       state.visibleTranscript.error('Failed to launch emulator $id: $e');

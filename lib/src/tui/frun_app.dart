@@ -13,7 +13,6 @@ import '../app/transcript.dart';
 import '../config/config.dart';
 import '../config/config_store.dart';
 import '../config/history_store.dart';
-import '../devices/emulator_manager.dart';
 import '../ide/source_location.dart';
 import '../version.dart';
 import 'clipboard.dart';
@@ -113,13 +112,13 @@ final class CloseBootModePickerMsg extends Msg {
   const CloseBootModePickerMsg();
 }
 
-final class PickDeviceMsg extends Msg {
-  const PickDeviceMsg(this.index);
+final class PickRunTargetMsg extends Msg {
+  const PickRunTargetMsg(this.index);
   final int index;
 }
 
-final class CloseDevicePickerMsg extends Msg {
-  const CloseDevicePickerMsg();
+final class CloseRunTargetPickerMsg extends Msg {
+  const CloseRunTargetPickerMsg();
 }
 
 final class _CycleTabsForwardMsg extends Msg {
@@ -161,7 +160,6 @@ final class FrunModel extends TeaModel {
   bool _configEditorActive = false;
   int _configEditorRow = 0;
   FrunConfig? _configDraft;
-  List<String> _cachedEmulatorIds = [];
   final HistoryStore _historyStore = HistoryStore();
   late final TranscriptCursor _tc;
   final HitRegions _hits = HitRegions();
@@ -230,7 +228,6 @@ final class FrunModel extends TeaModel {
       _configEditorActive = true;
       _configEditorRow = 0;
       _configDraft = state.config;
-      _fetchEmulatorIds();
     }
 
     if (_input.editorMode != state.config.editorMode) {
@@ -325,7 +322,7 @@ final class FrunModel extends TeaModel {
       if (msg.index >= 0 && msg.index < entries.length) {
         final picked = entries[msg.index];
         state.clearPickers();
-        unawaited(state.runController.launchEntry(picked));
+        unawaited(state.runController.openRunTargetPicker(picked));
       }
     } else if (msg is CloseLaunchPickerMsg) {
       state.clearPickers();
@@ -347,15 +344,13 @@ final class FrunModel extends TeaModel {
       }
     } else if (msg is CloseBootModePickerMsg) {
       state.clearPickers();
-    } else if (msg is PickDeviceMsg) {
-      final devices = state.deviceChoices;
-      if (msg.index >= 0 && msg.index < devices.length) {
-        final picked = devices[msg.index];
-        state.clearPickers();
-        _input.setText('devices select ${picked.id}');
-        _submit();
+    } else if (msg is PickRunTargetMsg) {
+      final targets = state.runTargetChoices;
+      if (msg.index >= 0 && msg.index < targets.length) {
+        unawaited(state.runController.launchOnTarget(targets[msg.index]));
       }
-    } else if (msg is CloseDevicePickerMsg) {
+    } else if (msg is CloseRunTargetPickerMsg) {
+      state.pendingRunEntry = null;
       state.clearPickers();
     } else if (msg is _CycleTabsForwardMsg) {
       if (state.runController.tabs.length >= 2) {
@@ -598,35 +593,8 @@ final class FrunModel extends TeaModel {
 
     if (ke.code == KeyCode.enter) {
       if (_configDraft != null) {
-        final draft = _configDraft!;
-        final deviceId = draft.defaultDeviceId;
-        if (deviceId == null) {
-          state.selectedDeviceId = null;
-          state.setConfig(draft);
-          _configStore.save(draft);
-        } else {
-          final devices = state.deviceManager?.devices ?? const [];
-          final directMatch = state.deviceManager?.byId(deviceId);
-          final avdMatch = devices.where((d) => d.emulatorId == deviceId).firstOrNull;
-          if (avdMatch != null) {
-            // AVD name selected but emulator already running — resolve to runtime device ID.
-            final fixed = draft.copyWith(defaultDeviceId: avdMatch.id);
-            state.selectedDeviceId = avdMatch.id;
-            state.setConfig(fixed);
-            _configStore.save(fixed);
-          } else if (directMatch == null && _cachedEmulatorIds.contains(deviceId)) {
-            // AVD not running — launch it, store runtime device ID once ready.
-            final stripped = draft.copyWith(clearDefaultDeviceId: true);
-            state.setConfig(stripped);
-            _configStore.save(stripped);
-            _launchEmulatorForConfig(deviceId);
-          } else {
-            // Direct device ID (connected or stored from previous session).
-            state.selectedDeviceId = deviceId;
-            state.setConfig(draft);
-            _configStore.save(draft);
-          }
-        }
+        state.setConfig(_configDraft!);
+        _configStore.save(_configDraft!);
       }
       _configEditorActive = false;
       _configDraft = null;
@@ -657,14 +625,8 @@ final class FrunModel extends TeaModel {
     }
     if ((isLeft || isRight) && _configDraft != null) {
       final entry = _configEditorEntries[_configEditorRow];
-      if (entry.values.isNotEmpty || entry.isDynamic) {
+      if (entry.values.isNotEmpty) {
         _configDraft = _cycleConfigValue(_configDraft!, entry.key, isRight ? 1 : -1);
-        if (entry.key == 'default_device_id') {
-          final id = _configDraft!.defaultDeviceId;
-          if (id == null || state.deviceManager?.byId(id) != null) {
-            state.selectedDeviceId = id;
-          }
-        }
       }
       return;
     }
@@ -1488,7 +1450,7 @@ final class FrunModel extends TeaModel {
     final session = state.runController.session;
     final entry = state.runController.lastEntry;
     final rows = <(String, String)>[
-      ('Device', state.selectedDeviceId ?? '(none)'),
+      ('Device', state.runController.activeTab?.deviceId ?? '(none)'),
       ('Launch', entry?.name ?? '—'),
       ('VM service', session?.vmServiceUri ?? '—'),
       ('DevTools', session?.devToolsUri ?? '—'),
@@ -1533,7 +1495,7 @@ final class FrunModel extends TeaModel {
     if (state.launchChoices.isNotEmpty) return state.launchChoices.length;
     if (state.emulatorChoices.isNotEmpty) return state.emulatorChoices.length;
     if (state.bootModeChoices.isNotEmpty) return state.bootModeChoices.length;
-    if (state.deviceChoices.isNotEmpty) return state.deviceChoices.length;
+    if (state.runTargetChoices.isNotEmpty) return state.runTargetChoices.length;
     return 0;
   }
 
@@ -1544,7 +1506,7 @@ final class FrunModel extends TeaModel {
       case _PickerKind.emulator:
       case _PickerKind.bootMode:
         return theme.pickerEmulatorChipSelectedStyle;
-      case _PickerKind.device:
+      case _PickerKind.runTarget:
         return theme.pickerDeviceChipSelectedStyle;
     }
   }
@@ -1554,7 +1516,7 @@ final class FrunModel extends TeaModel {
       if (idx < 0 || idx >= state.launchChoices.length) return;
       final picked = state.launchChoices[idx];
       state.clearPickers();
-      unawaited(state.runController.launchEntry(picked));
+      unawaited(state.runController.openRunTargetPicker(picked));
       return;
     }
     if (state.emulatorChoices.isNotEmpty) {
@@ -1573,12 +1535,9 @@ final class FrunModel extends TeaModel {
       _submit();
       return;
     }
-    if (state.deviceChoices.isNotEmpty) {
-      if (idx < 0 || idx >= state.deviceChoices.length) return;
-      final picked = state.deviceChoices[idx];
-      state.clearPickers();
-      _input.setText('devices select ${picked.id}');
-      _submit();
+    if (state.runTargetChoices.isNotEmpty) {
+      if (idx < 0 || idx >= state.runTargetChoices.length) return;
+      unawaited(state.runController.launchOnTarget(state.runTargetChoices[idx]));
       return;
     }
   }
@@ -1609,12 +1568,12 @@ final class FrunModel extends TeaModel {
         moreHintFormat: 'emulators launch <id> [cold]',
       );
     }
-    if (state.deviceChoices.isNotEmpty) {
+    if (state.runTargetChoices.isNotEmpty) {
       return _PickerSpec(
-        kind: _PickerKind.device,
-        itemCount: state.deviceChoices.length,
-        header: ' Devices: pick to select — click or press esc to close',
-        moreHintFormat: 'devices select <id>',
+        kind: _PickerKind.runTarget,
+        itemCount: state.runTargetChoices.length,
+        header: ' Run on: pick a device/emulator — click or press esc to close',
+        moreHintFormat: 'run <index|name>',
       );
     }
     return null;
@@ -1627,7 +1586,7 @@ final class FrunModel extends TeaModel {
       case _PickerKind.emulator:
       case _PickerKind.bootMode:
         return theme.pickerEmulatorChipStyle;
-      case _PickerKind.device:
+      case _PickerKind.runTarget:
         return theme.pickerDeviceChipStyle;
     }
   }
@@ -1640,8 +1599,8 @@ final class FrunModel extends TeaModel {
         return PickEmulatorMsg(index);
       case _PickerKind.bootMode:
         return PickBootModeMsg(index);
-      case _PickerKind.device:
-        return PickDeviceMsg(index);
+      case _PickerKind.runTarget:
+        return PickRunTargetMsg(index);
     }
   }
 
@@ -1653,8 +1612,8 @@ final class FrunModel extends TeaModel {
         return const CloseEmulatorPickerMsg();
       case _PickerKind.bootMode:
         return const CloseBootModePickerMsg();
-      case _PickerKind.device:
-        return const CloseDevicePickerMsg();
+      case _PickerKind.runTarget:
+        return const CloseRunTargetPickerMsg();
     }
   }
 
@@ -1679,14 +1638,13 @@ final class FrunModel extends TeaModel {
         return index == 0
             ? ' [0] Quick Boot  (resume saved state) '
             : ' [1] Cold Boot   (fresh start) ';
-      case _PickerKind.device:
-        final d = state.deviceChoices[index];
+      case _PickerKind.runTarget:
+        final t = state.runTargetChoices[index];
         final tags = <String>[
-          d.platform,
-          d.emulator ? 'emulator' : 'physical',
+          if (t.platform.isNotEmpty) t.platform,
+          t.needsBoot ? 'emulator (boot)' : 'device',
         ];
-        final selected = d.id == state.selectedDeviceId ? ' ✓' : '';
-        return ' [$index] ${d.name}$selected  ${tags.join(' · ')} ';
+        return ' [$index] ${t.name}  ${tags.join(' · ')} ';
     }
   }
 
@@ -1827,7 +1785,6 @@ final class FrunModel extends TeaModel {
     _ConfigEditorEntry('editor_mode', ['normal', 'vim'], label: 'Editor mode'),
     _ConfigEditorEntry('theme', ['dark', 'light'], label: 'Theme'),
     _ConfigEditorEntry('hot_reload_on_save', ['true', 'false'], label: 'Hot reload on save'),
-    _ConfigEditorEntry('default_device_id', [], label: 'Default device id', isDynamic: true),
     _ConfigEditorEntry('open_devtools_on_launch', ['ask', 'always', 'never'], label: 'Open devtools on launch'),
     _ConfigEditorEntry('emulator_boot', ['quick', 'cold'], label: 'Emulator boot'),
   ];
@@ -1842,8 +1799,6 @@ final class FrunModel extends TeaModel {
         return c.theme.id;
       case 'hot_reload_on_save':
         return c.hotReloadOnSave.toString();
-      case 'default_device_id':
-        return c.defaultDeviceId ?? '(none)';
       case 'open_devtools_on_launch':
         return c.openDevtoolsOnLaunch.id;
       case 'emulator_boot':
@@ -1869,23 +1824,6 @@ final class FrunModel extends TeaModel {
         return c.copyWith(theme: vals[idx]);
       case 'hot_reload_on_save':
         return c.copyWith(hotReloadOnSave: !c.hotReloadOnSave);
-      case 'default_device_id':
-        final devices = state.deviceManager?.devices ?? const [];
-        final deviceIds = devices.map((d) => d.id).toList();
-        final connectedAvdIds = devices
-            .where((d) => d.emulatorId != null)
-            .map((d) => d.emulatorId!)
-            .toSet();
-        final unconnectedAvdIds = _cachedEmulatorIds
-            .where((id) => !connectedAvdIds.contains(id));
-        final ids = ['(none)', ...deviceIds, ...unconnectedAvdIds];
-        final current = c.defaultDeviceId ?? '(none)';
-        final idx = ids.indexOf(current);
-        final newIdx = ((idx == -1 ? 0 : idx) + delta + ids.length) % ids.length;
-        final newId = ids[newIdx];
-        return newId == '(none)'
-            ? c.copyWith(clearDefaultDeviceId: true)
-            : c.copyWith(defaultDeviceId: newId);
       case 'open_devtools_on_launch':
         const vals = FrunDevToolsAutoOpen.values;
         final idx = (vals.indexOf(c.openDevtoolsOnLaunch) + delta + vals.length) % vals.length;
@@ -1896,43 +1834,6 @@ final class FrunModel extends TeaModel {
         return c.copyWith(emulatorBoot: vals[idx]);
       default:
         return c;
-    }
-  }
-
-  Future<void> _fetchEmulatorIds() async {
-    final daemon = state.daemon;
-    if (daemon == null) return;
-    try {
-      final emulators = await EmulatorManager(daemon)
-          .list()
-          .timeout(const Duration(seconds: 10));
-      _cachedEmulatorIds = emulators.map((e) => e.id).toList();
-    } catch (_) {}
-  }
-
-  Future<void> _launchEmulatorForConfig(String emulatorId) async {
-    final daemon = state.daemon;
-    if (daemon == null) return;
-    state.visibleTranscript.system('Launching emulator $emulatorId…');
-    try {
-      final coldBoot = state.config.emulatorBoot == FrunEmulatorBoot.cold;
-      final device = await EmulatorManager(daemon)
-          .launchAndAwaitDevice(emulatorId, coldBoot: coldBoot);
-      if (device == null) {
-        state.visibleTranscript.warn(
-          'Emulator $emulatorId launched but no device appeared within the timeout.',
-        );
-        return;
-      }
-      state.selectedDeviceId = device.id;
-      final next = state.config.copyWith(defaultDeviceId: device.id);
-      state.setConfig(next);
-      _configStore.save(next);
-      state.visibleTranscript.success(
-        'Emulator ready: ${device.name} (${device.id}). Selected.',
-      );
-    } catch (e) {
-      state.visibleTranscript.error('Failed to launch emulator $emulatorId: $e');
     }
   }
 
@@ -1987,7 +1888,7 @@ final class FrunModel extends TeaModel {
       }
 
       if (contentX < width - 1) {
-        if (isSelected && (entry.values.isNotEmpty || entry.isDynamic)) {
+        if (isSelected && entry.values.isNotEmpty) {
           final chip = '◄ $currentVal ►';
           canvas.paint(contentX, rowY, theme.pickerChipSelectedStyle.render(chip));
         } else {
@@ -2252,7 +2153,6 @@ final class FrunModel extends TeaModel {
     final tabCount = state.runController.tabs.length;
     final parts = <String>[
       state.project.name,
-      state.selectedDeviceId ?? '—',
       state.config.ide.id,
       if (tabCount > 0) 'tabs:$tabCount',
     ];
@@ -2276,7 +2176,7 @@ class _PickerChip {
   final String text;
 }
 
-enum _PickerKind { launch, emulator, bootMode, device }
+enum _PickerKind { launch, emulator, bootMode, runTarget }
 
 class _PickerSpec {
   const _PickerSpec({
@@ -2305,11 +2205,10 @@ const activeButtons = <_Button>[
 ];
 
 class _ConfigEditorEntry {
-  const _ConfigEditorEntry(this.key, this.values, {this.label, this.isDynamic = false});
+  const _ConfigEditorEntry(this.key, this.values, {this.label});
   final String key;
   final List<String> values;
   final String? label;
-  final bool isDynamic;
   String get displayLabel => label ?? key;
 }
 

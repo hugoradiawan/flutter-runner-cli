@@ -96,7 +96,6 @@ class FrunConfig {
     this.editorMode = FrunEditorMode.normal,
     this.theme = FrunThemeMode.dark,
     this.hotReloadOnSave = true,
-    this.defaultDeviceId,
     this.openDevtoolsOnLaunch = FrunDevToolsAutoOpen.ask,
     this.emulatorBoot = FrunEmulatorBoot.quick,
     this.nvimServer,
@@ -106,7 +105,6 @@ class FrunConfig {
   FrunEditorMode editorMode;
   FrunThemeMode theme;
   bool hotReloadOnSave;
-  String? defaultDeviceId;
   FrunDevToolsAutoOpen openDevtoolsOnLaunch;
   FrunEmulatorBoot emulatorBoot;
 
@@ -121,7 +119,6 @@ class FrunConfig {
       editorMode: FrunEditorMode.fromString(map['editor_mode'] as String?),
       theme: FrunThemeMode.fromString(map['theme'] as String?),
       hotReloadOnSave: (map['hot_reload_on_save'] as bool?) ?? true,
-      defaultDeviceId: map['default_device_id'] as String?,
       openDevtoolsOnLaunch: FrunDevToolsAutoOpen.fromString(
         map['open_devtools_on_launch'] as String?,
       ),
@@ -135,7 +132,6 @@ class FrunConfig {
     'editor_mode': editorMode.id,
     'theme': theme.id,
     'hot_reload_on_save': hotReloadOnSave,
-    'default_device_id': defaultDeviceId,
     'open_devtools_on_launch': openDevtoolsOnLaunch.id,
     'emulator_boot': emulatorBoot.id,
     'nvim_server': nvimServer,
@@ -146,8 +142,6 @@ class FrunConfig {
     FrunEditorMode? editorMode,
     FrunThemeMode? theme,
     bool? hotReloadOnSave,
-    String? defaultDeviceId,
-    bool clearDefaultDeviceId = false,
     FrunDevToolsAutoOpen? openDevtoolsOnLaunch,
     FrunEmulatorBoot? emulatorBoot,
     String? nvimServer,
@@ -158,9 +152,6 @@ class FrunConfig {
       editorMode: editorMode ?? this.editorMode,
       theme: theme ?? this.theme,
       hotReloadOnSave: hotReloadOnSave ?? this.hotReloadOnSave,
-      defaultDeviceId: clearDefaultDeviceId
-          ? null
-          : (defaultDeviceId ?? this.defaultDeviceId),
       openDevtoolsOnLaunch: openDevtoolsOnLaunch ?? this.openDevtoolsOnLaunch,
       emulatorBoot: emulatorBoot ?? this.emulatorBoot,
       nvimServer: clearNvimServer ? null : (nvimServer ?? this.nvimServer),

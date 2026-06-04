@@ -56,15 +56,14 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   final configStore = configStoreOverride ?? ConfigStore();
   final config = configStore.load();
 
-  final state = AppState(project: project, config: config)
-    ..selectedDeviceId = config.defaultDeviceId;
+  final state = AppState(project: project, config: config);
 
   final registry = CommandRegistry()
     ..register(QuitCommand())
     ..register(ClearCommand())
     ..register(ConfigCommand(configStore))
-    ..register(DevicesCommand(configStore: configStore))
-    ..register(EmulatorsCommand(configStore: configStore))
+    ..register(DevicesCommand())
+    ..register(EmulatorsCommand())
     ..register(DevToolsCommand())
     ..register(RunCommand(state.runController))
     ..register(ReloadCommand(state.runController))

@@ -51,7 +51,7 @@ class RunCommand extends Command {
     }
 
     state.clearPickers();
-    await controller.launchEntry(picked);
+    await controller.openRunTargetPicker(picked);
     return CommandResult.ok;
   }
 

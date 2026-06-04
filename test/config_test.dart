@@ -14,7 +14,6 @@ void main() {
       expect(round.editorMode, defaults.editorMode);
       expect(round.theme, defaults.theme);
       expect(round.hotReloadOnSave, defaults.hotReloadOnSave);
-      expect(round.defaultDeviceId, defaults.defaultDeviceId);
       expect(round.openDevtoolsOnLaunch, defaults.openDevtoolsOnLaunch);
     });
 
@@ -24,21 +23,13 @@ void main() {
         'editor_mode': null,
         'theme': 'light',
         'hot_reload_on_save': false,
-        'default_device_id': 'pixel-7',
         'open_devtools_on_launch': 'always',
       });
       expect(c.ide, FrunIde.vscode);
       expect(c.editorMode, FrunEditorMode.normal);
       expect(c.theme, FrunThemeMode.light);
       expect(c.hotReloadOnSave, isFalse);
-      expect(c.defaultDeviceId, 'pixel-7');
       expect(c.openDevtoolsOnLaunch, FrunDevToolsAutoOpen.always);
-    });
-
-    test('copyWith clearDefaultDeviceId wipes value', () {
-      final c = FrunConfig(defaultDeviceId: 'old');
-      final n = c.copyWith(clearDefaultDeviceId: true);
-      expect(n.defaultDeviceId, isNull);
     });
   });
 
@@ -68,7 +59,6 @@ void main() {
           editorMode: FrunEditorMode.vim,
           theme: FrunThemeMode.light,
           hotReloadOnSave: false,
-          defaultDeviceId: 'sim-iphone-15',
           openDevtoolsOnLaunch: FrunDevToolsAutoOpen.never,
         ),
       );
@@ -77,7 +67,6 @@ void main() {
       expect(loaded.editorMode, FrunEditorMode.vim);
       expect(loaded.theme, FrunThemeMode.light);
       expect(loaded.hotReloadOnSave, isFalse);
-      expect(loaded.defaultDeviceId, 'sim-iphone-15');
       expect(loaded.openDevtoolsOnLaunch, FrunDevToolsAutoOpen.never);
     });
   });

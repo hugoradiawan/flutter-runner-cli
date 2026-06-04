@@ -131,7 +131,6 @@ ide: vscode                    # vscode | zed | neovim
 editor_mode: normal            # normal | vim
 theme: dark                    # dark | light
 hot_reload_on_save: true
-default_device_id: null
 open_devtools_on_launch: ask   # always | never | ask
 nvim_server: null              # nvim/Neovide RPC addr (for ide: neovim); null → $NVIM
 ```
