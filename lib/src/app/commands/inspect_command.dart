@@ -11,8 +11,6 @@ import 'command.dart';
 class InspectCommand extends Command {
   InspectCommand();
 
-  bool _enabled = false;
-
   @override
   String get name => 'inspect';
 
@@ -25,26 +23,30 @@ class InspectCommand extends Command {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    final session = state.runController.session;
-    if (session == null) {
+    final tab = state.runController.activeTab;
+    final session = tab?.session;
+    if (tab == null || session == null) {
       state.visibleTranscript.warn('No running app. Start one with /run first.');
       return CommandResult.ok;
     }
-    _enabled = !_enabled;
-    if (_enabled) {
+    // Re-point the shared VM connection at this tab's device so the inspector
+    // bridge listens to the selected app's selection events.
+    await state.runController.ensureIsolatesForActiveTab();
+    tab.inspectEnabled = !tab.inspectEnabled;
+    if (tab.inspectEnabled) {
       state.notifier.notify(FrunNotifEvent.enteringInspect);
     }
     try {
       await session.callServiceExtension(
         'ext.flutter.inspector.show',
-        <String, Object?>{'enabled': _enabled},
+        <String, Object?>{'enabled': tab.inspectEnabled},
       );
     } catch (e) {
       state.visibleTranscript.error('Could not toggle inspector: $e');
-      _enabled = !_enabled;
+      tab.inspectEnabled = !tab.inspectEnabled;
       return CommandResult.ok;
     }
-    if (_enabled) {
+    if (tab.inspectEnabled) {
       state.inspectorBridge.attach(state);
       state.notifier.notify(FrunNotifEvent.inspectReady);
       state.visibleTranscript.success(

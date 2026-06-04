@@ -36,6 +36,9 @@ class IsolatesCommand extends Command {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
+    // Re-point the shared VM connection at the selected tab's device so the
+    // listed / controlled isolates belong to the active tab.
+    await state.runController.ensureIsolatesForActiveTab();
     if (manager.service == null) {
       state.visibleTranscript.warn(
         'No VM service yet. Start the app with /run, then try /isolates.',

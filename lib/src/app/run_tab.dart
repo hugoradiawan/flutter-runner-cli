@@ -29,6 +29,10 @@ class RunTab {
   AppRunSession? session;
   StreamSubscription<DaemonEvent>? eventsSub;
 
+  /// Per-tab widget-inspector "select" mode state. Each device remembers its
+  /// own on/off so switching tabs doesn't desync the toggle.
+  bool inspectEnabled = false;
+
   bool get isRunning => session != null;
 
   /// Short label rendered in the tab strip. Falls back to the dart entry's

@@ -29,6 +29,10 @@ class RunController {
   DartFileWatcher? _watcher;
   StreamSubscription<vm.Event>? _extensionSub;
 
+  /// VM-service ws URI the shared [IsolateManager] is currently connected to.
+  /// Guards against redundant reconnects when re-pointing to the active tab.
+  String? _connectedVmUri;
+
   RunTab? get activeTab =>
       (_activeIndex >= 0 && _activeIndex < tabs.length) ? tabs[_activeIndex] : null;
   int get activeIndex => _activeIndex;
@@ -308,6 +312,25 @@ class RunController {
     _activeIndex = index;
   }
 
+  /// Re-point the shared [IsolateManager] connection at the active tab's VM
+  /// service. Commands that act on the running app (`/inspect`, `/devtools`,
+  /// `/isolates`) call this first so they operate on the *selected* tab's
+  /// device rather than whichever device connected last.
+  ///
+  /// Returns `true` when a live VM service is connected for the active tab.
+  Future<bool> ensureIsolatesForActiveTab() async {
+    final ws = activeTab?.session?.vmServiceUri;
+    if (ws == null) {
+      await _disconnectIsolates();
+      return false;
+    }
+    if (_connectedVmUri == ws && state.isolateManager.service != null) {
+      return true;
+    }
+    await _connectIsolates(ws);
+    return state.isolateManager.service != null;
+  }
+
   void _onEvent(RunTab tab, DaemonEvent event) {
     switch (event.name) {
       case 'app.start':
@@ -385,6 +408,7 @@ class RunController {
   Future<void> _connectIsolates(String wsUri) async {
     try {
       await state.isolateManager.connect(wsUri);
+      _connectedVmUri = wsUri;
       state.transcript.system(
         'VM service connected (${state.isolateManager.isolates.length} isolates).',
       );
@@ -392,6 +416,7 @@ class RunController {
       _extensionSub =
           state.isolateManager.extensionEvents.listen(_onExtensionEvent);
     } catch (e) {
+      _connectedVmUri = null;
       state.transcript.warn('VM service connect failed: $e');
     }
   }
@@ -399,6 +424,7 @@ class RunController {
   Future<void> _disconnectIsolates() async {
     await _extensionSub?.cancel();
     _extensionSub = null;
+    _connectedVmUri = null;
     await state.isolateManager.disconnect();
   }
 
