@@ -111,7 +111,7 @@ class FrunConfig {
 
   /// When true, Flutter.Error events dump the full raw DiagnosticsNode payload
   /// (pretty JSON) instead of the compact summary + trimmed stack. Off by
-  /// default; flip with `/config set verbose_errors true`.
+  /// default; flip with `config set verbose_errors true`.
   bool verboseErrors;
 
   /// Explicit Neovim/Neovide RPC server address (socket or named pipe) for

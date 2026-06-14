@@ -13,7 +13,7 @@ class DevicesCommand extends Command {
   String get summary => 'List connected devices';
 
   @override
-  String get usage => '/devices [list]';
+  String get usage => 'devices [list]';
 
   @override
   List<String> get aliases => const ['dev'];
@@ -23,7 +23,7 @@ class DevicesCommand extends Command {
     final mgr = state.deviceManager;
     if (mgr == null) {
       state.visibleTranscript.warn(
-        'Flutter daemon is still starting. Try /devices again in a moment.',
+        'Flutter daemon is still starting. Try devices again in a moment.',
       );
       return CommandResult.ok;
     }
@@ -35,7 +35,7 @@ class DevicesCommand extends Command {
     final list = state.deviceManager!.devices;
     if (list.isEmpty) {
       state.visibleTranscript.warn(
-        'No devices found. Try /emulators to launch one or connect a device.',
+        'No devices found. Try emulators to launch one or connect a device.',
       );
       return;
     }

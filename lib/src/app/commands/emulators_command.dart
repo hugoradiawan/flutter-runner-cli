@@ -22,7 +22,7 @@ class EmulatorsCommand extends Command {
   String get summary => 'List, launch, or create emulators';
 
   @override
-  String get usage => '/emulators [launch `<id>`|create [name]|list]';
+  String get usage => 'emulators [launch `<id>`|create [name]|list]';
 
   @override
   List<String> get aliases => const ['emu'];
@@ -32,7 +32,7 @@ class EmulatorsCommand extends Command {
     final daemon = state.daemon;
     if (daemon == null) {
       state.visibleTranscript.warn(
-        'Flutter daemon is still starting. Try /emulators again shortly.',
+        'Flutter daemon is still starting. Try emulators again shortly.',
       );
       return CommandResult.ok;
     }
@@ -80,7 +80,7 @@ class EmulatorsCommand extends Command {
       }
       if (emulators.isEmpty) {
         state.visibleTranscript.warn(
-          'No emulators found. Try `/emulators create [name]` (Android only).',
+          'No emulators found. Try `emulators create [name]` (Android only).',
         );
         return;
       }
@@ -109,7 +109,7 @@ class EmulatorsCommand extends Command {
       }
       if (emulators.isEmpty) {
         state.visibleTranscript.warn(
-          'No emulators defined. Try `/emulators create [name]` (Android only).',
+          'No emulators defined. Try `emulators create [name]` (Android only).',
         );
         return;
       }
@@ -160,7 +160,7 @@ class EmulatorsCommand extends Command {
     try {
       await manager.create(name: name);
       state.visibleTranscript.success(
-        'Emulator created. Run `/emulators` to see it.',
+        'Emulator created. Run `emulators` to see it.',
       );
     } catch (e) {
       state.visibleTranscript.error('Failed to create emulator: $e');

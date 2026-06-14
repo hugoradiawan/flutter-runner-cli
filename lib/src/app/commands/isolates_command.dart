@@ -6,15 +6,15 @@ import '../../vm/isolate_manager.dart';
 import '../app_state.dart';
 import 'command.dart';
 
-/// `/isolates` — inspect and control Dart isolates.
+/// `isolates` — inspect and control Dart isolates.
 ///
 /// Usage:
-///   /isolates                       → list
-///   /isolates pause `<id>`          → pause an isolate
-///   /isolates resume `<id>`         → resume an isolate
-///   /isolates step `<id>` [over|in|out]
-///   /isolates kill `<id>`           → kill an isolate
-///   /isolates stack `<id>`          → print the current stack (opens top frame in IDE)
+///   isolates                       → list
+///   isolates pause `<id>`          → pause an isolate
+///   isolates resume `<id>`         → resume an isolate
+///   isolates step `<id>` [over|in|out]
+///   isolates kill `<id>`           → kill an isolate
+///   isolates stack `<id>`          → print the current stack (opens top frame in IDE)
 class IsolatesCommand extends Command {
   IsolatesCommand(this.manager, this.ide);
 
@@ -29,7 +29,7 @@ class IsolatesCommand extends Command {
 
   @override
   String get usage =>
-      '/isolates [pause|resume|step|kill|stack `<id>`]';
+      'isolates [pause|resume|step|kill|stack `<id>`]';
 
   @override
   List<String> get aliases => const ['iso'];

@@ -16,8 +16,8 @@ import 'app_state.dart';
 import 'run_tab.dart';
 
 /// Owns all concurrent `flutter run` sessions as a list of [RunTab]s. Tabs are
-/// added on `/run`, removed on `/stop`, and one is "active" — that's the tab
-/// the TUI renders and the one `/reload`, `/restart`, `/stop` operate on.
+/// added on `run`, removed on `stop`, and one is "active" — that's the tab
+/// the TUI renders and the one `reload`, `restart`, `stop` operate on.
 ///
 /// The file watcher is shared: when any `.dart` file is saved, every running
 /// session is hot-reloaded.
@@ -375,8 +375,8 @@ class RunController {
   }
 
   /// Re-point the shared [IsolateManager] connection at the active tab's VM
-  /// service. Commands that act on the running app (`/inspect`, `/devtools`,
-  /// `/isolates`) call this first so they operate on the *selected* tab's
+  /// service. Commands that act on the running app (`inspect`, `devtools`,
+  /// `isolates`) call this first so they operate on the *selected* tab's
   /// device rather than whichever device connected last.
   ///
   /// Returns `true` when a live VM service is connected for the active tab.

@@ -56,7 +56,7 @@ class StopCommand extends Command {
   List<String> get aliases => const ['q'];
 
   @override
-  String get usage => '/stop [all]';
+  String get usage => 'stop [all]';
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {

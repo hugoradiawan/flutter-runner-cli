@@ -9,7 +9,10 @@ import '../project/launch_config.dart';
 import '../project/project_detector.dart';
 import '../vm/isolate_manager.dart';
 import 'run_controller.dart';
+import 'run_target.dart';
 import 'transcript.dart';
+
+export 'run_target.dart';
 
 /// Mutable, observable-ish state shared between the TUI shell, commands, and
 /// services. Components read it during build; commands and services mutate it.
@@ -117,39 +120,4 @@ class AppState {
     clearPickers();
     runTargetChoices = targets;
   }
-}
-
-/// A target the user can pick from the `/run` picker: a connected device, or an
-/// offline emulator that must be booted first ([needsBoot] = true).
-class RunTarget {
-  const RunTarget({
-    required this.id,
-    required this.name,
-    required this.platform,
-    required this.needsBoot,
-  });
-
-  /// Device id (connected target) or emulator id (offline target to boot).
-  final String id;
-  final String name;
-
-  /// Platform string for a device, or platformType for an emulator. May be ''.
-  final String platform;
-
-  /// `true` when [id] is an offline emulator that must be launched before run.
-  final bool needsBoot;
-
-  factory RunTarget.device(FlutterDevice d) => RunTarget(
-    id: d.id,
-    name: d.name,
-    platform: d.platform,
-    needsBoot: false,
-  );
-
-  factory RunTarget.emulator(FlutterEmulator e) => RunTarget(
-    id: e.id,
-    name: e.name,
-    platform: e.platformType ?? '',
-    needsBoot: true,
-  );
 }

@@ -4,7 +4,7 @@ import '../../ide/frun_notifier.dart';
 import '../app_state.dart';
 import 'command.dart';
 
-/// `/devtools` — serve DevTools (via the persistent daemon) and print the URL
+/// `devtools` — serve DevTools (via the persistent daemon) and print the URL
 /// pointing at the running app's VM service.
 class DevToolsCommand extends Command {
   @override
@@ -68,7 +68,7 @@ class DevToolsCommand extends Command {
       args = [url];
     } else if (Platform.isWindows) {
       exe = 'cmd';
-      args = ['/c', 'start', '', url];
+      args = ['c', 'start', '', url];
     } else {
       exe = 'xdg-open';
       args = [url];

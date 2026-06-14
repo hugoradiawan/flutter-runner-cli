@@ -6,12 +6,12 @@ import '../app_state.dart';
 import '../run_controller.dart';
 import 'command.dart';
 
-/// `/run` — pick a launch entry and start the app.
+/// `run` — pick a launch entry and start the app.
 ///
 /// Usage:
-///   /run               → open the launch-entry button bar above the input
-///   /run `<index>`     → launch by index from the discovered entries
-///   /run `<name>`      → launch by entry name
+///   run               → open the launch-entry button bar above the input
+///   run `<index>`     → launch by index from the discovered entries
+///   run `<name>`      → launch by entry name
 class RunCommand extends Command {
   RunCommand(this.controller);
 
@@ -24,7 +24,7 @@ class RunCommand extends Command {
   String get summary => 'Pick a launch config and run the app';
 
   @override
-  String get usage => '/run [index|name]';
+  String get usage => 'run [index|name]';
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {

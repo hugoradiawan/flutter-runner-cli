@@ -3,13 +3,13 @@ import '../../config/config_store.dart';
 import '../app_state.dart';
 import 'command.dart';
 
-/// `/config` — read or set config keys.
+/// `config` — read or set config keys.
 ///
 /// Usage:
-///   /config                 → print current config
-///   /config show            → same as above
-///   /config path            → print where the config file lives
-///   /config set `<k>` `<v>` → set a key and save
+///   config                 → print current config
+///   config show            → same as above
+///   config path            → print where the config file lives
+///   config set `<k>` `<v>` → set a key and save
 class ConfigCommand extends Command {
   ConfigCommand(this.store);
 
@@ -22,7 +22,7 @@ class ConfigCommand extends Command {
   String get summary => 'View or change frun configuration';
 
   @override
-  String get usage => '/config [show|path|set <key> <value>]';
+  String get usage => 'config [show|path|set <key> <value>]';
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
