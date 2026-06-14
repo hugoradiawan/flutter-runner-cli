@@ -1,0 +1,127 @@
+part of 'frun_app.dart';
+
+// ─── Shared layout/render value types ──────────────────────────────────────
+
+class _VisibleLink {
+  _VisibleLink(this.transcriptLineIndex, this.link);
+  final int transcriptLineIndex;
+  final TranscriptLink link;
+}
+
+/// One row's worth of rendered text. A long transcript line wraps into
+/// several `_DisplayRow`s; [startCol] is the offset into the source line so
+/// the renderer can map link spans onto the right row.
+class _DisplayRow {
+  _DisplayRow(this.lineIndex, this.startCol, this.text, {this.ansiPrefix = ''});
+  final int lineIndex;
+  final int startCol;
+  final String text;
+
+  /// ANSI SGR codes active at the start of this row (accumulated from prior
+  /// wrapped chunks). Prepended during rendering so colours survive wraps.
+  final String ansiPrefix;
+}
+
+// ─── Tuning constants (library-private; shared across the behaviour mixins) ─
+
+const int _maxInputRows = 8;
+const int _maxInfoBarRows = 6;
+const int _maxPickerRows = 12;
+const int _pickerIndent = 2;
+const String _runButtonLabel = ' ► ';
+const String _pickerCloseLabel = ' x ';
+
+// ─── Per-tab button table ──────────────────────────────────────────────────
+
+class _TabSegment {
+  const _TabSegment(this.index, this.tab, this.isActive, this.width);
+  final int index;
+  final RunTab tab;
+  final bool isActive;
+  final int width;
+}
+
+class _PickerChip {
+  const _PickerChip(this.index, this.text);
+  final int index;
+  final String text;
+}
+
+enum _PickerKind { launch, emulator, bootMode, runTarget }
+
+class _PickerSpec {
+  const _PickerSpec({
+    required this.kind,
+    required this.itemCount,
+    required this.header,
+    required this.moreHintFormat,
+  });
+  final _PickerKind kind;
+  final int itemCount;
+  final String header;
+  final String moreHintFormat;
+}
+
+class _Button {
+  const _Button(this.letter, this.message, {this.isStop = false});
+  final String letter;
+  final Msg Function(int index) message;
+  final bool isStop;
+}
+
+const activeButtons = <_Button>[
+  _Button('r', ReloadTabMsg.new),
+  _Button('R', RestartTabMsg.new),
+  _Button('S', StopTabMsg.new, isStop: true),
+];
+
+class _ConfigEditorEntry {
+  const _ConfigEditorEntry(this.key, this.values, {this.label});
+  final String key;
+  final List<String> values;
+  final String? label;
+  String get displayLabel => label ?? key;
+}
+
+const _configEditorEntries = <_ConfigEditorEntry>[
+  _ConfigEditorEntry('ide', ['vscode', 'zed', 'neovim'], label: 'IDE'),
+  _ConfigEditorEntry('editor_mode', ['normal', 'vim'], label: 'Editor mode'),
+  _ConfigEditorEntry('theme', ['dark', 'light'], label: 'Theme'),
+  _ConfigEditorEntry('hot_reload_on_save', ['true', 'false'], label: 'Hot reload on save'),
+  _ConfigEditorEntry('open_devtools_on_launch', ['ask', 'always', 'never'], label: 'Open devtools on launch'),
+  _ConfigEditorEntry('emulator_boot', ['quick', 'cold'], label: 'Emulator boot'),
+  _ConfigEditorEntry('verbose_errors', ['false', 'true'], label: 'Verbose error logs'),
+];
+
+/// Updates [active] SGR parameter list from a raw SGR parameter string
+/// (the text between `\x1b[` and `m`, e.g. `'1;33'` or `'0'`).
+/// Handles reset codes, extended 256-colour, and truecolour sequences.
+void _applyAnsiSgr(String params, List<String> active) {
+  if (params.isEmpty || params == '0') {
+    active.clear();
+    return;
+  }
+  final parts = params.split(';');
+  var j = 0;
+  while (j < parts.length) {
+    final p = parts[j];
+    if (p == '0' || p.isEmpty) {
+      active.clear();
+      j++;
+    } else if ((p == '38' || p == '48') && j + 1 < parts.length) {
+      if (parts[j + 1] == '5' && j + 2 < parts.length) {
+        active.add('$p;5;${parts[j + 2]}');
+        j += 3;
+      } else if (parts[j + 1] == '2' && j + 4 < parts.length) {
+        active.add('$p;2;${parts[j + 2]};${parts[j + 3]};${parts[j + 4]}');
+        j += 5;
+      } else {
+        active.add(p);
+        j++;
+      }
+    } else {
+      active.add(p);
+      j++;
+    }
+  }
+}

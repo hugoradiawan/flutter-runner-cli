@@ -10,19 +10,19 @@ Think "the Flutter VS Code extension, but a TUI." No AI features.
 ```
 ┌─ frun · my_app ──────────────────────────────────────────────────────────────┐
 │ Transcript                                                                   │
-│ frun 0.1.0 — type /help for commands.                                        │
+│ frun 0.1.0 — type help  for commands.                                        │
 │ Project: my_app (/Users/me/dev/my_app)                                       │
-│ Detected .vscode/ → launch configs available via /run.                       │
-│ > /run                                                                       │
+│ Detected .vscode/ → launch configs available via run.                        │
+│ > run                                                                        │
 │ Launch entries:                                                              │
 │   [ 0] dev   main_dev.dart  launch.json  debug                               │
-│ Pick one with `/run <index|name>` (or click in the launch picker).           │
-│ > /run 0                                                                     │
+│ Pick one with `run <index|name>` (or click in the launch picker).            │
+│ > run  0                                                                     │
 │ Launching dev on emulator-5554 (lib/main_dev.dart)…                          │
 │ App started. VM service: ws://127.0.0.1:54331/…                              │
 │                                                                              │
 │ [ 1: dev · emulator-5554 ][ r ][ R ][ S ]  [+ Run]      my_app  dev:emul…   │
-│ > /reload                                                                    │
+│ > reload                                                                     │
 │ ↑↓ scroll · ^↑↓ half · esc cursor · click tabs · ^t next tab · ^c quit       │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -70,27 +70,32 @@ from source directly:
 dart run bin/frun.dart
 ```
 
-## Slash commands
+## Commands
+
+Type a command name at the prompt — no prefix.
 
 | Command | Aliases | Purpose |
 |---|---|---|
-| `/help`        | `/h`, `/?`     | Show all commands |
-| `/run [idx]`   |                | Pick a launch entry and start the app (opens a clickable picker if no arg) |
-| `/reload`      | `/r`           | Hot reload the active tab |
-| `/restart`     | `/R`           | Hot restart the active tab |
-| `/stop`        |                | Stop the active tab (`/stop all` stops every tab) |
-| `/devices`     | `/dev`         | List devices or select with `select <id>` |
-| `/emulators`   | `/emu`         | List, launch, or create emulators |
-| `/devtools`    | `/dt`          | Serve DevTools, print URL, attach inspector bridge |
-| `/isolates`    | `/iso`         | Inspect / pause / resume / step / kill Dart isolates |
-| `/inspect`     | `/i`           | Toggle widget inspector (taps → IDE) |
-| `/status`      | `/s`           | Toggle the status panel under the transcript |
-| `/config`      |                | View or set config (`show`, `path`, `set <k> <v>`) |
-| `/clear`       | `/cls`         | Clear transcript |
-| `/quit`        | `/q`, `/exit`  | Exit |
+| `help`        | `h`, `?`      | Show all commands |
+| `run [idx]`   |               | Pick a launch entry and start the app (opens a clickable picker if no arg) |
+| `reload`      | `r`           | Hot reload the active tab |
+| `restart`     | `R`           | Hot restart the active tab |
+| `stop`        | `q`           | Stop the active tab (`stop all` stops every tab) |
+| `detach`      | `d`           | Detach from the app — leaves it running, disconnects frun |
+| `perf`        | `P`           | Toggle the performance overlay on the active tab |
+| `devices`     | `dev`         | List devices or select with `select <id>` |
+| `emulators`   | `emu`         | List, launch, or create emulators |
+| `devtools`    | `dt`, `v`     | Serve DevTools, print URL, attach inspector bridge |
+| `isolates`    | `iso`         | Inspect / pause / resume / step / kill Dart isolates |
+| `inspect`     | `i`           | Toggle widget inspector (taps → IDE) |
+| `status`      | `s`           | Toggle the status panel under the transcript |
+| `config`      |               | View or set config (`show`, `path`, `set <k> <v>`) |
+| `clear`       | `cls`, `c`    | Clear transcript |
+| `quit`        | `exit`        | Exit |
 
 In vim mode the same commands are also reachable via `:` (e.g. `:run 0`,
-`:reload`, `:q`).
+`:reload`, `:q`). Note: in vim mode `:q` quits, but at the prompt `q` is the
+alias for `stop` — type `quit` or `exit` to leave frun.
 
 While the transcript is in view, `Tab` cycles through `file.dart:line[:col]`
 links; pressing `Enter` (with the prompt empty) opens the focused link in
@@ -98,7 +103,7 @@ your configured IDE.
 
 ## Multi-device tabs
 
-Every `/run` opens (or focuses) a tab in the strip just above the prompt.
+Every `run` opens (or focuses) a tab in the strip just above the prompt.
 You can run the same project on several devices at once — each tab keeps
 its own transcript and session.
 
@@ -107,7 +112,7 @@ its own transcript and session.
 - `Ctrl-T` cycles to the next tab. In vim mode `gt` / `gT` / `Ngt` also work.
 - A file save triggers a hot reload on **every** running tab simultaneously
   (when `hot_reload_on_save` is on).
-- `/stop` stops the active tab; `/stop all` stops every tab.
+- `stop` stops the active tab; `stop all` stops every tab.
 - The `[+ Run]` button at the right edge of the tab strip re-opens the
   launch picker.
 
@@ -132,11 +137,13 @@ editor_mode: normal            # normal | vim
 theme: dark                    # dark | light
 hot_reload_on_save: true
 open_devtools_on_launch: ask   # always | never | ask
+emulator_boot: quick           # quick | cold
+verbose_errors: false          # true → dump full Flutter.Error payloads instead of the compact summary
 nvim_server: null              # nvim/Neovide RPC addr (for ide: neovim); null → $NVIM
 ```
 
-Edit live with `/config set <key> <value>`. `/config path` prints the file
-location; `/config show` dumps the current values.
+Edit live with `config set <key> <value>`. `config path` prints the file
+location; `config show` dumps the current values.
 
 ### IDE jump-to-source
 
@@ -167,8 +174,8 @@ Neovide listening and point frun at it:
 ```sh
 neovide -- --listen 127.0.0.1:6789
 # then, in frun:
-# /config set nvim_server 127.0.0.1:6789
-# /config set ide neovim
+# config set nvim_server 127.0.0.1:6789
+# config set ide neovim
 ```
 
 `nvim` must be on your `PATH`. If no server can be found, frun prints a hint
@@ -176,7 +183,7 @@ instead of opening anything.
 
 ## Vim mode
 
-`/config set editor_mode vim` switches the prompt to a small vim-style
+`config set editor_mode vim` switches the prompt to a small vim-style
 editor with insert / normal / visual{char,line,block} / op-pending /
 replace / search / ex sub-modes.
 
@@ -186,7 +193,7 @@ x X i I a A o O r R s S D C Y` plus a numeric count prefix; operators
 registers (`"a … "z`, `"+` / `"*` for the system clipboard);
 `p P` to paste; `u Ctrl-R` for undo/redo on the input buffer;
 `v V Ctrl-V` for visual modes; `/` and `?` for search with `n N`;
-`:` for ex commands — anything resolvable to a slash-command works (e.g.
+`:` for ex commands — anything resolvable to a command works (e.g.
 `:run`, `:reload`, `:devtools`, `:q`, `:wq`, `:noh`, `:reg`, `:s/foo/bar/g`).
 Tab navigation: `gt` next, `gT` previous, `Ngt` jump to tab N.
 
@@ -197,7 +204,7 @@ search the visible transcript, `n` / `N` to step matches.
 ## How it works
 
 - A persistent `flutter daemon` process supplies devices and emulators.
-- `/run` spawns `flutter run --machine` per launch and parses its JSON-RPC
+- `run` spawns `flutter run --machine` per launch and parses its JSON-RPC
   stream — multiple concurrent runs are kept as separate `RunTab`s.
 - File saves under `lib/` trigger debounced hot-reload requests across
   every running tab.
