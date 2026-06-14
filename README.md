@@ -8,23 +8,24 @@ your shell.
 Think "the Flutter VS Code extension, but a TUI." No AI features.
 
 ```
-┌─ frun · my_app ──────────────────────────────────────────────────────────────┐
-│ Transcript                                                                   │
-│ frun 0.1.0 — type help  for commands.                                        │
-│ Project: my_app (/Users/me/dev/my_app)                                       │
-│ Detected .vscode/ → launch configs available via run.                        │
-│ > run                                                                        │
-│ Launch entries:                                                              │
-│   [ 0] dev   main_dev.dart  launch.json  debug                               │
-│ Pick one with `run <index|name>` (or click in the launch picker).            │
-│ > run  0                                                                     │
-│ Launching dev on emulator-5554 (lib/main_dev.dart)…                          │
-│ App started. VM service: ws://127.0.0.1:54331/…                              │
-│                                                                              │
-│ [ 1: dev · emulator-5554 ][ r ][ R ][ S ]  [+ Run]      my_app  dev:emul…   │
-│ > reload                                                                     │
-│ ↑↓ scroll · ^↑↓ half · esc cursor · click tabs · ^t next tab · ^c quit       │
-└──────────────────────────────────────────────────────────────────────────────┘
+Starting flutter daemon…
+frun 0.1.0 — type help for commands.
+Project: my_app  (~/dev/my_app)
+Detected .vscode/ → launch configs available via run.
+Vim mode active — press i to type commands.
+Flutter daemon ready (3 devices).
+> run
+Launch entries:
+  [0] dev   lib/main_dev.dart   launch.json   debug
+Pick one with `run <index|name>` (or click in the picker).
+> run 0
+Launching dev on emulator-5554 (lib/main_dev.dart)…
+App started. VM service: ws://127.0.0.1:54331/…
+
+[ 1: dev · emulator-5554 ][ r ][ R ][ S ]
+┌────────────────────────────────────────────────────────────────────────┐
+│ >                                           my_app  vscode  tabs:1  ►  │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Status
