@@ -291,7 +291,11 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
         if (rightX > 1 + prompt.length) {
           canvas.paint(rightX, yRow, theme.dimStyle.render(rightInfo));
         }
-        final usable = math.max(0, rightX - 1 - prompt.length);
+        // Diagnostics counters sit just left of the right info, inside the box.
+        // The input text must stop before whichever of them is leftmost.
+        var leftEdge = rightX;
+        leftEdge = _paintDiagnosticsCounters(canvas, theme, rightX, yRow, prompt.length);
+        final usable = math.max(0, leftEdge - 1 - prompt.length);
         var visible = line;
         var cursorOffset = cur.col;
         if (visible.length > usable) {
@@ -341,5 +345,68 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       if (tabCount > 0) 'tabs:$tabCount',
     ];
     return ' ${parts.join('  ')} ';
+  }
+
+  /// Paint the `(i) N [!] N (e) N` diagnostic counters just left of [rightX] on
+  /// the prompt row, color-coded by severity, and register a click region that
+  /// toggles the diagnostics overlay. Returns the leftmost x consumed (so the
+  /// caller shrinks the input width); equals [rightX] when nothing was painted
+  /// (no diagnostics, or the row is too narrow).
+  int _paintDiagnosticsCounters(
+    Canvas canvas,
+    FrunTheme theme,
+    int rightX,
+    int yRow,
+    int promptLen,
+  ) {
+    final diags = state.diagnostics;
+    if (diags.isEmpty) {
+      // Server is up but the first pass hasn't reported yet — show a hint so the
+      // slot doesn't look empty/stuck (large monorepos take ~20s to settle).
+      if (state.analysisServer != null && state.analysisError == null) {
+        const label = ' analyzing… ';
+        final x = rightX - label.length;
+        if (x > 1 + promptLen + 4) {
+          canvas.paint(x, yRow, theme.dimStyle.render(label), zIndex: 1);
+          return x;
+        }
+      }
+      return rightX;
+    }
+    final (e, w, i, t) = Diagnostic.counts(diags);
+    // Only show categories with a non-zero count.
+    final segs = <(String, Style)>[
+      if (e > 0)
+        ('${_categoryIcon(DiagnosticCategory.error)} $e', theme.errorStyle),
+      if (w > 0)
+        ('${_categoryIcon(DiagnosticCategory.warning)} $w', theme.warnStyle),
+      if (i > 0)
+        ('${_categoryIcon(DiagnosticCategory.info)} $i', theme.accentStyle),
+      if (t > 0)
+        ('${_categoryIcon(DiagnosticCategory.todo)} $t', theme.successStyle),
+    ];
+    if (segs.isEmpty) return rightX;
+    var totalW = 2; // one pad cell on each side
+    for (var s = 0; s < segs.length; s++) {
+      totalW += segs[s].$1.length;
+      if (s > 0) totalW += 1; // separator cell
+    }
+    final countersX = rightX - totalW;
+    // Need room for the prompt plus a little input before the counters.
+    if (countersX <= 1 + promptLen + 4) return rightX;
+    var cx = countersX + 1;
+    for (var s = 0; s < segs.length; s++) {
+      if (s > 0) cx += 1;
+      canvas.paint(cx, yRow, segs[s].$2.render(segs[s].$1), zIndex: 1);
+      cx += segs[s].$1.length;
+    }
+    _hits.add(
+      x: countersX,
+      y: yRow,
+      w: totalW,
+      h: 1,
+      msg: const ToggleDiagnosticsOverlayMsg(),
+    );
+    return countersX;
   }
 }

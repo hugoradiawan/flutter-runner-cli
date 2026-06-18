@@ -18,6 +18,10 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
     if (ke.code == KeyCode.rune &&
         ke.modifiers.contains(KeyMod.ctrl) &&
         (ke.text == 'g' || ke.text == 'G')) {
+      if (state.showDiagnosticsPanel) {
+        _closeDiagnosticsPanel();
+        return;
+      }
       if (_configEditorActive) {
         _configEditorActive = false;
         _configDraft = null;
@@ -73,6 +77,12 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
     // mode so a stray Esc doesn't strand the picker on screen.
     if (ke.code == KeyCode.escape && state.hasActivePicker) {
       state.clearPickers();
+      return;
+    }
+
+    // Diagnostics overlay is modal while open: handle its keys, swallow rest.
+    if (state.showDiagnosticsPanel) {
+      _handleDiagnosticsKey(event);
       return;
     }
 
@@ -264,6 +274,161 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
       }
       return;
     }
+  }
+
+  /// Handle keys while the diagnostics overlay is open. The overlay is modal.
+  ///
+  /// Common to both editor modes: arrows navigate, Enter jumps, Tab cycles the
+  /// filter, Esc closes. In **normal** mode bare text is a live filter. In
+  /// **vim** mode `j/k` move, `gg`/`G` jump to ends, `Ctrl-d`/`Ctrl-u` half-page,
+  /// `q` closes, and `/` enters search-typing (where text feeds the filter until
+  /// Enter/Esc).
+  void _handleDiagnosticsKey(KeyMsg event) {
+    final ke = event.keyEvent;
+    final vim = state.config.editorMode == FrunEditorMode.vim;
+    final plain = ke.code == KeyCode.rune &&
+        !ke.modifiers.contains(KeyMod.ctrl) &&
+        !ke.modifiers.contains(KeyMod.alt) &&
+        ke.text.isNotEmpty;
+
+    if (ke.code == KeyCode.escape) {
+      if (vim && _diagSearching) {
+        _diagSearching = false; // leave search; keep the applied filter
+        return;
+      }
+      _closeDiagnosticsPanel();
+      return;
+    }
+    if (ke.code == KeyCode.up) {
+      _moveDiagSelection(-1);
+      _diagPendingG = false;
+      return;
+    }
+    if (ke.code == KeyCode.down) {
+      _moveDiagSelection(1);
+      _diagPendingG = false;
+      return;
+    }
+    if (ke.code == KeyCode.enter) {
+      if (vim && _diagSearching) {
+        _diagSearching = false; // confirm search
+        _diagSelectedIndex = 0;
+        return;
+      }
+      final d = _selectedDiagnostic();
+      if (d != null) {
+        unawaited(_openDiagnostic(d));
+        _closeDiagnosticsPanel();
+      }
+      return;
+    }
+    if (ke.code == KeyCode.tab) {
+      _stepDiagnosticsFilter(1);
+      return;
+    }
+    if (ke.code == KeyCode.backspace) {
+      final s = state.diagnosticsSearch;
+      if (s.isNotEmpty) {
+        state.diagnosticsSearch = s.substring(0, s.length - 1);
+        _diagSelectedIndex = 0;
+      }
+      return;
+    }
+
+    // Vim navigation mode (not while typing a `/` search).
+    if (vim && !_diagSearching) {
+      if (ke.code == KeyCode.rune && ke.modifiers.contains(KeyMod.ctrl)) {
+        final t = ke.text.toLowerCase();
+        if (t == 'd') {
+          for (var n = 0; n < 5; n++) {
+            _moveDiagSelection(1);
+          }
+          return;
+        }
+        if (t == 'u') {
+          for (var n = 0; n < 5; n++) {
+            _moveDiagSelection(-1);
+          }
+          return;
+        }
+      }
+      if (plain) {
+        switch (ke.text) {
+          case 'j':
+            _moveDiagSelection(1);
+            _diagPendingG = false;
+          case 'k':
+            _moveDiagSelection(-1);
+            _diagPendingG = false;
+          case 'l':
+            _stepDiagnosticsFilter(1); // next category chip
+            _diagPendingG = false;
+          case 'h':
+            _stepDiagnosticsFilter(-1); // previous category chip
+            _diagPendingG = false;
+          case 'G':
+            _diagSelectEdge(first: false);
+            _diagPendingG = false;
+          case 'g':
+            if (_diagPendingG) {
+              _diagSelectEdge(first: true);
+              _diagPendingG = false;
+            } else {
+              _diagPendingG = true;
+            }
+          case 'q':
+            _closeDiagnosticsPanel();
+          case '/':
+            _diagSearching = true;
+            state.diagnosticsSearch = '';
+            _diagSelectedIndex = 0;
+            _diagPendingG = false;
+          default:
+            _diagPendingG = false; // swallow other keys
+        }
+      }
+      return;
+    }
+
+    // Normal mode (or vim search-typing): bare text is a live filter.
+    if (ke.code == KeyCode.space) {
+      state.diagnosticsSearch += ' ';
+      _diagSelectedIndex = 0;
+      return;
+    }
+    if (plain) {
+      state.diagnosticsSearch += ke.text;
+      _diagSelectedIndex = 0;
+      return;
+    }
+    // Swallow anything else so it doesn't leak into the hidden input.
+  }
+
+  void _closeDiagnosticsPanel() {
+    state.showDiagnosticsPanel = false;
+    _diagPendingG = false;
+    _diagSearching = false;
+  }
+
+  /// Move the active filter chip by [dir] (+1 next, -1 previous), wrapping over
+  /// only the *visible* chips (`all` plus categories that have problems), and
+  /// reset list position.
+  void _stepDiagnosticsFilter(int dir) {
+    final (e, w, i, t) = Diagnostic.counts(state.diagnostics);
+    final order = <DiagnosticCategory?>[
+      null,
+      if (e > 0) DiagnosticCategory.error,
+      if (w > 0) DiagnosticCategory.warning,
+      if (i > 0) DiagnosticCategory.info,
+      if (t > 0) DiagnosticCategory.todo,
+    ];
+    final cur = order.indexOf(state.diagnosticsFilter);
+    final next = cur < 0
+        ? (dir > 0 ? 0 : order.length - 1)
+        : (cur + dir + order.length) % order.length;
+    state.diagnosticsFilter = order[next];
+    _diagSelectedIndex = 0;
+    _diagScrollOffset = 0;
   }
 
   void _insertIntoActive(KeyMsg event) {

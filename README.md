@@ -90,6 +90,7 @@ Type a command name at the prompt — no prefix.
 | `isolates`    | `iso`         | Inspect / pause / resume / step / kill Dart isolates |
 | `inspect`     | `i`           | Toggle widget inspector (taps → IDE) |
 | `status`      | `s`           | Toggle the status panel under the transcript |
+| `diagnostics` | `problems`, `prob` | Toggle the analyzer problems panel; arg `error\|warning\|info\|all` pre-filters |
 | `config`      |               | View or set config (`show`, `path`, `set <k> <v>`) |
 | `clear`       | `cls`, `c`    | Clear transcript |
 | `quit`        | `exit`        | Exit |
@@ -116,6 +117,38 @@ its own transcript and session.
 - `stop` stops the active tab; `stop all` stops every tab.
 - The `[+ Run]` button at the right edge of the tab strip re-opens the
   launch picker.
+
+## Diagnostics
+
+frun runs the Dart analysis server (`dart language-server`) in the background and
+surfaces project-wide analyzer **errors / warnings / infos** live — the TUI
+equivalent of the VS Code "Problems" panel. No `run` needed; analysis starts on
+launch.
+
+- Color-coded counters sit at the right edge of the prompt box —
+  `✘ 3  ▲ 30  ⓘ 40  ✎ 12` (error · warning · info · todo). They update in
+  realtime as you edit and save; the analyzer watches the filesystem itself.
+  TODO / FIXME comments get their own `✎` bucket.
+- **Click the counters** (or type `diagnostics` / `problems`) to open the
+  problems list, grouped by file. **Click any issue** — or select with `↑`/`↓`,
+  or **scroll the wheel** — and press `Enter` to jump to that `file:line:col`
+  in your configured IDE.
+- Filter the list: click the `[all] [✘] [▲] [ⓘ] [✎]` chips in the header, press
+  `Tab` to cycle categories, or just **type** to filter by message / file / rule
+  name. `Esc` closes the panel.
+- `diagnostics error` (or `warning` / `info` / `todo` / `all`) opens the panel
+  with that category pre-selected.
+- In **vim mode** the list is driven vim-style: `j`/`k` move, `gg`/`G` jump to
+  ends, `Ctrl-d`/`Ctrl-u` half-page, `/` starts a filter, `Enter` opens, `q`
+  (or `Esc`) closes. In normal mode just type to filter.
+- In a monorepo (melos / pub workspace) every package is analyzed, not just the
+  app — so the first full pass can take ~20s; counters fill in progressively.
+
+Results are cached per project under `%APPDATA%\frun\diagnostics\` (or
+`~/.config/frun/diagnostics/`), so the counters show last-known totals instantly
+on the next launch, before the first analysis pass finishes. Nothing is written
+into your project. If `dart` isn't on your `PATH`, frun prints a hint and the
+counters stay hidden.
 
 ## Mouse
 
@@ -205,6 +238,8 @@ search the visible transcript, `n` / `N` to step matches.
 ## How it works
 
 - A persistent `flutter daemon` process supplies devices and emulators.
+- A background `dart language-server` (LSP) analyzes the whole project and
+  pushes realtime diagnostics that drive the problems panel and the counters.
 - `run` spawns `flutter run --machine` per launch and parses its JSON-RPC
   stream — multiple concurrent runs are kept as separate `RunTab`s.
 - File saves under `lib/` trigger debounced hot-reload requests across

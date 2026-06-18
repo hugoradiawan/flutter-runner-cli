@@ -1,3 +1,6 @@
+import '../analysis/analysis_server.dart';
+import '../analysis/diagnostic.dart';
+import '../analysis/diagnostics_store.dart';
 import '../config/config.dart';
 import '../daemon/daemon_messages.dart';
 import '../daemon/flutter_daemon.dart';
@@ -63,6 +66,34 @@ class AppState {
 
   /// Set to `true` by `/config` to trigger the interactive footer editor.
   bool showConfigEditor = false;
+
+  // ── Diagnostics (analyzer errors / warnings / infos) ──────────────────────
+
+  /// The Dart analysis server client (LSP). Null until the analysis boot
+  /// completes, and null forever if `dart` isn't on the PATH.
+  DartAnalysisServer? analysisServer;
+
+  /// Per-project on-disk cache for [diagnostics].
+  DiagnosticsStore? diagnosticsStore;
+
+  /// Set when the analysis server fails to start.
+  String? analysisError;
+
+  /// Latest project-wide analyzer diagnostics. Updated in realtime by the
+  /// analysis server; seeded from the cache on launch so counters show
+  /// last-known totals immediately.
+  List<Diagnostic> diagnostics = const <Diagnostic>[];
+
+  /// Whether the diagnostics ("problems") overlay is open. Toggled by
+  /// `/diagnostics`, by clicking the prompt-box counters, or closed with esc.
+  bool showDiagnosticsPanel = false;
+
+  /// Active category filter in the diagnostics overlay; null = show all.
+  DiagnosticCategory? diagnosticsFilter;
+
+  /// Free-text filter applied to the diagnostics overlay (matches file path or
+  /// message). Empty = no text filter.
+  String diagnosticsSearch = '';
 
   /// Active `/run` picker. When non-empty, the TUI renders a button bar of
   /// launch entries above the input line. Cleared after the user picks one

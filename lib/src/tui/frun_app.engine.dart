@@ -218,4 +218,11 @@ mixin _EngineMixin on _FrunModelBase {
       onQuit();
     }
   }
+
+  /// Open a diagnostic's source location in the configured IDE. Reuses the same
+  /// jump path as transcript links.
+  Future<void> _openDiagnostic(Diagnostic d) async {
+    final loc = SourceLocation(file: d.filePath, line: d.line, column: d.column);
+    await state.ideLauncher.open(loc, state);
+  }
 }

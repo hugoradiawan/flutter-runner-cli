@@ -79,3 +79,25 @@ final class CloseRunTargetPickerMsg extends Msg {
 final class _CycleTabsForwardMsg extends Msg {
   const _CycleTabsForwardMsg();
 }
+
+// ─── Diagnostics overlay ───────────────────────────────────────────────────
+
+final class ToggleDiagnosticsOverlayMsg extends Msg {
+  const ToggleDiagnosticsOverlayMsg();
+}
+
+final class CloseDiagnosticsOverlayMsg extends Msg {
+  const CloseDiagnosticsOverlayMsg();
+}
+
+final class SetDiagnosticsFilterMsg extends Msg {
+  const SetDiagnosticsFilterMsg(this.level);
+
+  /// Category to filter to, or null for "all".
+  final DiagnosticCategory? level;
+}
+
+final class JumpToDiagnosticMsg extends Msg {
+  const JumpToDiagnosticMsg(this.diagnostic);
+  final Diagnostic diagnostic;
+}

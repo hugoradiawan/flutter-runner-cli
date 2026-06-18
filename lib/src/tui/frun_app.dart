@@ -3,7 +3,9 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:dart_tui/dart_tui.dart';
+import 'package:path/path.dart' as p;
 
+import '../analysis/diagnostic.dart';
 import '../app/app_state.dart';
 import '../app/commands/command.dart';
 import '../app/commands/command_registry.dart';
@@ -78,6 +80,15 @@ abstract class _FrunModelBase extends TeaModel {
   int _pickerSelectedIndex = 0;
   int _pickerScrollOffset = 0;
   bool _pickerWasActive = false;
+
+  // Diagnostics overlay selection (indexes into the flattened file-header +
+  // issue row list) and its scroll offset.
+  int _diagSelectedIndex = 0;
+  int _diagScrollOffset = 0;
+  // Vim-mode panel state: `gg` pending-g latch, and whether `/` search-typing
+  // is active (so bare letters feed the filter instead of acting as motions).
+  bool _diagPendingG = false;
+  bool _diagSearching = false;
 
   // Mouse-drag selection state. `_mouseAnchor` is captured on left-click
   // inside the transcript body when no hit-region intercepts; the selection

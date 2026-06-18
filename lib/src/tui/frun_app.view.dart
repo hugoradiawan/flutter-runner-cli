@@ -28,8 +28,20 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
     final picker = _activePicker();
     final pickerH = _computePickerHeight(picker);
     final configEditorH = _computeConfigEditorHeight();
-    final statusH = state.showStatusPanel ? _statusHeight(h, infoBarH + pickerH + totalInputH + configEditorH) : 0;
-    final bodyH = h - totalInputH - statusH - infoBarH - pickerH - configEditorH;
+    final diagnosticsH = _computeDiagnosticsHeight();
+    final statusH = state.showStatusPanel
+        ? _statusHeight(
+            h,
+            infoBarH + pickerH + totalInputH + configEditorH + diagnosticsH,
+          )
+        : 0;
+    final bodyH = h -
+        totalInputH -
+        statusH -
+        infoBarH -
+        pickerH -
+        configEditorH -
+        diagnosticsH;
     _lastBodyHeight = bodyH;
     _lastBodyY = 0;
 
@@ -56,6 +68,15 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
         w,
         h - totalInputH - infoBarH - pickerH - configEditorH,
         configEditorH,
+      );
+    }
+    if (diagnosticsH > 0) {
+      _paintDiagnosticsPanel(
+        canvas,
+        theme,
+        w,
+        h - totalInputH - infoBarH - diagnosticsH,
+        diagnosticsH,
       );
     }
     _paintInfoBar(canvas, theme, w, h - totalInputH - infoBarH, infoBarH);

@@ -73,7 +73,15 @@ mixin _ReducerMixin on _FrunModelBase, _KeyMixin, _MouseMixin, _EngineMixin {
     }
 
     if (msg is MouseClickMsg) {
-      _onMouseClick(msg.mouse);
+      // Some terminals deliver wheel ticks as clicks; route those to the panel
+      // scroller when the diagnostics overlay is open.
+      final b = msg.mouse.button;
+      if (state.showDiagnosticsPanel &&
+          (b == MouseButton.wheelUp || b == MouseButton.wheelDown)) {
+        _scrollDiagnosticsByWheel(up: b == MouseButton.wheelUp);
+      } else {
+        _onMouseClick(msg.mouse);
+      }
       return (this, null);
     }
 
@@ -88,7 +96,13 @@ mixin _ReducerMixin on _FrunModelBase, _KeyMixin, _MouseMixin, _EngineMixin {
     }
 
     if (msg is MouseWheelMsg) {
-      _onMouseWheel(msg.mouse);
+      final b = msg.mouse.button;
+      if (state.showDiagnosticsPanel &&
+          (b == MouseButton.wheelUp || b == MouseButton.wheelDown)) {
+        _scrollDiagnosticsByWheel(up: b == MouseButton.wheelUp);
+      } else {
+        _onMouseWheel(msg.mouse);
+      }
       return (this, null);
     }
 
@@ -159,6 +173,25 @@ mixin _ReducerMixin on _FrunModelBase, _KeyMixin, _MouseMixin, _EngineMixin {
         state.runController.cycleActive(forward: true);
         _resetViewForNewTab();
       }
+    } else if (msg is ToggleDiagnosticsOverlayMsg) {
+      state.showDiagnosticsPanel = !state.showDiagnosticsPanel;
+      _diagPendingG = false;
+      _diagSearching = false;
+      if (state.showDiagnosticsPanel) {
+        _diagSelectedIndex = 0;
+        _diagScrollOffset = 0;
+      }
+    } else if (msg is CloseDiagnosticsOverlayMsg) {
+      state.showDiagnosticsPanel = false;
+      _diagPendingG = false;
+      _diagSearching = false;
+    } else if (msg is SetDiagnosticsFilterMsg) {
+      state.diagnosticsFilter = msg.level;
+      _diagSelectedIndex = 0;
+      _diagScrollOffset = 0;
+    } else if (msg is JumpToDiagnosticMsg) {
+      unawaited(_openDiagnostic(msg.diagnostic));
+      state.showDiagnosticsPanel = false;
     }
 
     final nowActive = state.hasActivePicker;

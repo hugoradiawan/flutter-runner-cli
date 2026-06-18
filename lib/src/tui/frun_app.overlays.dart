@@ -409,6 +409,358 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     }
   }
 
+  // ── Diagnostics overlay ──────────────────────────────────────────────────
+
+  /// The project diagnostics after applying the active category + text filters.
+  List<Diagnostic> _filteredDiagnostics() {
+    var list = state.diagnostics;
+    final f = state.diagnosticsFilter;
+    if (f != null) {
+      list = list.where((d) => d.category == f).toList(growable: false);
+    }
+    final q = state.diagnosticsSearch.trim().toLowerCase();
+    if (q.isNotEmpty) {
+      list = list
+          .where(
+            (d) =>
+                d.message.toLowerCase().contains(q) ||
+                d.filePath.toLowerCase().contains(q) ||
+                (d.code?.toLowerCase().contains(q) ?? false),
+          )
+          .toList(growable: false);
+    }
+    return list;
+  }
+
+  /// Flatten the filtered diagnostics into file-header + issue rows.
+  List<_DiagRow> _diagnosticRows() {
+    final grouped = Diagnostic.groupByFile(_filteredDiagnostics());
+    final rows = <_DiagRow>[];
+    grouped.forEach((file, items) {
+      rows.add(_DiagRow.fileHeader(file, items.length));
+      for (final d in items) {
+        rows.add(_DiagRow.issue(d));
+      }
+    });
+    return rows;
+  }
+
+  /// Snap [_diagSelectedIndex] onto a valid issue row.
+  void _clampDiagSelection(List<_DiagRow> rows) {
+    if (rows.isEmpty) {
+      _diagSelectedIndex = 0;
+      return;
+    }
+    _diagSelectedIndex = _diagSelectedIndex.clamp(0, rows.length - 1);
+    if (rows[_diagSelectedIndex].kind == _DiagRowKind.issue) return;
+    for (var i = _diagSelectedIndex; i < rows.length; i++) {
+      if (rows[i].kind == _DiagRowKind.issue) {
+        _diagSelectedIndex = i;
+        return;
+      }
+    }
+    for (var i = _diagSelectedIndex; i >= 0; i--) {
+      if (rows[i].kind == _DiagRowKind.issue) {
+        _diagSelectedIndex = i;
+        return;
+      }
+    }
+  }
+
+  /// Move the selection to the next/previous issue row, skipping file headers.
+  void _moveDiagSelection(int delta) {
+    final rows = _diagnosticRows();
+    if (rows.isEmpty) return;
+    _clampDiagSelection(rows);
+    final step = delta >= 0 ? 1 : -1;
+    var i = _diagSelectedIndex;
+    for (var n = 0; n < rows.length; n++) {
+      i += step;
+      if (i < 0) i = rows.length - 1;
+      if (i >= rows.length) i = 0;
+      if (rows[i].kind == _DiagRowKind.issue) {
+        _diagSelectedIndex = i;
+        return;
+      }
+    }
+  }
+
+  /// Jump the selection to the first / last issue row (vim `gg` / `G`).
+  void _diagSelectEdge({required bool first}) {
+    final rows = _diagnosticRows();
+    if (rows.isEmpty) return;
+    if (first) {
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].kind == _DiagRowKind.issue) {
+          _diagSelectedIndex = i;
+          return;
+        }
+      }
+    } else {
+      for (var i = rows.length - 1; i >= 0; i--) {
+        if (rows[i].kind == _DiagRowKind.issue) {
+          _diagSelectedIndex = i;
+          return;
+        }
+      }
+    }
+  }
+
+  /// The diagnostic under the current selection, if any.
+  Diagnostic? _selectedDiagnostic() {
+    final rows = _diagnosticRows();
+    if (rows.isEmpty) return null;
+    _clampDiagSelection(rows);
+    return rows[_diagSelectedIndex].diagnostic;
+  }
+
+  int _computeDiagnosticsHeight() {
+    if (!state.showDiagnosticsPanel) return 0;
+    // Don't stack on top of a picker or the config editor.
+    if (state.hasActivePicker || _configEditorActive) return 0;
+    final rows = _diagnosticRows().length;
+    final body = math.max(1, rows); // at least one row for the empty state
+    final desired = 1 + 1 + body + 1; // header + top border + body + bottom
+    final headroom = math.max(4, _height - 6);
+    const maxCap = 1 + 1 + _maxDiagnosticsRows + 1;
+    return math.min(desired, math.min(maxCap, headroom));
+  }
+
+  void _paintDiagnosticsPanel(
+    Canvas canvas,
+    FrunTheme theme,
+    int width,
+    int y,
+    int height,
+  ) {
+    if (height <= 0) return;
+    final (e, w, i, t) = Diagnostic.counts(state.diagnostics);
+
+    // ── Header: title, clickable filter chips, search, close button ──
+    var hx = 0;
+    const title = ' Problems';
+    canvas.paint(hx, y, theme.dimStyle.render(title));
+    hx += title.length + 1;
+    hx = _paintDiagnosticsFilterChip(
+      canvas,
+      theme,
+      hx,
+      y,
+      'all',
+      null,
+      state.diagnosticsFilter == null,
+    );
+    // Per-category chips are shown only when that category has problems.
+    if (e > 0) {
+      hx = _paintDiagnosticsFilterChip(
+        canvas,
+        theme,
+        hx,
+        y,
+        '${_categoryIcon(DiagnosticCategory.error)} $e',
+        DiagnosticCategory.error,
+        state.diagnosticsFilter == DiagnosticCategory.error,
+      );
+    }
+    if (w > 0) {
+      hx = _paintDiagnosticsFilterChip(
+        canvas,
+        theme,
+        hx,
+        y,
+        '${_categoryIcon(DiagnosticCategory.warning)} $w',
+        DiagnosticCategory.warning,
+        state.diagnosticsFilter == DiagnosticCategory.warning,
+      );
+    }
+    if (i > 0) {
+      hx = _paintDiagnosticsFilterChip(
+        canvas,
+        theme,
+        hx,
+        y,
+        '${_categoryIcon(DiagnosticCategory.info)} $i',
+        DiagnosticCategory.info,
+        state.diagnosticsFilter == DiagnosticCategory.info,
+      );
+    }
+    if (t > 0) {
+      hx = _paintDiagnosticsFilterChip(
+        canvas,
+        theme,
+        hx,
+        y,
+        '${_categoryIcon(DiagnosticCategory.todo)} $t',
+        DiagnosticCategory.todo,
+        state.diagnosticsFilter == DiagnosticCategory.todo,
+      );
+    }
+
+    final closeX = (width - _pickerCloseLabel.length).clamp(0, width);
+    final q = state.diagnosticsSearch;
+    if (q.isNotEmpty) {
+      final searchText = ' /$q';
+      final maxSearch = closeX - hx - 1;
+      if (maxSearch > 0) {
+        canvas.paint(
+          hx,
+          y,
+          theme.searchActiveStyle.render(_clipText(searchText, maxSearch)),
+        );
+      }
+    }
+    if (closeX > hx) {
+      canvas.paint(closeX, y, theme.buttonStopStyle.render(_pickerCloseLabel));
+      _hits.add(
+        x: closeX,
+        y: y,
+        w: _pickerCloseLabel.length,
+        h: 1,
+        msg: const CloseDiagnosticsOverlayMsg(),
+      );
+    }
+
+    if (height < 3 || width < 4) return;
+
+    // ── Borders ──
+    final topY = y + 1;
+    final bottomY = y + height - 1;
+    final innerStartY = y + 2;
+    final innerEndY = y + height - 2;
+    final horizontal = '─' * (width - 2);
+    canvas.paint(0, topY, theme.borderStyle.render('┌$horizontal┐'));
+    canvas.paint(0, bottomY, theme.borderStyle.render('└$horizontal┘'));
+    for (var r = innerStartY; r <= innerEndY; r++) {
+      canvas.paint(0, r, theme.borderStyle.render('│'));
+      canvas.paint(width - 1, r, theme.borderStyle.render('│'));
+    }
+
+    final innerH = innerEndY - innerStartY + 1;
+    if (innerH <= 0) return;
+
+    final rows = _diagnosticRows();
+    if (rows.isEmpty) {
+      final msg = state.diagnostics.isEmpty
+          ? ' No problems detected. '
+          : ' No problems match the filter (esc to close). ';
+      canvas.paint(
+        _pickerIndent,
+        innerStartY,
+        theme.dimStyle.render(_clipText(msg, width - _pickerIndent * 2)),
+      );
+      return;
+    }
+
+    _clampDiagSelection(rows);
+
+    final maxVisible = innerH;
+    final totalHidden = math.max(0, rows.length - maxVisible);
+    final visibleCount = totalHidden > 0 ? maxVisible - 1 : rows.length;
+    if (visibleCount > 0) {
+      if (_diagSelectedIndex < _diagScrollOffset) {
+        _diagScrollOffset = _diagSelectedIndex;
+      } else if (_diagSelectedIndex >= _diagScrollOffset + visibleCount) {
+        _diagScrollOffset = _diagSelectedIndex - visibleCount + 1;
+      }
+      _diagScrollOffset =
+          _diagScrollOffset.clamp(0, math.max(0, rows.length - visibleCount));
+    }
+
+    final maxText = width - 2;
+    for (var r = 0; r < visibleCount; r++) {
+      final idx = _diagScrollOffset + r;
+      if (idx >= rows.length) break;
+      final rowY = innerStartY + r;
+      final row = rows[idx];
+      if (row.kind == _DiagRowKind.fileHeader) {
+        final text = ' ${_relativeDiagPath(row.file)}  (${row.count})';
+        canvas.paint(1, rowY, theme.dimStyle.render(_clipText(text, maxText)));
+      } else {
+        final d = row.diagnostic!;
+        final selected = idx == _diagSelectedIndex;
+        final glyph = _categoryIcon(d.category);
+        final code = d.code != null ? '  ${d.code}' : '';
+        final text = '   $glyph Ln${d.line} Col${d.column}  ${d.message}$code';
+        final clipped = _clipText(text, maxText);
+        final style = selected
+            ? theme.pickerChipSelectedStyle
+            : _categoryStyle(theme, d.category);
+        canvas.paint(1, rowY, style.render(clipped));
+        _hits.add(
+          x: 1,
+          y: rowY,
+          w: clipped.length,
+          h: 1,
+          msg: JumpToDiagnosticMsg(d),
+        );
+      }
+    }
+
+    if (totalHidden > 0) {
+      final rowY = innerStartY + visibleCount;
+      if (rowY <= innerEndY) {
+        final hiddenBelow =
+            math.max(0, rows.length - _diagScrollOffset - visibleCount);
+        final keys = state.config.editorMode == FrunEditorMode.vim
+            ? 'j/k move · gg/G ends · / filter · enter open'
+            : '↑↓ move · type to filter · enter open';
+        final more = ' +$hiddenBelow more — $keys ';
+        canvas.paint(
+          _pickerIndent,
+          rowY,
+          theme.dimStyle.render(_clipText(more, width - _pickerIndent * 2)),
+        );
+      }
+    }
+  }
+
+  int _paintDiagnosticsFilterChip(
+    Canvas canvas,
+    FrunTheme theme,
+    int x,
+    int y,
+    String label,
+    DiagnosticCategory? level,
+    bool active,
+  ) {
+    final text = ' $label ';
+    // Active chip is highlighted; inactive chips wear their category colour
+    // (the `all` chip is neutral grey).
+    final style = active
+        ? theme.pickerChipSelectedStyle
+        : (level == null ? theme.dimStyle : _categoryStyle(theme, level));
+    canvas.paint(x, y, style.render(text));
+    _hits.add(
+      x: x,
+      y: y,
+      w: text.length,
+      h: 1,
+      msg: SetDiagnosticsFilterMsg(level),
+    );
+    return x + text.length + 1; // +1 gap between chips
+  }
+
+  String _relativeDiagPath(String file) {
+    final root = state.project.root;
+    if (p.isWithin(root, file)) return p.relative(file, from: root);
+    return file;
+  }
+
+  /// Scroll the diagnostics list by a wheel notch, moving the selection so the
+  /// painter keeps it in view.
+  void _scrollDiagnosticsByWheel({required bool up}) {
+    for (var n = 0; n < 3; n++) {
+      _moveDiagSelection(up ? -1 : 1);
+    }
+  }
+
+  String _clipText(String s, int max) {
+    if (max <= 0) return '';
+    if (s.length <= max) return s;
+    if (max <= 1) return s.substring(0, max);
+    return '${s.substring(0, max - 1)}…';
+  }
+
   // ── Info bar / tabs ────────────────────────────────────────────────────
 
   int _computeInfoBarHeight(int width) {

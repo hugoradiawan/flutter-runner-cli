@@ -27,9 +27,47 @@ class _DisplayRow {
 const int _maxInputRows = 8;
 const int _maxInfoBarRows = 6;
 const int _maxPickerRows = 12;
+const int _maxDiagnosticsRows = 16;
 const int _pickerIndent = 2;
 const String _runButtonLabel = ' ► ';
 const String _pickerCloseLabel = ' x ';
+
+// ─── Diagnostics overlay rows ──────────────────────────────────────────────
+
+/// Single-cell glyph for each diagnostic category (used in the counters and the
+/// overlay rows). Chosen from widely-supported, single-width symbols.
+String _categoryIcon(DiagnosticCategory c) => switch (c) {
+      DiagnosticCategory.error => '✘',
+      DiagnosticCategory.warning => '▲',
+      DiagnosticCategory.info => 'ⓘ',
+      DiagnosticCategory.todo => '✎',
+    };
+
+Style _categoryStyle(FrunTheme theme, DiagnosticCategory c) => switch (c) {
+      DiagnosticCategory.error => theme.errorStyle,
+      DiagnosticCategory.warning => theme.warnStyle,
+      DiagnosticCategory.info => theme.accentStyle,
+      DiagnosticCategory.todo => theme.successStyle,
+    };
+
+enum _DiagRowKind { fileHeader, issue }
+
+/// One row in the flattened diagnostics overlay: either a file header (with an
+/// issue count) or a single issue. Selection only ever lands on [issue] rows.
+class _DiagRow {
+  const _DiagRow.fileHeader(this.file, this.count)
+      : kind = _DiagRowKind.fileHeader,
+        diagnostic = null;
+  const _DiagRow.issue(Diagnostic this.diagnostic)
+      : kind = _DiagRowKind.issue,
+        file = '',
+        count = 0;
+
+  final _DiagRowKind kind;
+  final String file;
+  final int count;
+  final Diagnostic? diagnostic;
+}
 
 // ─── Per-tab button table ──────────────────────────────────────────────────
 
