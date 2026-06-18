@@ -13,8 +13,8 @@ mixin _ReducerMixin on _FrunModelBase, _KeyMixin, _MouseMixin, _EngineMixin {
       state.transcript.info('Detected .vscode/ → launch configs available via run.');
     }
     if (state.config.editorMode == FrunEditorMode.vim) {
-      _vimState.mode = VimMode.normal;
-      state.transcript.info('Vim mode active — press i to type commands.');
+      _vimState.mode = VimMode.insert;
+      state.transcript.info('Vim mode active — press Esc for normal mode.');
     }
     return null;
   }
