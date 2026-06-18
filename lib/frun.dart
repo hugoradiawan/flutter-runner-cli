@@ -162,27 +162,153 @@ Future<void> _bootAnalysis(AppState state) async {
   }
 }
 
+/// How many times to (re)start the flutter daemon before giving up. After a
+/// PC restart the very first attempt almost always fails because the adb
+/// server is down — flutter's `device.getDevices` then reports
+/// `adb: failed to check server version: cannot connect to daemon`. Retrying
+/// (with an adb restart in between) recovers without the user relaunching frun.
+const int _daemonStartAttempts = 4;
+
+/// Pause between daemon start attempts, giving the freshly-started adb server
+/// time to come up before flutter queries devices again.
+const Duration _daemonRetryDelay = Duration(seconds: 2);
+
 Future<void> _bootDaemon(AppState state) async {
-  state.transcript.system('Starting flutter daemon…');
-  try {
-    final daemon = await FlutterDaemon.start();
-    state.daemon = daemon;
-    daemon.stderrLines.listen((line) => state.transcript.warn('daemon: $line'));
-    final manager = DeviceManager(daemon);
-    state.deviceManager = manager;
-    manager.changes.listen((devices) {
-      state.transcript.system(
-        'Devices changed: ${devices.length} connected.',
-      );
-    });
-    await manager.start();
-    state.daemonReady = true;
-    state.transcript.success(
-      'Flutter daemon ready (${state.deviceManager!.devices.length} devices).',
+  // Preempt the cold-boot failure: make sure the adb server is up *before*
+  // flutter's first `device.getDevices`. `start-server` is a no-op when adb is
+  // already running, so this is cheap and won't disturb a healthy server with
+  // its connected devices. The kill+start retry below still handles a stale
+  // server that `start-server` alone can't revive.
+  await _ensureAdbServer(state, restart: false, announce: false);
+
+  for (var attempt = 1; attempt <= _daemonStartAttempts; attempt++) {
+    state.transcript.system(
+      attempt == 1
+          ? 'Starting flutter daemon…'
+          : 'Retrying flutter daemon (attempt $attempt/$_daemonStartAttempts)…',
     );
-  } catch (e) {
-    state.daemonError = e.toString();
-    state.transcript.error('Failed to start flutter daemon: $e');
+    FlutterDaemon? daemon;
+    DeviceManager? manager;
+    try {
+      daemon = await FlutterDaemon.start();
+      state.daemon = daemon;
+      daemon.stderrLines.listen((line) => state.transcript.warn('daemon: $line'));
+      manager = DeviceManager(daemon);
+      state.deviceManager = manager;
+      manager.changes.listen((devices) {
+        state.transcript.system(
+          'Devices changed: ${devices.length} connected.',
+        );
+      });
+      await manager.start();
+      state.daemonReady = true;
+      state.daemonError = null;
+      state.transcript.success(
+        'Flutter daemon ready (${state.deviceManager!.devices.length} devices).',
+      );
+      // Warm the emulator subsystem in the background. The daemon's first
+      // `emulator.getEmulators` does cold Android-SDK / AVD discovery that can
+      // run well past the `emu` command's timeout on a fresh boot. Paying that
+      // cost now means the user's later `emu` returns from a warm daemon fast.
+      unawaited(_warmEmulators(state));
+      return;
+    } catch (e) {
+      state.daemonError = e.toString();
+      // Tear down the partial daemon so the retry starts clean and we don't
+      // orphan the `flutter daemon` process or stack stderr listeners.
+      try {
+        await manager?.dispose();
+      } catch (_) {/* best-effort */}
+      try {
+        await daemon?.shutdown();
+      } catch (_) {/* best-effort */}
+      state.daemon = null;
+      state.deviceManager = null;
+
+      if (attempt < _daemonStartAttempts) {
+        state.transcript.warn(
+          'Flutter daemon start failed ($e). Restarting adb and retrying…',
+        );
+        await _ensureAdbServer(state);
+        await Future<void>.delayed(_daemonRetryDelay);
+        continue;
+      }
+      state.transcript.error('Failed to start flutter daemon: $e');
+    }
   }
+}
+
+/// Make sure the adb server is up. On a fresh boot adb's own server is down and
+/// flutter's first device query fails. When [restart] is true (the retry path)
+/// a clean `kill-server` + `start-server` clears stale state; when false (the
+/// proactive pre-flight) only `start-server` runs, which is a no-op on a
+/// healthy server. Best-effort — every failure is swallowed so the daemon retry
+/// surfaces the real error if adb genuinely can't run. [announce] silences the
+/// transcript message for the quiet pre-flight call.
+Future<void> _ensureAdbServer(
+  AppState state, {
+  bool restart = true,
+  bool announce = true,
+}) async {
+  for (final adb in _adbCandidates()) {
+    try {
+      if (restart) {
+        await Process.run(adb, const ['kill-server']);
+      }
+      final started = await Process.run(adb, const ['start-server']);
+      if (started.exitCode == 0) {
+        if (announce) {
+          state.transcript.system('adb server ${restart ? 'restarted' : 'ready'}.');
+        }
+        return;
+      }
+    } on ProcessException {
+      // adb isn't at this path — try the next candidate.
+      continue;
+    }
+  }
+  if (announce) {
+    state.transcript.warn(
+      'Could not restart adb automatically — set ANDROID_HOME or put '
+      'platform-tools on PATH if the daemon keeps failing.',
+    );
+  }
+}
+
+/// Background warm-up: trigger the daemon's cold emulator discovery once during
+/// boot so the user's later `emu` command hits a warm daemon. Best-effort — any
+/// failure is swallowed here; the `emu` command surfaces real errors itself.
+Future<void> _warmEmulators(AppState state) async {
+  final daemon = state.daemon;
+  if (daemon == null) return;
+  try {
+    await daemon.getEmulators();
+  } catch (_) {/* best-effort warm-up */}
+}
+
+/// Candidate `adb` executables in priority order: explicit SDK env vars, the
+/// platform's default install location, then bare `adb` (resolved via PATH).
+Iterable<String> _adbCandidates() sync* {
+  final env = Platform.environment;
+  final exe = Platform.isWindows ? 'adb.exe' : 'adb';
+  final sep = Platform.pathSeparator;
+  for (final root in [env['ANDROID_HOME'], env['ANDROID_SDK_ROOT']]) {
+    if (root != null && root.isNotEmpty) {
+      yield '$root${sep}platform-tools$sep$exe';
+    }
+  }
+  if (Platform.isWindows) {
+    final localAppData = env['LOCALAPPDATA'];
+    if (localAppData != null && localAppData.isNotEmpty) {
+      yield '$localAppData\\Android\\Sdk\\platform-tools\\$exe';
+    }
+  } else {
+    final home = env['HOME'];
+    if (home != null && home.isNotEmpty) {
+      yield '$home/Library/Android/sdk/platform-tools/$exe'; // macOS
+      yield '$home/Android/Sdk/platform-tools/$exe'; // Linux
+    }
+  }
+  yield exe; // bare — relies on PATH
 }
 

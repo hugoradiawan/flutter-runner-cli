@@ -66,7 +66,7 @@ class EmulatorsCommand extends Command {
     bool timedOut = false;
     try {
       final emulators = await manager.list().timeout(
-        const Duration(seconds: 30),
+        const Duration(seconds: 90),
         onTimeout: () {
           timedOut = true;
           return const [];
@@ -95,7 +95,7 @@ class EmulatorsCommand extends Command {
     bool timedOut = false;
     try {
       final emulators = await manager.list().timeout(
-        const Duration(seconds: 30),
+        const Duration(seconds: 90),
         onTimeout: () {
           timedOut = true;
           return const [];
