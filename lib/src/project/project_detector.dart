@@ -157,15 +157,21 @@ class ProjectDetector {
       );
     }
     final listing = apps.map((c) {
-      final rel = p.relative(c.dir, from: workspaceRoot);
+      final rel = _relDisplay(c.dir, workspaceRoot);
       return '  - $rel  (${c.name})';
     }).join('\n');
     return ProjectDetectionResult.failure(
       'Workspace at $workspaceRoot has more than one Flutter app:\n'
       '$listing\n'
-      'Pick one: `frun <path>` (e.g. `frun ${p.relative(apps.first.dir, from: workspaceRoot)}`).',
+      'Pick one: `frun <path>` (e.g. `frun ${_relDisplay(apps.first.dir, workspaceRoot)}`).',
     );
   }
+
+  /// Relative path from [from] to [dir], always rendered with `/` separators
+  /// so error messages and the `frun <path>` hint read the same on every
+  /// platform (and so they match `frun`'s own slash-tolerant path parsing).
+  static String _relDisplay(String dir, String from) =>
+      p.posix.joinAll(p.split(p.relative(dir, from: from)));
 
   static ProjectDetectionResult _build({required String dir, required String name}) {
     final workspaceRoot = _findWorkspaceRoot(dir);
@@ -297,10 +303,15 @@ class ProjectDetector {
   }
 
   /// Walks upward from [projectRoot] looking for the nearest ancestor that
-  /// contains a `.vscode/` directory.
+  /// contains a `.vscode/` directory. Stops before the user home directory so
+  /// a global `~/.vscode` is never mistaken for the workspace root — without
+  /// that guard the walk climbs out of the project and latches onto home.
+  /// Falls back to [projectRoot] when nothing is found.
   static String _findWorkspaceRoot(String projectRoot) {
+    final home = _homeDir();
     Directory current = Directory(projectRoot).absolute;
     while (true) {
+      if (home != null && p.equals(current.path, home)) return projectRoot;
       if (Directory(p.join(current.path, '.vscode')).existsSync()) {
         return current.path;
       }
@@ -308,6 +319,14 @@ class ProjectDetector {
       if (parent.path == current.path) return projectRoot;
       current = parent;
     }
+  }
+
+  /// The current user's home directory, or null when the environment does not
+  /// expose one. `USERPROFILE` on Windows, `HOME` elsewhere.
+  static String? _homeDir() {
+    final env = Platform.environment;
+    final home = env['USERPROFILE'] ?? env['HOME'];
+    return (home == null || home.isEmpty) ? null : home;
   }
 
   /// Cheap probe for "is this a runnable Flutter app?" — looks for any

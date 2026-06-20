@@ -1,6 +1,7 @@
 import 'package:frun/src/config/config.dart';
 import 'package:frun/src/ide/ide_launcher.dart';
 import 'package:frun/src/ide/source_location.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
@@ -50,7 +51,9 @@ void main() {
         column: 2,
       );
       expect(loc, isNotNull);
-      expect(loc!.file, '/tmp/app/lib/main.dart');
+      // toFilePath() yields native separators (e.g. `\tmp\...` on Windows);
+      // compare with p.equals so the assertion holds on every platform.
+      expect(p.equals(loc!.file, '/tmp/app/lib/main.dart'), isTrue);
       expect(loc.line, 7);
       expect(loc.column, 2);
     });
