@@ -13,6 +13,7 @@ import 'src/app/app_state.dart';
 import 'src/app/commands/clear_command.dart';
 import 'src/app/commands/command_registry.dart';
 import 'src/app/commands/config_command.dart';
+import 'src/app/commands/copy_command.dart';
 import 'src/app/commands/devices_command.dart';
 import 'src/app/commands/devtools_command.dart';
 import 'src/app/commands/diagnostics_command.dart';
@@ -29,6 +30,7 @@ import 'src/daemon/flutter_daemon.dart';
 import 'src/devices/device_manager.dart';
 import 'src/platform/windows_console.dart';
 import 'src/project/project_detector.dart';
+import 'src/tui/clipboard.dart';
 import 'src/tui/frun_app.dart';
 
 export 'src/version.dart';
@@ -65,6 +67,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   final registry = CommandRegistry()
     ..register(QuitCommand())
     ..register(ClearCommand())
+    ..register(CopyCommand(copyToClipboard))
     ..register(ConfigCommand(configStore))
     ..register(DevicesCommand())
     ..register(EmulatorsCommand())

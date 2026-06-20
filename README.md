@@ -93,6 +93,7 @@ Type a command name at the prompt — no prefix.
 | `diagnostics` | `problems`, `prob` | Toggle the analyzer problems panel; arg `error\|warning\|info\|all` pre-filters |
 | `config`      |               | View or set config (`show`, `path`, `set <k> <v>`) |
 | `clear`       | `cls`, `c`    | Clear transcript |
+| `copy`        | `yank`, `copyall` | Copy the whole transcript to the clipboard |
 | `quit`        | `exit`        | Exit |
 
 In vim mode the same commands are also reachable via `:` (e.g. `:run 0`,

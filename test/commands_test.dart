@@ -4,6 +4,7 @@ import 'package:frun/src/app/app_state.dart';
 import 'package:frun/src/app/commands/clear_command.dart';
 import 'package:frun/src/app/commands/command_registry.dart';
 import 'package:frun/src/app/commands/config_command.dart';
+import 'package:frun/src/app/commands/copy_command.dart';
 import 'package:frun/src/app/commands/help_command.dart';
 import 'package:frun/src/app/commands/quit_command.dart';
 import 'package:frun/src/app/transcript.dart';
@@ -57,6 +58,35 @@ void main() {
     state.transcript.info('b');
     await ClearCommand().run(const [], state);
     expect(state.transcript.lines, isEmpty);
+  });
+
+  test('/copy grabs the whole transcript', () async {
+    state.transcript.info('line one');
+    state.transcript.info('line two');
+    String? captured;
+    final res = await CopyCommand((text) async {
+      captured = text;
+      return true;
+    }).run(const [], state);
+    expect(res.shouldQuit, isFalse);
+    expect(captured, 'line one\nline two');
+    final sys = state.transcript.lines
+        .where((l) => l.level == TranscriptLevel.system)
+        .toList();
+    expect(sys.last.text, contains('Copied 2 lines'));
+  });
+
+  test('/copy on empty transcript warns', () async {
+    var called = false;
+    await CopyCommand((text) async {
+      called = true;
+      return true;
+    }).run(const [], state);
+    expect(called, isFalse);
+    final warns = state.transcript.lines
+        .where((l) => l.level == TranscriptLevel.warn)
+        .toList();
+    expect(warns, isNotEmpty);
   });
 
   test('/config set persists changes', () async {

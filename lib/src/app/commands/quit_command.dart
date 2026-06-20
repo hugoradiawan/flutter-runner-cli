@@ -9,7 +9,7 @@ class QuitCommand extends Command {
   String get summary => 'Exit frun';
 
   @override
-  List<String> get aliases => const ['exit'];
+  List<String> get aliases => const ['exit', 'q'];
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
