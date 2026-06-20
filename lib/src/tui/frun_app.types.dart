@@ -3,23 +3,34 @@ part of 'frun_app.dart';
 // ─── Shared layout/render value types ──────────────────────────────────────
 
 class _VisibleLink {
-  _VisibleLink(this.transcriptLineIndex, this.link);
+  _VisibleLink(this.transcriptLineIndex, this.link, this.visStart, this.visEnd);
   final int transcriptLineIndex;
   final TranscriptLink link;
+
+  /// The link's [TranscriptLink.start]/[TranscriptLink.end] raw offsets mapped
+  /// into visible-column space (ANSI stripped), matching `_DisplayRow.startCol`.
+  final int visStart;
+  final int visEnd;
 }
 
-/// One row's worth of rendered text. A long transcript line wraps into
-/// several `_DisplayRow`s; [startCol] is the offset into the source line so
-/// the renderer can map link spans onto the right row.
+/// One row's worth of text after soft-wrapping. A long transcript line wraps
+/// into several `_DisplayRow`s.
+///
+/// [text] is the *visible* content with ANSI escape codes stripped, so column
+/// indices into it map 1:1 onto on-screen cells. All column arithmetic — mouse
+/// hit-testing, the vim cursor, selection, search, and yank — operates on
+/// [text]. [startCol] is this row's visible-column offset into the source line
+/// (so link spans can be mapped onto the right row).
+///
+/// [rendered] is the colourised string (the row's raw slice with its ANSI
+/// intact, prefixed by the SGR state carried over from earlier wrapped chunks).
+/// It is used *only* for the base full-line paint; overlays restyle [text].
 class _DisplayRow {
-  _DisplayRow(this.lineIndex, this.startCol, this.text, {this.ansiPrefix = ''});
+  _DisplayRow(this.lineIndex, this.startCol, this.text, {this.rendered = ''});
   final int lineIndex;
   final int startCol;
   final String text;
-
-  /// ANSI SGR codes active at the start of this row (accumulated from prior
-  /// wrapped chunks). Prepended during rendering so colours survive wraps.
-  final String ansiPrefix;
+  final String rendered;
 }
 
 // ─── Tuning constants (library-private; shared across the behaviour mixins) ─
@@ -130,6 +141,33 @@ const _configEditorEntries = <_ConfigEditorEntry>[
   _ConfigEditorEntry('emulator_boot', ['quick', 'cold'], label: 'Emulator boot'),
   _ConfigEditorEntry('verbose_errors', ['false', 'true'], label: 'Verbose error logs'),
 ];
+
+/// Number of *visible* columns in [raw] before raw string index [rawEnd]
+/// (defaults to the whole string), skipping CSI escape sequences (which occupy
+/// zero columns). Maps raw offsets — e.g. link spans extracted from a coloured
+/// source line — into the visible-column space the renderer operates in.
+///
+/// Counts each non-escape UTF-16 code unit as one column, matching the wrapping
+/// in `_layoutDisplayRows`.
+int _visibleWidth(String raw, [int? rawEnd]) {
+  final end = (rawEnd ?? raw.length).clamp(0, raw.length);
+  var i = 0;
+  var vis = 0;
+  while (i < end) {
+    if (raw[i] == '\x1b' && i + 1 < raw.length && raw[i + 1] == '[') {
+      i += 2;
+      while (i < raw.length) {
+        final cu = raw.codeUnitAt(i);
+        i++;
+        if (cu >= 0x40 && cu <= 0x7E) break; // CSI final byte
+      }
+      continue;
+    }
+    i++;
+    vis++;
+  }
+  return vis;
+}
 
 /// Updates [active] SGR parameter list from a raw SGR parameter string
 /// (the text between `\x1b[` and `m`, e.g. `'1;33'` or `'0'`).

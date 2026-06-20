@@ -52,16 +52,16 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       final baseStyle = line.onClick != null
           ? theme.accentStyle
           : theme.forLevel(line.level);
-      canvas.paint(0, yRow, baseStyle.render(row.ansiPrefix + row.text));
+      canvas.paint(0, yRow, baseStyle.render(row.rendered));
 
       if (focused != null && focused.transcriptLineIndex == row.lineIndex) {
-        final link = focused.link;
         final rowStart = row.startCol;
         final rowEnd = rowStart + row.text.length;
-        final overlapStart = math.max(link.start, rowStart);
-        final overlapEnd = math.min(link.end, rowEnd);
+        final overlapStart = math.max(focused.visStart, rowStart);
+        final overlapEnd = math.min(focused.visEnd, rowEnd);
         if (overlapEnd > overlapStart) {
-          final substring = line.text.substring(overlapStart, overlapEnd);
+          final substring =
+              row.text.substring(overlapStart - rowStart, overlapEnd - rowStart);
           canvas.paint(overlapStart - rowStart, yRow,
               theme.linkHighlightStyle.render(substring));
         }
@@ -137,10 +137,22 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       }
 
       var rawPos = 0;
-      var visCol = 0;
+      var visCol = 0; // visible columns emitted in the current chunk
+      var totalVis = 0; // visible columns emitted in the whole line so far
       var chunkRawStart = 0;
+      var chunkVisStart = 0;
       var chunkAnsiPrefix = '';
       final activeSgr = <String>[];
+      final visBuf = StringBuffer(); // visible (ANSI-stripped) chunk text
+
+      void flush(int rawEnd) {
+        out.add(_DisplayRow(
+          i,
+          chunkVisStart,
+          visBuf.toString(),
+          rendered: chunkAnsiPrefix + text.substring(chunkRawStart, rawEnd),
+        ));
+      }
 
       while (rawPos < text.length) {
         // CSI escape sequence (ESC [)?  Consume atomically — zero visual cols.
@@ -162,28 +174,22 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
         }
 
         if (visCol == width) {
-          out.add(_DisplayRow(
-            i,
-            chunkRawStart,
-            text.substring(chunkRawStart, rawPos),
-            ansiPrefix: chunkAnsiPrefix,
-          ));
+          flush(rawPos);
           chunkRawStart = rawPos;
+          chunkVisStart = totalVis;
           chunkAnsiPrefix =
               activeSgr.isEmpty ? '' : '\x1b[${activeSgr.join(';')}m';
           visCol = 0;
+          visBuf.clear();
         }
 
+        visBuf.write(text[rawPos]);
         visCol++;
+        totalVis++;
         rawPos++;
       }
 
-      out.add(_DisplayRow(
-        i,
-        chunkRawStart,
-        text.substring(chunkRawStart),
-        ansiPrefix: chunkAnsiPrefix,
-      ));
+      flush(text.length);
     }
     return out;
   }
@@ -230,8 +236,14 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     final sorted = seenLines.toList()..sort();
     final out = <_VisibleLink>[];
     for (final i in sorted) {
-      for (final link in LinkExtractor.extract(lines[i].text)) {
-        out.add(_VisibleLink(i, link));
+      final src = lines[i].text;
+      for (final link in LinkExtractor.extract(src)) {
+        out.add(_VisibleLink(
+          i,
+          link,
+          _visibleWidth(src, link.start),
+          _visibleWidth(src, link.end),
+        ));
       }
     }
     return out;

@@ -178,7 +178,7 @@ mixin _MouseMixin on _FrunModelBase {
     for (var i = 0; i < _visibleLinks.length; i++) {
       final vl = _visibleLinks[i];
       if (vl.transcriptLineIndex != dr.lineIndex) continue;
-      if (logicalCol >= vl.link.start && logicalCol < vl.link.end) {
+      if (logicalCol >= vl.visStart && logicalCol < vl.visEnd) {
         _focusedLinkIndex = i;
         return true;
       }
