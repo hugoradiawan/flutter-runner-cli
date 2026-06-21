@@ -9,6 +9,7 @@ import 'package:dart_tui/dart_tui.dart';
 import 'src/analysis/analysis_server.dart';
 import 'src/analysis/diagnostics_store.dart';
 import 'src/analysis/package_locator.dart';
+import 'src/analysis/working_set.dart';
 import 'src/app/app_state.dart';
 import 'src/app/commands/clear_command.dart';
 import 'src/app/commands/command_registry.dart';
@@ -32,6 +33,7 @@ import 'src/platform/windows_console.dart';
 import 'src/project/project_detector.dart';
 import 'src/tui/clipboard.dart';
 import 'src/tui/frun_app.dart';
+import 'src/watcher/dart_file_watcher.dart';
 
 export 'src/version.dart';
 
@@ -113,6 +115,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   }
   await state.runController.stopAll();
   await state.isolateManager.disconnect();
+  await state.analysisWatcher?.dispose();
   await state.analysisServer?.shutdown();
   await state.daemon?.shutdown();
   return 0;
@@ -129,8 +132,13 @@ Future<void> _bootAnalysis(AppState state) async {
   if (cached.isNotEmpty) state.diagnostics = cached;
 
   // Discover every package in the project so monorepos (melos / pub
-  // workspaces) get all packages analyzed, not just the root's own package.
-  final packages = locatePackageRoots(state.project.root);
+  // workspaces) get all packages analyzed, not just the runnable app's own
+  // package. The runnable [root] (e.g. `app/`) is usually a *sibling* of the
+  // other packages (`features/*`, `cores/*`) under the monorepo boundary, so
+  // scan from [watchRoot] (the `.git`/`melos.yaml` ancestor). Scanning from
+  // [root] alone walks only inside `app/` and misses every sibling package —
+  // errors in those (e.g. `features/youchat`) then go silently unreported.
+  final packages = locatePackageRoots(state.project.watchRoot);
 
   try {
     final server = await DartAnalysisServer.start(
@@ -156,6 +164,31 @@ Future<void> _bootAnalysis(AppState state) async {
         } catch (_) {/* best-effort cache */}
       });
     });
+
+    // Open the user's working set (git-dirty `.dart` files) as LSP priority
+    // documents. The analyzer reports those within seconds; the whole-project
+    // background pass over a large monorepo is far too slow to surface a
+    // just-edited file — which is exactly the file the user is looking at.
+    final dirty = gitDirtyDartFiles(state.project.watchRoot);
+    for (final file in dirty) {
+      server.openFile(file);
+    }
+    if (dirty.isNotEmpty) {
+      state.transcript.system(
+        'Prioritizing ${dirty.length} changed file(s) for analysis.',
+      );
+    }
+
+    // Keep the analyzer in sync with edits made by an external editor: every
+    // changed `.dart` file is (re)opened/pushed so its diagnostics refresh
+    // live, and files first edited after launch start being analyzed too.
+    final watcher = DartFileWatcher(
+      root: state.project.watchRoot,
+      pollInterval: const Duration(seconds: 1),
+      onFileChanged: server.openFile,
+    );
+    watcher.start();
+    state.analysisWatcher = watcher;
   } catch (e) {
     state.analysisError = e.toString();
     state.transcript.warn(

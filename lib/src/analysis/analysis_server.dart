@@ -152,6 +152,16 @@ class DartAnalysisServer {
   final LspMessageFramer _framer = LspMessageFramer();
   final Map<String, List<Diagnostic>> _byUri = <String, List<Diagnostic>>{};
 
+  /// Documents we've pushed to the server via `didOpen`, mapped to their
+  /// current sync version. Opening a file makes it a *priority* document the
+  /// analyzer reports on within seconds — without this, a freshly-edited file
+  /// in a large monorepo can wait minutes for the background pass to reach it.
+  final Map<String, int> _openVersions = <String, int>{};
+
+  /// Files requested via [openFile] before the `initialize` handshake finished.
+  /// Flushed once the server is ready.
+  final List<String> _pendingOpens = <String>[];
+
   int _nextId = 1;
   int _initializeId = -1;
   bool _initialized = false;
@@ -240,6 +250,10 @@ class DartAnalysisServer {
       if (!_initialized && msg['id'] == _initializeId) {
         _initialized = true;
         _notify('initialized', const <String, Object?>{});
+        for (final path in _pendingOpens) {
+          _openOrChange(path);
+        }
+        _pendingOpens.clear();
       }
       return;
     }
@@ -333,6 +347,54 @@ class DartAnalysisServer {
 
   void _respond(Object? id, Object? result) {
     _send(<String, Object?>{'jsonrpc': '2.0', 'id': id, 'result': result});
+  }
+
+  /// Open [path] as a priority document, or — if already open — push its latest
+  /// on-disk content as a change. Call this for the files the user is actively
+  /// editing so their diagnostics surface promptly and stay in sync with disk
+  /// edits made by an external editor. No-op for non-`.dart` paths. Safe to
+  /// call before the server has initialized (the request is queued).
+  void openFile(String path) {
+    if (_disposed) return;
+    if (!path.endsWith('.dart')) return;
+    final norm = p.normalize(path);
+    if (!_initialized) {
+      if (!_pendingOpens.contains(norm)) _pendingOpens.add(norm);
+      return;
+    }
+    _openOrChange(norm);
+  }
+
+  void _openOrChange(String path) {
+    final String text;
+    try {
+      text = File(path).readAsStringSync();
+    } catch (_) {
+      return; // unreadable/just-deleted — leave the server's last view in place
+    }
+    final uri = Uri.file(path, windows: Platform.isWindows).toString();
+    final existing = _openVersions[path];
+    if (existing == null) {
+      _openVersions[path] = 1;
+      _notify('textDocument/didOpen', <String, Object?>{
+        'textDocument': <String, Object?>{
+          'uri': uri,
+          'languageId': 'dart',
+          'version': 1,
+          'text': text,
+        },
+      });
+    } else {
+      final version = existing + 1;
+      _openVersions[path] = version;
+      // Full-document sync (the analyzer's default) — replace the whole text.
+      _notify('textDocument/didChange', <String, Object?>{
+        'textDocument': <String, Object?>{'uri': uri, 'version': version},
+        'contentChanges': <Object?>[
+          <String, Object?>{'text': text},
+        ],
+      });
+    }
   }
 
   Future<void> shutdown() async {

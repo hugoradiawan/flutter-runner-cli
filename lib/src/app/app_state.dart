@@ -11,6 +11,7 @@ import '../ide/inspector_bridge.dart';
 import '../project/launch_config.dart';
 import '../project/project_detector.dart';
 import '../vm/isolate_manager.dart';
+import '../watcher/dart_file_watcher.dart';
 import 'run_controller.dart';
 import 'run_target.dart';
 import 'transcript.dart';
@@ -78,6 +79,11 @@ class AppState {
 
   /// Set when the analysis server fails to start.
   String? analysisError;
+
+  /// Always-on watcher that keeps the analyzer's view of edited files in sync
+  /// with disk (re-opens/re-pushes changed `.dart` files as priority docs).
+  /// Independent of the run controller's hot-reload watcher.
+  DartFileWatcher? analysisWatcher;
 
   /// Latest project-wide analyzer diagnostics. Updated in realtime by the
   /// analysis server; seeded from the cache on launch so counters show
