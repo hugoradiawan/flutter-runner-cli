@@ -61,7 +61,9 @@ class ConfigRepositoryImpl implements IConfigRepository {
           emulatorBoot: FrunEmulatorBoot.fromString(value),
         ),
         'verbose_errors' => c.copyWith(verboseErrors: value == 'true'),
-        'nvim_server' => c.copyWith(nvimServer: value.isEmpty ? null : value),
+        'nvim_server' => value.isEmpty
+            ? c.copyWith(clearNvimServer: true)
+            : c.copyWith(nvimServer: value),
         _ => throw ArgumentError('Unknown config key: $key'),
       };
 }
