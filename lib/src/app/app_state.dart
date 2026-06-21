@@ -5,6 +5,17 @@ import '../config/config.dart';
 import '../daemon/daemon_messages.dart';
 import '../daemon/flutter_daemon.dart';
 import '../devices/device_manager.dart';
+import '../domain/repositories/config_repository.dart';
+import '../domain/repositories/device_repository.dart';
+import '../domain/repositories/diagnostics_repository.dart';
+import '../domain/repositories/emulator_repository.dart';
+import '../domain/repositories/session_repository.dart';
+import '../domain/usecases/get_config.usecase.dart';
+import '../domain/usecases/get_diagnostics.usecase.dart';
+import '../domain/usecases/list_devices.usecase.dart';
+import '../domain/usecases/list_emulators.usecase.dart';
+import '../domain/usecases/set_config.usecase.dart';
+import '../domain/usecases/watch_diagnostics.usecase.dart';
 import '../ide/frun_notifier.dart';
 import '../ide/ide_launcher.dart';
 import '../ide/inspector_bridge.dart';
@@ -50,6 +61,36 @@ class AppState {
   /// status panel and `/devices` command surface a "starting" message.
   FlutterDaemon? daemon;
   DeviceManager? deviceManager;
+
+  // ── CA repositories (set when respective services start) ──────────────────
+  IDeviceRepository? deviceRepository;
+  IEmulatorRepository? emulatorRepository;
+  IDiagnosticsRepository? diagnosticsRepository;
+  IConfigRepository? configRepository;
+  ISessionRepository? sessionRepository;
+
+  // ── UseCase accessors (constructed on demand from repos) ──────────────────
+  ListDevicesUseCase? get listDevicesUseCase =>
+      deviceRepository != null ? ListDevicesUseCase(deviceRepository!) : null;
+
+  ListEmulatorsUseCase? get listEmulatorsUseCase =>
+      emulatorRepository != null ? ListEmulatorsUseCase(emulatorRepository!) : null;
+
+  GetDiagnosticsUseCase? get getDiagnosticsUseCase =>
+      diagnosticsRepository != null
+          ? GetDiagnosticsUseCase(diagnosticsRepository!)
+          : null;
+
+  WatchDiagnosticsUseCase? get watchDiagnosticsUseCase =>
+      diagnosticsRepository != null
+          ? WatchDiagnosticsUseCase(diagnosticsRepository!)
+          : null;
+
+  GetConfigUseCase? get getConfigUseCase =>
+      configRepository != null ? GetConfigUseCase(configRepository!) : null;
+
+  SetConfigUseCase? get setConfigUseCase =>
+      configRepository != null ? SetConfigUseCase(configRepository!) : null;
   late final RunController runController = RunController(this);
   late final IsolateManager isolateManager = IsolateManager();
   late final IdeLauncher ideLauncher = IdeLauncher();

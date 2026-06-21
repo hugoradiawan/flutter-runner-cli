@@ -43,7 +43,7 @@ class EmulatorsCommand extends Command {
       return CommandResult.ok;
     }
     if (args.first == 'list' || args.first == 'ls') {
-      await _list(manager, state);
+      await _list(state);
       return CommandResult.ok;
     }
     if (args.first == 'launch' && args.length >= 2) {
@@ -90,39 +90,34 @@ class EmulatorsCommand extends Command {
     }
   }
 
-  Future<void> _list(EmulatorManager manager, AppState state) async {
-    state.visibleTranscript.system('Fetching emulators…');
-    bool timedOut = false;
-    try {
-      final emulators = await manager.list().timeout(
-        const Duration(seconds: 90),
-        onTimeout: () {
-          timedOut = true;
-          return const [];
-        },
+  Future<void> _list(AppState state) async {
+    final useCase = state.listEmulatorsUseCase;
+    if (useCase == null) {
+      state.visibleTranscript.warn(
+        'Flutter daemon is still starting. Try emulators again shortly.',
       );
-      if (timedOut) {
-        state.visibleTranscript.warn(
-          'Emulator list timed out. Flutter daemon may be slow or Android SDK not configured.',
-        );
-        return;
-      }
-      if (emulators.isEmpty) {
-        state.visibleTranscript.warn(
-          'No emulators defined. Try `emulators create [name]` (Android only).',
-        );
-        return;
-      }
-      state.visibleTranscript.system('Emulators:');
-      for (final e in emulators) {
-        state.visibleTranscript.info(
-          '  ${e.id.padRight(28)} ${e.name.padRight(30)} ${e.platformType ?? ""}',
-        );
-      }
-      state.visibleTranscript.info('Launch with `/emulators launch <id>`.');
-    } catch (e) {
-      state.visibleTranscript.error('Failed to list emulators: $e');
+      return;
     }
+    state.visibleTranscript.system('Fetching emulators…');
+    final result = await useCase.call();
+    result.fold(
+      (failure) => state.visibleTranscript.error('Failed to list emulators: ${failure.message}'),
+      (emulators) {
+        if (emulators.isEmpty) {
+          state.visibleTranscript.warn(
+            'No emulators defined. Try `emulators create [name]` (Android only).',
+          );
+          return;
+        }
+        state.visibleTranscript.system('Emulators:');
+        for (final e in emulators) {
+          state.visibleTranscript.info(
+            '  ${e.id.padRight(28)} ${e.name.padRight(30)} ${e.platformType ?? ""}',
+          );
+        }
+        state.visibleTranscript.info('Launch with `/emulators launch <id>`.');
+      },
+    );
   }
 
   Future<void> _launch(

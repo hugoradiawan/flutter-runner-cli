@@ -12,6 +12,7 @@ executables:
 
 dependencies:
   args: ^2.5.0
+  equatable: ^2.0.5
   logging: ^1.2.0
   path: ^1.9.0
   dart_tui: ^1.2.0

@@ -20,32 +20,36 @@ class DevicesCommand extends Command {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    final mgr = state.deviceManager;
-    if (mgr == null) {
+    final useCase = state.listDevicesUseCase;
+    if (useCase == null) {
       state.visibleTranscript.warn(
         'Flutter daemon is still starting. Try devices again in a moment.',
       );
       return CommandResult.ok;
     }
-    _printList(state);
-    return CommandResult.ok;
-  }
-
-  void _printList(AppState state) {
-    final list = state.deviceManager!.devices;
-    if (list.isEmpty) {
-      state.visibleTranscript.warn(
-        'No devices found. Try emulators to launch one or connect a device.',
-      );
-      return;
-    }
-    state.visibleTranscript.system('Devices:');
-    for (final d in list) {
-      final kind = d.emulator ? 'emulator' : 'physical';
-      state.visibleTranscript.info(
-        '  ${d.name.padRight(30)} ${d.id.padRight(28)} ${d.platform.padRight(14)} $kind',
-      );
-    }
-    state.visibleTranscript.info('Pick a device when you /run.');
+    final result = await useCase.call();
+    return result.fold(
+      (failure) {
+        state.visibleTranscript.warn(failure.message);
+        return CommandResult.ok;
+      },
+      (devices) {
+        if (devices.isEmpty) {
+          state.visibleTranscript.warn(
+            'No devices found. Try emulators to launch one or connect a device.',
+          );
+          return CommandResult.ok;
+        }
+        state.visibleTranscript.system('Devices:');
+        for (final d in devices) {
+          final kind = d.emulator ? 'emulator' : 'physical';
+          state.visibleTranscript.info(
+            '  ${d.name.padRight(30)} ${d.id.padRight(28)} ${d.platform.padRight(14)} $kind',
+          );
+        }
+        state.visibleTranscript.info('Pick a device when you /run.');
+        return CommandResult.ok;
+      },
+    );
   }
 }

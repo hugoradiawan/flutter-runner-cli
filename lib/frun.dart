@@ -28,7 +28,12 @@ import 'src/app/commands/run_command.dart';
 import 'src/app/commands/status_command.dart';
 import 'src/config/config_store.dart';
 import 'src/daemon/flutter_daemon.dart';
+import 'src/data/repositories/config_repository_impl.dart';
+import 'src/data/repositories/device_repository_impl.dart';
+import 'src/data/repositories/diagnostics_repository_impl.dart';
+import 'src/data/repositories/emulator_repository_impl.dart';
 import 'src/devices/device_manager.dart';
+import 'src/devices/emulator_manager.dart';
 import 'src/platform/windows_console.dart';
 import 'src/project/project_detector.dart';
 import 'src/tui/clipboard.dart';
@@ -64,7 +69,8 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   final configStore = configStoreOverride ?? ConfigStore();
   final config = configStore.load();
 
-  final state = AppState(project: project, config: config);
+  final state = AppState(project: project, config: config)
+    ..configRepository = ConfigRepositoryImpl(configStore);
 
   final registry = CommandRegistry()
     ..register(QuitCommand())
@@ -146,6 +152,7 @@ Future<void> _bootAnalysis(AppState state) async {
       workspaceFolders: packages,
     );
     state.analysisServer = server;
+    state.diagnosticsRepository = DiagnosticsRepositoryImpl(server);
     server.stderrLines.listen((l) => state.transcript.warn('analysis: $l'));
     state.transcript.system(
       packages.length > 1
@@ -239,6 +246,8 @@ Future<void> _bootDaemon(AppState state) async {
       await manager.start();
       state.daemonReady = true;
       state.daemonError = null;
+      state.deviceRepository = DeviceRepositoryImpl(manager);
+      state.emulatorRepository = EmulatorRepositoryImpl(EmulatorManager(daemon));
       state.transcript.success(
         'Flutter daemon ready (${state.deviceManager!.devices.length} devices).',
       );
