@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'daemon_messages.dart';
+import '../models/daemon_messages.dart';
 
 /// Thin client for `flutter daemon`.
 ///

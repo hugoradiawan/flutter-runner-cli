@@ -1,4 +1,4 @@
-/// Public entry point for the `frun` TUI.
+﻿/// Public entry point for the `frun` TUI.
 library;
 
 import 'dart:async';
@@ -26,7 +26,7 @@ import 'src/app/commands/quit_command.dart';
 import 'src/app/commands/reload_command.dart';
 import 'src/app/commands/run_command.dart';
 import 'src/app/commands/status_command.dart';
-import 'src/daemon/flutter_daemon.dart';
+import 'src/data/datasources/flutter_daemon.dart';
 import 'src/data/datasources/config_datasource.dart';
 import 'src/data/datasources/config_store.dart';
 import 'src/data/repositories/config_repository_impl.dart';
@@ -49,7 +49,7 @@ export 'src/version.dart';
 Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   if (!stdout.hasTerminal) {
     stderr.writeln(
-      'frun: this command is a terminal UI — please run it from an interactive shell.',
+      'frun: this command is a terminal UI â€” please run it from an interactive shell.',
     );
     return 64;
   }
@@ -129,7 +129,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   // Kick the daemon off in the background so the TUI is interactive
   // immediately. Any failure is surfaced in the transcript.
   unawaited(_bootDaemon(state));
-  // Start the analyzer in the background too — independent of the daemon.
+  // Start the analyzer in the background too â€” independent of the daemon.
   unawaited(_bootAnalysis(state));
 
   try {
@@ -160,7 +160,7 @@ Future<void> _bootAnalysis(AppState state) async {
   // package. The runnable [root] (e.g. `app/`) is usually a *sibling* of the
   // other packages (`features/*`, `cores/*`) under the monorepo boundary, so
   // scan from [watchRoot] (the `.git`/`melos.yaml` ancestor). Scanning from
-  // [root] alone walks only inside `app/` and misses every sibling package —
+  // [root] alone walks only inside `app/` and misses every sibling package â€”
   // errors in those (e.g. `features/youchat`) then go silently unreported.
   final packages = locatePackageRoots(state.project.watchRoot);
 
@@ -174,14 +174,14 @@ Future<void> _bootAnalysis(AppState state) async {
     server.stderrLines.listen((l) => state.transcript.warn('analysis: $l'));
     state.transcript.system(
       packages.length > 1
-          ? 'Analyzing ${packages.length} packages… '
+          ? 'Analyzing ${packages.length} packagesâ€¦ '
                 '(first pass can take ~20s on large monorepos)'
-          : 'Analyzing project…',
+          : 'Analyzing projectâ€¦',
     );
     Timer? saveDebounce;
     server.diagnostics.listen((items) {
       state.diagnostics = items;
-      // Debounce disk writes — analysis can settle in bursts.
+      // Debounce disk writes â€” analysis can settle in bursts.
       saveDebounce?.cancel();
       saveDebounce = Timer(const Duration(seconds: 1), () {
         try {
@@ -195,7 +195,7 @@ Future<void> _bootAnalysis(AppState state) async {
     // Open the user's working set (git-dirty `.dart` files) as LSP priority
     // documents. The analyzer reports those within seconds; the whole-project
     // background pass over a large monorepo is far too slow to surface a
-    // just-edited file — which is exactly the file the user is looking at.
+    // just-edited file â€” which is exactly the file the user is looking at.
     final dirty = gitDirtyDartFiles(state.project.watchRoot);
     for (final file in dirty) {
       server.openFile(file);
@@ -219,7 +219,7 @@ Future<void> _bootAnalysis(AppState state) async {
   } catch (e) {
     state.analysisError = e.toString();
     state.transcript.warn(
-      'Diagnostics unavailable — could not start "dart language-server". '
+      'Diagnostics unavailable â€” could not start "dart language-server". '
       'Is the Dart SDK on your PATH? ($e)',
     );
   }
@@ -227,7 +227,7 @@ Future<void> _bootAnalysis(AppState state) async {
 
 /// How many times to (re)start the flutter daemon before giving up. After a
 /// PC restart the very first attempt almost always fails because the adb
-/// server is down — flutter's `device.getDevices` then reports
+/// server is down â€” flutter's `device.getDevices` then reports
 /// `adb: failed to check server version: cannot connect to daemon`. Retrying
 /// (with an adb restart in between) recovers without the user relaunching frun.
 const int _daemonStartAttempts = 4;
@@ -247,8 +247,8 @@ Future<void> _bootDaemon(AppState state) async {
   for (var attempt = 1; attempt <= _daemonStartAttempts; attempt++) {
     state.transcript.system(
       attempt == 1
-          ? 'Starting flutter daemon…'
-          : 'Retrying flutter daemon (attempt $attempt/$_daemonStartAttempts)…',
+          ? 'Starting flutter daemonâ€¦'
+          : 'Retrying flutter daemon (attempt $attempt/$_daemonStartAttempts)â€¦',
     );
     FlutterDaemon? daemon;
     DeviceManager? manager;
@@ -300,7 +300,7 @@ Future<void> _bootDaemon(AppState state) async {
 
       if (attempt < _daemonStartAttempts) {
         state.transcript.warn(
-          'Flutter daemon start failed ($e). Restarting adb and retrying…',
+          'Flutter daemon start failed ($e). Restarting adb and retryingâ€¦',
         );
         await _ensureAdbServer(state);
         await Future<void>.delayed(_daemonRetryDelay);
@@ -315,7 +315,7 @@ Future<void> _bootDaemon(AppState state) async {
 /// flutter's first device query fails. When [restart] is true (the retry path)
 /// a clean `kill-server` + `start-server` clears stale state; when false (the
 /// proactive pre-flight) only `start-server` runs, which is a no-op on a
-/// healthy server. Best-effort — every failure is swallowed so the daemon retry
+/// healthy server. Best-effort â€” every failure is swallowed so the daemon retry
 /// surfaces the real error if adb genuinely can't run. [announce] silences the
 /// transcript message for the quiet pre-flight call.
 Future<void> _ensureAdbServer(
@@ -338,20 +338,20 @@ Future<void> _ensureAdbServer(
         return;
       }
     } on ProcessException {
-      // adb isn't at this path — try the next candidate.
+      // adb isn't at this path â€” try the next candidate.
       continue;
     }
   }
   if (announce) {
     state.transcript.warn(
-      'Could not restart adb automatically — set ANDROID_HOME or put '
+      'Could not restart adb automatically â€” set ANDROID_HOME or put '
       'platform-tools on PATH if the daemon keeps failing.',
     );
   }
 }
 
 /// Background warm-up: trigger the daemon's cold emulator discovery once during
-/// boot so the user's later `emu` command hits a warm daemon. Best-effort — any
+/// boot so the user's later `emu` command hits a warm daemon. Best-effort â€” any
 /// failure is swallowed here; the `emu` command surfaces real errors itself.
 Future<void> _warmEmulators(AppState state) async {
   final daemon = state.daemon;
@@ -386,5 +386,6 @@ Iterable<String> _adbCandidates() sync* {
       yield '$home/Android/Sdk/platform-tools/$exe'; // Linux
     }
   }
-  yield exe; // bare — relies on PATH
+  yield exe; // bare â€” relies on PATH
 }
+

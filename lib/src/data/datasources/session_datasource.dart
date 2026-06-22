@@ -1,5 +1,5 @@
-import '../../ca/data_source.dart';
-import '../../daemon/app_session.dart';
+﻿import '../../ca/data_source.dart';
+import 'app_session.dart';
 import '../../domain/failures/session_failure.dart';
 
 class SessionDataSource extends RemoteDataSource<SessionFailure> {
@@ -7,3 +7,4 @@ class SessionDataSource extends RemoteDataSource<SessionFailure> {
 
   final AppRunSession session;
 }
+

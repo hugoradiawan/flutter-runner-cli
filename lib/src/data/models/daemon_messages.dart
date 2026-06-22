@@ -1,8 +1,7 @@
-/// Typed view of the records the Flutter daemon emits over its JSON-RPC stream.
+/// Typed DTOs for records the Flutter daemon emits over its JSON-RPC stream.
 ///
 /// The daemon is intentionally loosely-typed (it adds fields between releases),
-/// so these classes only surface what `frun` actually consumes and keep the
-/// original payload around for diagnostics.
+/// so these classes only surface what `frun` actually consumes.
 library;
 
 class FlutterDevice {

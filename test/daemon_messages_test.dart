@@ -1,4 +1,4 @@
-import 'package:frun/src/daemon/daemon_messages.dart';
+﻿import 'package:frun/src/data/models/daemon_messages.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -37,3 +37,4 @@ void main() {
     expect(e.name, 'Pixel_7');
   });
 }
+

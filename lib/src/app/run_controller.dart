@@ -1,11 +1,11 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 
 import 'package:path/path.dart' as p;
 import 'package:vm_service/vm_service.dart' as vm;
 
-import '../daemon/app_session.dart';
-import '../daemon/daemon_messages.dart';
+import '../data/datasources/app_session.dart';
+import '../data/models/daemon_messages.dart';
 import '../devices/emulator_manager.dart';
 import '../domain/value_objects/config_values.dart';
 import '../ide/frun_notifier.dart';
@@ -16,7 +16,7 @@ import 'app_state.dart';
 import 'run_tab.dart';
 
 /// Owns all concurrent `flutter run` sessions as a list of [RunTab]s. Tabs are
-/// added on `run`, removed on `stop`, and one is "active" — that's the tab
+/// added on `run`, removed on `stop`, and one is "active" â€” that's the tab
 /// the TUI renders and the one `reload`, `restart`, `stop` operate on.
 ///
 /// The file watcher is shared: when any `.dart` file is saved, every running
@@ -107,7 +107,7 @@ class RunController {
         return null;
       }
       final coldBoot = state.config.emulatorBoot == FrunEmulatorBoot.cold;
-      state.visibleTranscript.system('Launching emulator ${target.id}…');
+      state.visibleTranscript.system('Launching emulator ${target.id}â€¦');
       try {
         final device = await EmulatorManager(
           daemon,
@@ -141,7 +141,7 @@ class RunController {
       if (tabs[i].dedupeKey == dedupeKey && tabs[i].isRunning) {
         _activeIndex = i;
         state.transcript.system(
-          'Already running — focused tab ${i + 1} (${tabs[i].label}).',
+          'Already running â€” focused tab ${i + 1} (${tabs[i].label}).',
         );
         return tabs[i];
       }
@@ -151,7 +151,7 @@ class RunController {
     tabs.add(tab);
     _activeIndex = tabs.length - 1;
     tab.transcript.system(
-      'Launching ${entry.name} on $deviceId (${entry.program})…',
+      'Launching ${entry.name} on $deviceId (${entry.program})â€¦',
     );
     state.notifier.notifyTab(tab, FrunNotifEvent.appLaunching);
     try {
@@ -198,7 +198,7 @@ class RunController {
     watcher.start();
     watcher.onChange.listen((_) {
       if (tabs.every((t) => !t.isRunning)) return;
-      state.visibleTranscript.system('File changed — hot reloading all tabs.');
+      state.visibleTranscript.system('File changed â€” hot reloading all tabs.');
       unawaited(hotReloadAll());
     });
     _watcher = watcher;
@@ -330,7 +330,7 @@ class RunController {
   Future<void> _detachTab(RunTab tab) async {
     final s = tab.session;
     if (s != null) {
-      tab.transcript.system('Detaching from app…');
+      tab.transcript.system('Detaching from appâ€¦');
       try {
         await s.detach();
       } catch (e) {
@@ -356,7 +356,7 @@ class RunController {
   Future<void> _stopTab(RunTab tab) async {
     final s = tab.session;
     if (s != null) {
-      tab.transcript.system('Stopping app…');
+      tab.transcript.system('Stopping appâ€¦');
       try {
         await s.stop();
       } catch (e) {
@@ -409,7 +409,7 @@ class RunController {
         final ws = event.params['wsUri']?.toString();
         if (ws != null) {
           tab.transcript.info('VM service: $ws');
-          // Isolate connection is shared across the process — only the active
+          // Isolate connection is shared across the process â€” only the active
           // tab drives it to keep the UX coherent.
           if (tab == activeTab) _connectIsolates(ws);
         }
@@ -522,8 +522,8 @@ class RunController {
   /// their `type`:
   ///   - `ErrorSummary` (the headline, e.g. "X was used after being disposed")
   ///   - `ErrorDescription` / `ErrorHint` (context)
-  ///   - the "error-causing widget" block → a clickable `file:line`
-  ///   - `DiagnosticsStackTrace` → frames, with framework noise collapsed
+  ///   - the "error-causing widget" block â†’ a clickable `file:line`
+  ///   - `DiagnosticsStackTrace` â†’ frames, with framework noise collapsed
   ///
   /// Stack frames and the summary live in each node's `properties` array (not
   /// `children`), so both are walked. Set [verbose] to also dump the full raw
@@ -538,8 +538,8 @@ class RunController {
 
     final buf = StringBuffer()
       ..writeln(
-        '══ Exception caught by $library'
-        '${errorsSince > 0 ? ' (error #${errorsSince + 1})' : ''} ══',
+        'â•â• Exception caught by $library'
+        '${errorsSince > 0 ? ' (error #${errorsSince + 1})' : ''} â•â•',
       );
 
     final parts = _ErrorParts();
@@ -654,7 +654,7 @@ class RunController {
         if (!parts.context.contains(desc)) parts.context.add(desc);
       }
       // Other node types (ErrorSpacer, bare DiagnosticsProperty, etc.) carry no
-      // useful standalone text — skip to keep the log compact.
+      // useful standalone text â€” skip to keep the log compact.
     }
 
     _collectNode(
@@ -673,7 +673,7 @@ class RunController {
     );
   }
 
-  /// Pulls the first `file://…/x.dart:line:col` or `package:…` reference out of
+  /// Pulls the first `file://â€¦/x.dart:line:col` or `package:â€¦` reference out of
   /// [desc] and renders it as a clickable path: `package:` forms are kept
   /// as-is, `file://` forms are resolved and made relative to [projectRoot]
   /// (forward slashes) so the transcript link-extractor picks them up.
@@ -702,8 +702,8 @@ class RunController {
     return '$path:$line$colSuffix';
   }
 
-  /// Drops pure framework frames (`package:flutter/…`, `dart:…`), collapsing
-  /// each consecutive run into a single `… N framework frames hidden` marker.
+  /// Drops pure framework frames (`package:flutter/â€¦`, `dart:â€¦`), collapsing
+  /// each consecutive run into a single `â€¦ N framework frames hidden` marker.
   /// If filtering would hide everything, falls back to the top frames so the
   /// stack is never empty.
   static List<String> _trimFrames(List<String> frames) {
@@ -715,7 +715,7 @@ class RunController {
     var hidden = 0;
     void flush() {
       if (hidden > 0) {
-        out.add('… $hidden framework frame${hidden == 1 ? '' : 's'} hidden');
+        out.add('â€¦ $hidden framework frame${hidden == 1 ? '' : 's'} hidden');
         hidden = 0;
       }
     }
@@ -737,7 +737,7 @@ class RunController {
 
   void _onProcessExit(RunTab tab, AppRunSession exitedSession, int code) {
     if (tab.session != exitedSession) {
-      // A newer session has taken over this tab — ignore the older exit.
+      // A newer session has taken over this tab â€” ignore the older exit.
       return;
     }
     tab.transcript.system('flutter run exited (code $code).');
@@ -757,3 +757,5 @@ class _ErrorParts {
   String? widgetLoc;
   String? widgetRaw;
 }
+
+

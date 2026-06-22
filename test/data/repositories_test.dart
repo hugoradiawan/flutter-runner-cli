@@ -1,8 +1,8 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:io';
 
 import 'package:frun/src/ca/result.dart';
-import 'package:frun/src/daemon/daemon_messages.dart';
+import 'package:frun/src/data/models/daemon_messages.dart';
 import 'package:frun/src/data/datasources/config_datasource.dart';
 import 'package:frun/src/data/datasources/config_store.dart';
 import 'package:frun/src/data/models/frun_config.dart';
@@ -22,13 +22,13 @@ import 'package:mocktail/mocktail.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
-// ── Mocks ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Mocks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class MockDeviceManager extends Mock implements DeviceManager {}
 
 class MockEmulatorManager extends Mock implements EmulatorManager {}
 
-// ── Fixtures ──────────────────────────────────────────────────────────────────
+// â”€â”€ Fixtures â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 final _flutterDevice = FlutterDevice(
   id: 'emulator-5554',
@@ -53,7 +53,7 @@ const _emulatorEntity = EmulatorEntity(
   name: 'Pixel 7 API 34',
 );
 
-// ── ConfigRepositoryImpl ──────────────────────────────────────────────────────
+// â”€â”€ ConfigRepositoryImpl â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 void main() {
   setUpAll(() {
@@ -152,7 +152,7 @@ void main() {
     });
   });
 
-  // ── DeviceRepositoryImpl ──────────────────────────────────────────────────────
+  // â”€â”€ DeviceRepositoryImpl â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   group('DeviceRepositoryImpl', () {
     late MockDeviceManager manager;
@@ -226,7 +226,7 @@ void main() {
     });
   });
 
-  // ── EmulatorRepositoryImpl ────────────────────────────────────────────────────
+  // â”€â”€ EmulatorRepositoryImpl â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   group('EmulatorRepositoryImpl', () {
     late MockEmulatorManager manager;
@@ -323,3 +323,4 @@ void main() {
     });
   });
 }
+

@@ -1,7 +1,7 @@
-import '../analysis/analysis_server.dart';
+﻿import '../analysis/analysis_server.dart';
 import '../analysis/diagnostic.dart';
 import '../analysis/diagnostics_store.dart';
-import '../daemon/flutter_daemon.dart';
+import '../data/datasources/flutter_daemon.dart';
 import '../devices/device_manager.dart';
 import '../domain/entities/app_config.entity.dart';
 import '../domain/entities/emulator.entity.dart';
@@ -43,7 +43,7 @@ class AppState {
 
   final FlutterProject project;
 
-  /// The "system" transcript — boot banner, project info, `/devices`, `/help`,
+  /// The "system" transcript â€” boot banner, project info, `/devices`, `/help`,
   /// daemon errors. Anything not tied to a specific running session. Per-tab
   /// logs live on each [RunTab.transcript]; see [visibleTranscript].
   final Transcript transcript;
@@ -56,7 +56,7 @@ class AppState {
   AppConfigEntity _config;
   AppConfigEntity get config => _config;
 
-  /// Replace the in-memory config — call after editing via `/config set ...`
+  /// Replace the in-memory config â€” call after editing via `/config set ...`
   /// or the config editor overlay.
   void setConfig(AppConfigEntity next) {
     _config = next;
@@ -70,14 +70,14 @@ class AppState {
   FlutterDaemon? daemon;
   DeviceManager? deviceManager;
 
-  // ── CA repositories (set when respective services start) ──────────────────
+  // â”€â”€ CA repositories (set when respective services start) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   IDeviceRepository? deviceRepository;
   IEmulatorRepository? emulatorRepository;
   IDiagnosticsRepository? diagnosticsRepository;
   IConfigRepository? configRepository;
   ISessionRepository? sessionRepository;
 
-  // ── UseCase accessors (constructed on demand from repos) ──────────────────
+  // â”€â”€ UseCase accessors (constructed on demand from repos) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   ListDevicesUseCase? get listDevicesUseCase =>
       deviceRepository != null ? ListDevicesUseCase(deviceRepository!) : null;
 
@@ -134,7 +134,7 @@ class AppState {
   /// Set to `true` by `/config` to trigger the interactive footer editor.
   bool showConfigEditor = false;
 
-  // ── Diagnostics (analyzer errors / warnings / infos) ──────────────────────
+  // â”€â”€ Diagnostics (analyzer errors / warnings / infos) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /// The Dart analysis server client (LSP). Null until the analysis boot
   /// completes, and null forever if `dart` isn't on the PATH.
@@ -172,7 +172,7 @@ class AppState {
   /// or dismisses the picker.
   List<LaunchEntry> launchChoices = const <LaunchEntry>[];
 
-  /// Active `/emulators` picker. Same shape as [launchChoices] — only one
+  /// Active `/emulators` picker. Same shape as [launchChoices] â€” only one
   /// picker is open at a time; opening one clears the others.
   List<EmulatorEntity> emulatorChoices = const <EmulatorEntity>[];
 
@@ -180,13 +180,13 @@ class AppState {
   /// entry in the `/run` launch picker; cleared once a target is chosen.
   LaunchEntry? pendingRunEntry;
 
-  /// Active `/run` target picker — connected devices plus offline emulators.
+  /// Active `/run` target picker â€” connected devices plus offline emulators.
   List<RunTarget> runTargetChoices = const <RunTarget>[];
 
   /// Emulator id waiting for boot mode selection.
   String? pendingEmulatorId;
 
-  /// Boot mode picker choices — `['quick', 'cold']` when active, else empty.
+  /// Boot mode picker choices â€” `['quick', 'cold']` when active, else empty.
   List<String> bootModeChoices = const <String>[];
 
   bool get hasActivePicker =>
@@ -224,3 +224,4 @@ class AppState {
     runTargetChoices = targets;
   }
 }
+

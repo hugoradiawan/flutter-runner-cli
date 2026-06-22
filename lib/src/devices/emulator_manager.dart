@@ -1,7 +1,7 @@
-import 'dart:async';
+﻿import 'dart:async';
 
-import '../daemon/daemon_messages.dart';
-import '../daemon/flutter_daemon.dart';
+import '../data/models/daemon_messages.dart';
+import '../data/datasources/flutter_daemon.dart';
 
 class EmulatorManager {
   EmulatorManager(this._daemon);
@@ -41,3 +41,5 @@ class EmulatorManager {
     ).whenComplete(sub.cancel);
   }
 }
+
+

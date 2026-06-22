@@ -4,8 +4,8 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
-import '../project/launch_config.dart';
-import 'daemon_messages.dart';
+import '../../project/launch_config.dart';
+import '../models/daemon_messages.dart';
 
 /// A single `flutter run --machine` invocation.
 ///

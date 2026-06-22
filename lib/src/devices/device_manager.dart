@@ -1,7 +1,7 @@
-import 'dart:async';
+﻿import 'dart:async';
 
-import '../daemon/daemon_messages.dart';
-import '../daemon/flutter_daemon.dart';
+import '../data/models/daemon_messages.dart';
+import '../data/datasources/flutter_daemon.dart';
 
 /// Maintains an up-to-date view of connected devices by subscribing to the
 /// daemon's `device.added` / `device.removed` events.
@@ -62,3 +62,5 @@ class DeviceManager {
     await _changes.close();
   }
 }
+
+

@@ -1,7 +1,7 @@
-import 'dart:async' show unawaited;
+﻿import 'dart:async' show unawaited;
 
 import '../../ca/result.dart';
-import '../../daemon/app_session.dart';
+import '../datasources/app_session.dart';
 import '../../domain/entities/run_session.entity.dart';
 import '../../domain/failures/session_failure.dart';
 import '../../domain/params/reload.params.dart';
@@ -132,3 +132,4 @@ class SessionRepositoryImpl implements ISessionRepository {
         .map((e) => e.params['log'] as String? ?? '');
   }
 }
+
