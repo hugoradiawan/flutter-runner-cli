@@ -1,7 +1,9 @@
 import 'dart:async';
 
-import '../../config/config.dart';
 import '../../devices/emulator_manager.dart';
+import '../../domain/entities/emulator.entity.dart';
+import '../../domain/params/emulator_launch.params.dart';
+import '../../domain/value_objects/config_values.dart';
 import '../../ide/frun_notifier.dart';
 import '../app_state.dart';
 import 'command.dart';
@@ -29,17 +31,8 @@ class EmulatorsCommand extends Command {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    final daemon = state.daemon;
-    if (daemon == null) {
-      state.visibleTranscript.warn(
-        'Flutter daemon is still starting. Try emulators again shortly.',
-      );
-      return CommandResult.ok;
-    }
-    final manager = EmulatorManager(daemon);
-
     if (args.isEmpty) {
-      await _openPicker(manager, state);
+      await _openPicker(state);
       return CommandResult.ok;
     }
     if (args.first == 'list' || args.first == 'ls') {
@@ -47,47 +40,53 @@ class EmulatorsCommand extends Command {
       return CommandResult.ok;
     }
     if (args.first == 'launch' && args.length >= 2) {
-      final hasFlag = args.length >= 3 && (args[2] == 'cold' || args[2] == '--cold');
-      final coldBoot = hasFlag || state.config.emulatorBoot == FrunEmulatorBoot.cold;
-      await _launch(manager, args[1], state, coldBoot: coldBoot);
+      final hasFlag =
+          args.length >= 3 && (args[2] == 'cold' || args[2] == '--cold');
+      final coldBoot =
+          hasFlag || state.config.emulatorBoot == FrunEmulatorBoot.cold;
+      await _launch(args[1], state, coldBoot: coldBoot);
       return CommandResult.ok;
     }
     if (args.first == 'create') {
+      final daemon = state.daemon;
+      if (daemon == null) {
+        state.visibleTranscript.warn(
+          'Flutter daemon is still starting. Try emulators again shortly.',
+        );
+        return CommandResult.ok;
+      }
       final name = args.length >= 2 ? args.sublist(1).join('_') : null;
-      await _create(manager, name, state);
+      await _create(EmulatorManager(daemon), name, state);
       return CommandResult.ok;
     }
     state.visibleTranscript.warn('Usage: $usage');
     return CommandResult.ok;
   }
 
-  Future<void> _openPicker(EmulatorManager manager, AppState state) async {
-    state.visibleTranscript.system('Fetching emulators…');
-    bool timedOut = false;
-    try {
-      final emulators = await manager.list().timeout(
-        const Duration(seconds: 90),
-        onTimeout: () {
-          timedOut = true;
-          return const [];
-        },
+  Future<void> _openPicker(AppState state) async {
+    final useCase = state.listEmulatorsUseCase;
+    if (useCase == null) {
+      state.visibleTranscript.warn(
+        'Flutter daemon is still starting. Try emulators again shortly.',
       );
-      if (timedOut) {
-        state.visibleTranscript.warn(
-          'Emulator list timed out. Flutter daemon may be slow or Android SDK not configured.',
-        );
-        return;
-      }
-      if (emulators.isEmpty) {
-        state.visibleTranscript.warn(
-          'No emulators found. Try `emulators create [name]` (Android only).',
-        );
-        return;
-      }
-      state.setEmulatorPicker(emulators);
-    } catch (e) {
-      state.visibleTranscript.error('Failed to list emulators: $e');
+      return;
     }
+    state.visibleTranscript.system('Fetching emulators…');
+    final result = await useCase.call();
+    result.fold(
+      (failure) => state.visibleTranscript.error(
+        'Failed to list emulators: ${failure.message}',
+      ),
+      (emulators) {
+        if (emulators.isEmpty) {
+          state.visibleTranscript.warn(
+            'No emulators found. Try `emulators create [name]` (Android only).',
+          );
+          return;
+        }
+        state.setEmulatorPicker(emulators);
+      },
+    );
   }
 
   Future<void> _list(AppState state) async {
@@ -101,7 +100,9 @@ class EmulatorsCommand extends Command {
     state.visibleTranscript.system('Fetching emulators…');
     final result = await useCase.call();
     result.fold(
-      (failure) => state.visibleTranscript.error('Failed to list emulators: ${failure.message}'),
+      (failure) => state.visibleTranscript.error(
+        'Failed to list emulators: ${failure.message}',
+      ),
       (emulators) {
         if (emulators.isEmpty) {
           state.visibleTranscript.warn(
@@ -121,29 +122,61 @@ class EmulatorsCommand extends Command {
   }
 
   Future<void> _launch(
-    EmulatorManager manager,
     String id,
     AppState state, {
     bool coldBoot = false,
   }) async {
+    final listUseCase = state.listEmulatorsUseCase;
+    final launchUseCase = state.launchEmulatorUseCase;
+    if (listUseCase == null || launchUseCase == null) {
+      state.visibleTranscript.warn(
+        'Flutter daemon is still starting. Try emulators again shortly.',
+      );
+      return;
+    }
+
+    final listResult = await listUseCase.call();
+    EmulatorEntity? entity;
+    listResult.fold(
+      (failure) => state.visibleTranscript.error(
+        'Failed to list emulators: ${failure.message}',
+      ),
+      (emulators) {
+        try {
+          entity = emulators.firstWhere((e) => e.id == id);
+        } on StateError {
+          state.visibleTranscript.warn(
+            'Emulator "$id" not found. Run `emulators list` to see available IDs.',
+          );
+        }
+      },
+    );
+    if (entity == null) return;
+
     final bootLabel = coldBoot ? ' (cold boot)' : '';
     state.visibleTranscript.system('Launching emulator $id$bootLabel…');
-    state.notifier.notify(FrunNotifEvent.launchingEmulator, detail: 'Launching emulator $id$bootLabel…');
-    try {
-      final device = await manager.launchAndAwaitDevice(id, coldBoot: coldBoot);
-      if (device == null) {
-        state.visibleTranscript.warn(
-          'Emulator $id launched but no device appeared within the timeout.',
+    state.notifier.notify(
+      FrunNotifEvent.launchingEmulator,
+      detail: 'Launching emulator $id$bootLabel…',
+    );
+
+    final result = await launchUseCase.call(
+      EmulatorLaunchParams(emulator: entity!, coldBoot: coldBoot),
+    );
+    result.fold(
+      (failure) => state.visibleTranscript.error(
+        'Failed to launch emulator $id: ${failure.message}',
+      ),
+      (device) {
+        state.notifier.notify(
+          FrunNotifEvent.emulatorReady,
+          detail: 'Emulator ready: ${device.name}',
         );
-        return;
-      }
-      state.notifier.notify(FrunNotifEvent.emulatorReady, detail: 'Emulator ready: ${device.name}');
-      state.visibleTranscript.success(
-        'Emulator ready: ${device.name} (${device.id}).',
-      );
-    } catch (e) {
-      state.visibleTranscript.error('Failed to launch emulator $id: $e');
-    }
+        state.visibleTranscript.success(
+          'Emulator ready: ${device.name} (${device.id}).',
+        );
+      },
+    );
   }
 
   Future<void> _create(
@@ -151,7 +184,9 @@ class EmulatorsCommand extends Command {
     String? name,
     AppState state,
   ) async {
-    state.visibleTranscript.system('Creating emulator${name == null ? "" : " $name"}…');
+    state.visibleTranscript.system(
+      'Creating emulator${name == null ? "" : " $name"}…',
+    );
     try {
       await manager.create(name: name);
       state.visibleTranscript.success(

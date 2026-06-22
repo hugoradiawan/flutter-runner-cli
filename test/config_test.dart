@@ -1,15 +1,16 @@
 import 'dart:io';
 
-import 'package:frun/src/config/config.dart';
-import 'package:frun/src/config/config_store.dart';
+import 'package:frun/src/data/datasources/config_store.dart';
+import 'package:frun/src/data/models/frun_config.dart';
+import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
   group('FrunConfig', () {
-    test('round-trips defaults through fromMap/toMap', () {
-      final defaults = FrunConfig();
-      final round = FrunConfig.fromMap(defaults.toMap());
+    test('round-trips defaults through fromMap/toJson', () {
+      final defaults = const FrunConfig();
+      final round = FrunConfig.fromMap(defaults.toJson());
       expect(round.ide, defaults.ide);
       expect(round.editorMode, defaults.editorMode);
       expect(round.theme, defaults.theme);

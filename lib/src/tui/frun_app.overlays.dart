@@ -296,7 +296,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     return 1 + 1 + _configEditorEntries.length + 1;
   }
 
-  String _configEditorEntryValue(FrunConfig c, String key) {
+  String _configEditorEntryValue(AppConfigEntity c, String key) {
     switch (key) {
       case 'ide':
         return c.ide.id;
@@ -317,7 +317,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     }
   }
 
-  FrunConfig _cycleConfigValue(FrunConfig c, String key, int delta) {
+  AppConfigEntity _cycleConfigValue(AppConfigEntity c, String key, int delta) {
     switch (key) {
       case 'ide':
         const vals = FrunIde.values;

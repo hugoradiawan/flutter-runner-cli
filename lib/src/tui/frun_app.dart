@@ -12,9 +12,9 @@ import '../app/commands/command_registry.dart';
 import '../app/link_extractor.dart';
 import '../app/run_tab.dart';
 import '../app/transcript.dart';
-import '../config/config.dart';
-import '../config/config_store.dart';
-import '../config/history_store.dart';
+import '../data/datasources/history_store.dart';
+import '../domain/entities/app_config.entity.dart';
+import '../domain/value_objects/config_values.dart';
 import '../ide/source_location.dart';
 import '../version.dart';
 import 'clipboard.dart';
@@ -54,20 +54,17 @@ abstract class _FrunModelBase extends TeaModel {
     required this.state,
     required this.registry,
     required this.onQuit,
-    required ConfigStore configStore,
-  })  : _configStore = configStore,
-        _input = InputController(editorMode: state.config.editorMode);
+  }) : _input = InputController(editorMode: state.config.editorMode);
 
   final AppState state;
   final CommandRegistry registry;
   final void Function() onQuit;
 
-  final ConfigStore _configStore;
   final InputController _input;
 
   bool _configEditorActive = false;
   int _configEditorRow = 0;
-  FrunConfig? _configDraft;
+  AppConfigEntity? _configDraft;
   final HistoryStore _historyStore = HistoryStore();
   late final TranscriptCursor _tc;
   final HitRegions _hits = HitRegions();
@@ -156,7 +153,6 @@ final class FrunModel extends _FrunModelBase
     required super.state,
     required super.registry,
     required super.onQuit,
-    required super.configStore,
   }) {
     // Kept in the concrete class: this wiring references mixin methods
     // (_viewportFor, _runExCmd, _runSearch, _submit, _switchTabFromVim) that

@@ -1,4 +1,4 @@
-import 'package:frun/src/config/config.dart';
+﻿import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:frun/src/tui/input_controller.dart';
 import 'package:frun/src/tui/vim/text_objects.dart';
 import 'package:frun/src/tui/vim/vim_buffer.dart';
@@ -66,3 +66,4 @@ void main() {
     });
   });
 }
+

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
-import 'config.dart';
+import '../models/frun_config.dart';
 
 /// Persists [FrunConfig] as YAML in a global location.
 ///
@@ -56,7 +56,7 @@ class ConfigStore {
   void save(FrunConfig config) {
     final file = File(path);
     file.parent.createSync(recursive: true);
-    file.writeAsStringSync(_serialize(config.toMap()));
+    file.writeAsStringSync(_serialize(config.toJson()));
   }
 
   static String _serialize(Map<String, Object?> map) {

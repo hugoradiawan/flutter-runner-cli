@@ -1,6 +1,6 @@
 import 'package:dart_tui/dart_tui.dart';
 
-import '../config/config.dart';
+import '../domain/value_objects/config_values.dart';
 import 'vim/vim_buffer.dart';
 import 'vim/vim_mode.dart';
 

@@ -1,4 +1,4 @@
-import 'package:frun/src/config/config.dart';
+import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:frun/src/ide/ide_launcher.dart';
 import 'package:frun/src/ide/source_location.dart';
 import 'package:path/path.dart' as p;

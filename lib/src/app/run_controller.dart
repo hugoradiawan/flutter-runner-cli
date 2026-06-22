@@ -4,10 +4,10 @@ import 'dart:convert';
 import 'package:path/path.dart' as p;
 import 'package:vm_service/vm_service.dart' as vm;
 
-import '../config/config.dart';
 import '../daemon/app_session.dart';
 import '../daemon/daemon_messages.dart';
 import '../devices/emulator_manager.dart';
+import '../domain/value_objects/config_values.dart';
 import '../ide/frun_notifier.dart';
 import '../ide/source_location.dart';
 import '../project/launch_config.dart';
@@ -37,8 +37,9 @@ class RunController {
   /// Guards against redundant reconnects when re-pointing to the active tab.
   String? _connectedVmUri;
 
-  RunTab? get activeTab =>
-      (_activeIndex >= 0 && _activeIndex < tabs.length) ? tabs[_activeIndex] : null;
+  RunTab? get activeTab => (_activeIndex >= 0 && _activeIndex < tabs.length)
+      ? tabs[_activeIndex]
+      : null;
   int get activeIndex => _activeIndex;
   bool get isRunning => activeTab?.isRunning ?? false;
   bool get hasTabs => tabs.isNotEmpty;
@@ -66,9 +67,9 @@ class RunController {
     final daemon = state.daemon;
     if (daemon != null) {
       try {
-        emulators = await EmulatorManager(daemon)
-            .list()
-            .timeout(const Duration(seconds: 10));
+        emulators = await EmulatorManager(
+          daemon,
+        ).list().timeout(const Duration(seconds: 10));
       } catch (_) {}
     }
 
@@ -108,8 +109,9 @@ class RunController {
       final coldBoot = state.config.emulatorBoot == FrunEmulatorBoot.cold;
       state.visibleTranscript.system('Launching emulator ${target.id}…');
       try {
-        final device = await EmulatorManager(daemon)
-            .launchAndAwaitDevice(target.id, coldBoot: coldBoot);
+        final device = await EmulatorManager(
+          daemon,
+        ).launchAndAwaitDevice(target.id, coldBoot: coldBoot);
         if (device == null) {
           state.visibleTranscript.warn(
             'Emulator ${target.id} launched but no device appeared within the timeout.',
@@ -118,7 +120,9 @@ class RunController {
         }
         deviceId = device.id;
       } catch (e) {
-        state.visibleTranscript.error('Failed to launch emulator ${target.id}: $e');
+        state.visibleTranscript.error(
+          'Failed to launch emulator ${target.id}: $e',
+        );
         return null;
       }
     } else {
@@ -128,7 +132,10 @@ class RunController {
   }
 
   /// Start an app, or focus an existing tab that matches this entry + device.
-  Future<RunTab?> startOrFocus(LaunchEntry entry, {required String deviceId}) async {
+  Future<RunTab?> startOrFocus(
+    LaunchEntry entry, {
+    required String deviceId,
+  }) async {
     final dedupeKey = '${entry.name}|${entry.program}|$deviceId';
     for (var i = 0; i < tabs.length; i++) {
       if (tabs[i].dedupeKey == dedupeKey && tabs[i].isRunning) {
@@ -461,8 +468,10 @@ class RunController {
 
   /// Android logcat tags each line with e.g. `I/flutter ( 7225): `. Strip it
   /// so the transcript shows only the app's own log text.
-  static final _logcatPrefix =
-      RegExp(r'^[VDIWEF]/[^(]*\(\s*\d+\):\s?', multiLine: true);
+  static final _logcatPrefix = RegExp(
+    r'^[VDIWEF]/[^(]*\(\s*\d+\):\s?',
+    multiLine: true,
+  );
 
   static String _stripLogcatPrefix(String log) =>
       log.replaceAll(_logcatPrefix, '');
@@ -475,8 +484,9 @@ class RunController {
         'VM service connected (${state.isolateManager.isolates.length} isolates).',
       );
       await _extensionSub?.cancel();
-      _extensionSub =
-          state.isolateManager.extensionEvents.listen(_onExtensionEvent);
+      _extensionSub = state.isolateManager.extensionEvents.listen(
+        _onExtensionEvent,
+      );
     } catch (e) {
       _connectedVmUri = null;
       state.transcript.warn('VM service connect failed: $e');
@@ -527,8 +537,10 @@ class RunController {
     final library = data['library']?.toString() ?? 'Flutter framework';
 
     final buf = StringBuffer()
-      ..writeln('══ Exception caught by $library'
-          '${errorsSince > 0 ? ' (error #${errorsSince + 1})' : ''} ══');
+      ..writeln(
+        '══ Exception caught by $library'
+        '${errorsSince > 0 ? ' (error #${errorsSince + 1})' : ''} ══',
+      );
 
     final parts = _ErrorParts();
     _collectNode(data['properties'], parts, projectRoot);
@@ -557,15 +569,18 @@ class RunController {
       buf.writeln(f);
     }
 
-    final extractedAnything = parts.summary.isNotEmpty ||
+    final extractedAnything =
+        parts.summary.isNotEmpty ||
         parts.context.isNotEmpty ||
         parts.frames.isNotEmpty ||
         parts.widgetLoc != null ||
         parts.widgetRaw != null;
     if (verbose || !extractedAnything) {
-      buf.writeln(extractedAnything
-          ? '--- raw Flutter.Error payload (verbose_errors) ---'
-          : '--- raw Flutter.Error payload (nothing extracted) ---');
+      buf.writeln(
+        extractedAnything
+            ? '--- raw Flutter.Error payload (verbose_errors) ---'
+            : '--- raw Flutter.Error payload (nothing extracted) ---',
+      );
       try {
         buf.writeln(const JsonEncoder.withIndent('  ').convert(data));
       } catch (_) {
@@ -583,15 +598,17 @@ class RunController {
     if (exception is! Map) return '';
     final desc = exception['description']?.toString() ?? '';
     final type = exception['type']?.toString() ?? '';
-    final value = exception['valueToString']?.toString() ??
+    final value =
+        exception['valueToString']?.toString() ??
         exception['message']?.toString() ??
         '';
     return [type, value, desc].where((s) => s.isNotEmpty).toSet().join(': ');
   }
 
   static final RegExp _frameRe = RegExp(r'^#\d+\s');
-  static final RegExp _locRe =
-      RegExp(r'((?:file://|package:)\S+?\.dart):(\d+)(?::(\d+))?');
+  static final RegExp _locRe = RegExp(
+    r'((?:file://|package:)\S+?\.dart):(\d+)(?::(\d+))?',
+  );
 
   /// Recursively classifies a DiagnosticsNode (or list of them) into [parts],
   /// walking both `properties` and `children`. [inWidget] is true once inside
@@ -606,7 +623,13 @@ class RunController {
     if (depth > 12) return;
     if (node is List) {
       for (final child in node) {
-        _collectNode(child, parts, projectRoot, depth: depth, inWidget: inWidget);
+        _collectNode(
+          child,
+          parts,
+          projectRoot,
+          depth: depth,
+          inWidget: inWidget,
+        );
       }
       return;
     }
@@ -634,10 +657,20 @@ class RunController {
       // useful standalone text — skip to keep the log compact.
     }
 
-    _collectNode(node['properties'], parts, projectRoot,
-        depth: depth + 1, inWidget: isWidget);
-    _collectNode(node['children'], parts, projectRoot,
-        depth: depth + 1, inWidget: isWidget);
+    _collectNode(
+      node['properties'],
+      parts,
+      projectRoot,
+      depth: depth + 1,
+      inWidget: isWidget,
+    );
+    _collectNode(
+      node['children'],
+      parts,
+      projectRoot,
+      depth: depth + 1,
+      inWidget: isWidget,
+    );
   }
 
   /// Pulls the first `file://…/x.dart:line:col` or `package:…` reference out of
@@ -653,8 +686,12 @@ class RunController {
     final colSuffix = col != null ? ':$col' : '';
     if (uri.startsWith('package:')) return '$uri:$line$colSuffix';
 
-    final loc = SourceLocation.fromVmServiceUri(uri,
-        projectRoot: projectRoot, line: line, column: col ?? 1);
+    final loc = SourceLocation.fromVmServiceUri(
+      uri,
+      projectRoot: projectRoot,
+      line: line,
+      column: col ?? 1,
+    );
     if (loc == null) return null;
     var path = loc.file;
     if (projectRoot != null) {

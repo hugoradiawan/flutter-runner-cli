@@ -41,7 +41,7 @@ class EmulatorRepositoryImpl implements IEmulatorRepository {
     EmulatorLaunchParams params,
   ) async {
     try {
-      final device = await _manager.launchAndAwaitDevice(params.emulator.id);
+      final device = await _manager.launchAndAwaitDevice(params.emulator.id, coldBoot: params.coldBoot);
       if (device == null) {
         return Result.failure(
           DeviceFailure(

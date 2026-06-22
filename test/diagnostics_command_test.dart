@@ -4,7 +4,7 @@ import 'package:frun/src/analysis/diagnostic.dart';
 import 'package:frun/src/app/app_state.dart';
 import 'package:frun/src/app/commands/diagnostics_command.dart';
 import 'package:frun/src/app/transcript.dart';
-import 'package:frun/src/config/config.dart';
+import 'package:frun/src/domain/entities/app_config.entity.dart';
 import 'package:frun/src/project/project_detector.dart';
 import 'package:test/test.dart';
 
@@ -23,7 +23,7 @@ void main() {
         hasVsCodeFolder: false,
         hasZedFolder: false,
       ),
-      config: FrunConfig(),
+      config: AppConfigEntity.defaults(),
     );
   });
 

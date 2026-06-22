@@ -8,8 +8,11 @@ import 'package:frun/src/app/commands/copy_command.dart';
 import 'package:frun/src/app/commands/help_command.dart';
 import 'package:frun/src/app/commands/quit_command.dart';
 import 'package:frun/src/app/transcript.dart';
-import 'package:frun/src/config/config.dart';
-import 'package:frun/src/config/config_store.dart';
+import 'package:frun/src/data/datasources/config_datasource.dart';
+import 'package:frun/src/data/datasources/config_store.dart';
+import 'package:frun/src/data/repositories/config_repository_impl.dart';
+import 'package:frun/src/domain/entities/app_config.entity.dart';
+import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:frun/src/project/project_detector.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -31,8 +34,9 @@ void main() {
         hasVsCodeFolder: false,
         hasZedFolder: false,
       ),
-      config: FrunConfig(),
+      config: AppConfigEntity.defaults(),
     );
+    state.configRepository = ConfigRepositoryImpl(ConfigDataSource(store));
   });
 
   tearDown(() => temp.deleteSync(recursive: true));
@@ -41,9 +45,12 @@ void main() {
     final reg = CommandRegistry()
       ..register(QuitCommand())
       ..register(ClearCommand())
-      ..register(ConfigCommand(store));
+      ..register(ConfigCommand());
     reg.register(HelpCommand(reg));
-    expect(reg.suggestions('c').map((c) => c.name), containsAll(['clear', 'config']));
+    expect(
+      reg.suggestions('c').map((c) => c.name),
+      containsAll(['clear', 'config']),
+    );
     expect(reg.lookup('q'), isA<QuitCommand>());
     expect(reg.lookup('h'), isA<HelpCommand>());
   });
@@ -90,13 +97,13 @@ void main() {
   });
 
   test('/config set persists changes', () async {
-    await ConfigCommand(store).run(['set', 'ide', 'zed'], state);
+    await ConfigCommand().run(['set', 'ide', 'zed'], state);
     expect(state.config.ide, FrunIde.zed);
     expect(store.load().ide, FrunIde.zed);
   });
 
   test('/config set with unknown key warns', () async {
-    await ConfigCommand(store).run(['set', 'nope', 'val'], state);
+    await ConfigCommand().run(['set', 'nope', 'val'], state);
     final warns = state.transcript.lines
         .where((l) => l.level == TranscriptLevel.warn)
         .toList();

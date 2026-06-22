@@ -237,8 +237,9 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
 
     if (ke.code == KeyCode.enter) {
       if (_configDraft != null) {
-        state.setConfig(_configDraft!);
-        _configStore.save(_configDraft!);
+        final draft = _configDraft!;
+        state.setConfig(draft);
+        unawaited(state.saveConfigUseCase?.call(draft));
       }
       _configEditorActive = false;
       _configDraft = null;

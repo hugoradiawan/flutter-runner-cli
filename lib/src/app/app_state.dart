@@ -1,10 +1,10 @@
 import '../analysis/analysis_server.dart';
 import '../analysis/diagnostic.dart';
 import '../analysis/diagnostics_store.dart';
-import '../config/config.dart';
-import '../daemon/daemon_messages.dart';
 import '../daemon/flutter_daemon.dart';
 import '../devices/device_manager.dart';
+import '../domain/entities/app_config.entity.dart';
+import '../domain/entities/emulator.entity.dart';
 import '../domain/repositories/config_repository.dart';
 import '../domain/repositories/device_repository.dart';
 import '../domain/repositories/diagnostics_repository.dart';
@@ -12,9 +12,14 @@ import '../domain/repositories/emulator_repository.dart';
 import '../domain/repositories/session_repository.dart';
 import '../domain/usecases/get_config.usecase.dart';
 import '../domain/usecases/get_diagnostics.usecase.dart';
+import '../domain/usecases/hot_reload.usecase.dart';
+import '../domain/usecases/hot_restart.usecase.dart';
+import '../domain/usecases/launch_emulator.usecase.dart';
 import '../domain/usecases/list_devices.usecase.dart';
 import '../domain/usecases/list_emulators.usecase.dart';
+import '../domain/usecases/save_config.usecase.dart';
 import '../domain/usecases/set_config.usecase.dart';
+import '../domain/usecases/stop_session.usecase.dart';
 import '../domain/usecases/watch_diagnostics.usecase.dart';
 import '../ide/frun_notifier.dart';
 import '../ide/ide_launcher.dart';
@@ -32,7 +37,7 @@ export 'run_target.dart';
 /// Mutable, observable-ish state shared between the TUI shell, commands, and
 /// services. Components read it during build; commands and services mutate it.
 class AppState {
-  AppState({required this.project, required FrunConfig config})
+  AppState({required this.project, required AppConfigEntity config})
     : _config = config,
       transcript = Transcript();
 
@@ -48,14 +53,17 @@ class AppState {
   Transcript get visibleTranscript =>
       runController.activeTab?.transcript ?? transcript;
 
-  FrunConfig _config;
-  FrunConfig get config => _config;
+  AppConfigEntity _config;
+  AppConfigEntity get config => _config;
 
-  /// Replace the config — call after editing via `/config set ...` or the
-  /// upcoming first-run wizard.
-  void setConfig(FrunConfig next) {
+  /// Replace the in-memory config — call after editing via `/config set ...`
+  /// or the config editor overlay.
+  void setConfig(AppConfigEntity next) {
     _config = next;
   }
+
+  /// The file-system path where config is persisted.
+  String get configPath => configRepository?.getConfigPath() ?? '';
 
   /// Once the daemon has started, services are populated. Until then the
   /// status panel and `/devices` command surface a "starting" message.
@@ -73,24 +81,41 @@ class AppState {
   ListDevicesUseCase? get listDevicesUseCase =>
       deviceRepository != null ? ListDevicesUseCase(deviceRepository!) : null;
 
-  ListEmulatorsUseCase? get listEmulatorsUseCase =>
-      emulatorRepository != null ? ListEmulatorsUseCase(emulatorRepository!) : null;
+  ListEmulatorsUseCase? get listEmulatorsUseCase => emulatorRepository != null
+      ? ListEmulatorsUseCase(emulatorRepository!)
+      : null;
+
+  LaunchEmulatorUseCase? get launchEmulatorUseCase => emulatorRepository != null
+      ? LaunchEmulatorUseCase(emulatorRepository!)
+      : null;
 
   GetDiagnosticsUseCase? get getDiagnosticsUseCase =>
       diagnosticsRepository != null
-          ? GetDiagnosticsUseCase(diagnosticsRepository!)
-          : null;
+      ? GetDiagnosticsUseCase(diagnosticsRepository!)
+      : null;
 
   WatchDiagnosticsUseCase? get watchDiagnosticsUseCase =>
       diagnosticsRepository != null
-          ? WatchDiagnosticsUseCase(diagnosticsRepository!)
-          : null;
+      ? WatchDiagnosticsUseCase(diagnosticsRepository!)
+      : null;
 
   GetConfigUseCase? get getConfigUseCase =>
       configRepository != null ? GetConfigUseCase(configRepository!) : null;
 
   SetConfigUseCase? get setConfigUseCase =>
       configRepository != null ? SetConfigUseCase(configRepository!) : null;
+
+  SaveConfigUseCase? get saveConfigUseCase =>
+      configRepository != null ? SaveConfigUseCase(configRepository!) : null;
+
+  HotReloadUseCase? get hotReloadUseCase =>
+      sessionRepository != null ? HotReloadUseCase(sessionRepository!) : null;
+
+  HotRestartUseCase? get hotRestartUseCase =>
+      sessionRepository != null ? HotRestartUseCase(sessionRepository!) : null;
+
+  StopSessionUseCase? get stopSessionUseCase =>
+      sessionRepository != null ? StopSessionUseCase(sessionRepository!) : null;
   late final RunController runController = RunController(this);
   late final IsolateManager isolateManager = IsolateManager();
   late final IdeLauncher ideLauncher = IdeLauncher();
@@ -149,7 +174,7 @@ class AppState {
 
   /// Active `/emulators` picker. Same shape as [launchChoices] — only one
   /// picker is open at a time; opening one clears the others.
-  List<FlutterEmulator> emulatorChoices = const <FlutterEmulator>[];
+  List<EmulatorEntity> emulatorChoices = const <EmulatorEntity>[];
 
   /// Launch entry awaiting a run-target choice. Set when the user picks an
   /// entry in the `/run` launch picker; cleared once a target is chosen.
@@ -172,7 +197,7 @@ class AppState {
 
   void clearPickers() {
     launchChoices = const <LaunchEntry>[];
-    emulatorChoices = const <FlutterEmulator>[];
+    emulatorChoices = const <EmulatorEntity>[];
     bootModeChoices = const <String>[];
     pendingEmulatorId = null;
     runTargetChoices = const <RunTarget>[];
@@ -183,7 +208,7 @@ class AppState {
     launchChoices = entries;
   }
 
-  void setEmulatorPicker(List<FlutterEmulator> emulators) {
+  void setEmulatorPicker(List<EmulatorEntity> emulators) {
     clearPickers();
     emulatorChoices = emulators;
   }

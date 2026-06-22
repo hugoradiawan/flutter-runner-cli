@@ -1,7 +1,8 @@
 import 'package:dart_tui/dart_tui.dart';
 
 import '../app/transcript.dart';
-import '../config/config.dart';
+import '../domain/entities/app_config.entity.dart';
+import '../domain/value_objects/config_values.dart';
 
 class FrunTheme {
   const FrunTheme({
@@ -219,6 +220,6 @@ class FrunTheme {
             .foregroundColor256(231),
       );
 
-  static FrunTheme fromConfig(FrunConfig config) =>
+  static FrunTheme fromConfig(AppConfigEntity config) =>
       config.theme == FrunThemeMode.dark ? dark() : light();
 }

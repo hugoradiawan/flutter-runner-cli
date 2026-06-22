@@ -14,16 +14,20 @@ class SessionRepositoryImpl implements ISessionRepository {
     required this.projectRoot,
     this.flutterExecutable,
     Map<String, String>? environment,
-  }) : _environment = environment;
+    AppRunSession? Function(int tabId)? sessionLookup,
+  }) : _environment = environment,
+       _externalLookup = sessionLookup;
 
   final String projectRoot;
   final String? flutterExecutable;
   final Map<String, String>? _environment;
+  final AppRunSession? Function(int tabId)? _externalLookup;
 
   final Map<int, AppRunSession> _sessions = <int, AppRunSession>{};
   int _nextId = 1;
 
-  AppRunSession? _sessionFor(int tabId) => _sessions[tabId];
+  AppRunSession? _sessionFor(int tabId) =>
+      _sessions[tabId] ?? _externalLookup?.call(tabId);
 
   @override
   Future<Result<SessionFailure, RunSessionEntity>> launch(RunParams params) async {

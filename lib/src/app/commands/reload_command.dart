@@ -1,11 +1,9 @@
+import '../../domain/params/reload.params.dart';
+import '../../ide/frun_notifier.dart';
 import '../app_state.dart';
-import '../run_controller.dart';
 import 'command.dart';
 
 class ReloadCommand extends Command {
-  ReloadCommand(this.controller);
-  final RunController controller;
-
   @override
   String get name => 'reload';
 
@@ -17,15 +15,30 @@ class ReloadCommand extends Command {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    await controller.hotReloadActive();
+    final tab = state.runController.activeTab;
+    if (tab == null || tab.session == null) {
+      state.transcript.warn('No app running. Use /run first.');
+      return CommandResult.ok;
+    }
+    final useCase = state.hotReloadUseCase;
+    if (useCase == null) {
+      state.transcript.warn('No app running. Use /run first.');
+      return CommandResult.ok;
+    }
+    state.notifier.notifyTab(tab, FrunNotifEvent.hotReloading);
+    final result = await useCase.call(ReloadParams(tabId: tab.id));
+    result.fold(
+      (failure) => tab.transcript.error('Hot reload failed: ${failure.message}'),
+      (_) {
+        state.notifier.notifyTab(tab, FrunNotifEvent.hotReloaded);
+        tab.transcript.success('Hot reload requested.');
+      },
+    );
     return CommandResult.ok;
   }
 }
 
 class RestartCommand extends Command {
-  RestartCommand(this.controller);
-  final RunController controller;
-
   @override
   String get name => 'restart';
 
@@ -37,15 +50,30 @@ class RestartCommand extends Command {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    await controller.hotRestartActive();
+    final tab = state.runController.activeTab;
+    if (tab == null || tab.session == null) {
+      state.transcript.warn('No app running. Use /run first.');
+      return CommandResult.ok;
+    }
+    final useCase = state.hotRestartUseCase;
+    if (useCase == null) {
+      state.transcript.warn('No app running. Use /run first.');
+      return CommandResult.ok;
+    }
+    state.notifier.notifyTab(tab, FrunNotifEvent.restarting);
+    final result = await useCase.call(ReloadParams(tabId: tab.id));
+    result.fold(
+      (failure) => tab.transcript.error('Hot restart failed: ${failure.message}'),
+      (_) {
+        state.notifier.notifyTab(tab, FrunNotifEvent.restarted);
+        tab.transcript.success('Hot restart requested.');
+      },
+    );
     return CommandResult.ok;
   }
 }
 
 class StopCommand extends Command {
-  StopCommand(this.controller);
-  final RunController controller;
-
   @override
   String get name => 'stop';
 
@@ -61,18 +89,15 @@ class StopCommand extends Command {
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
     if (args.isNotEmpty && args.first == 'all') {
-      await controller.stopAll();
+      await state.runController.stopAll();
     } else {
-      await controller.stopActive();
+      await state.runController.stopActive();
     }
     return CommandResult.ok;
   }
 }
 
 class DetachCommand extends Command {
-  DetachCommand(this.controller);
-  final RunController controller;
-
   @override
   String get name => 'detach';
 
@@ -84,20 +109,17 @@ class DetachCommand extends Command {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    if (controller.activeTab?.session == null) {
+    if (state.runController.activeTab?.session == null) {
       state.visibleTranscript.warn('No app running.');
       return CommandResult.ok;
     }
-    await controller.detachActive();
+    await state.runController.detachActive();
     state.visibleTranscript.success('Detached — app continues running.');
     return CommandResult.ok;
   }
 }
 
 class PerformanceOverlayCommand extends Command {
-  PerformanceOverlayCommand(this.controller);
-  final RunController controller;
-
   bool _enabled = false;
 
   @override
@@ -111,7 +133,7 @@ class PerformanceOverlayCommand extends Command {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    final session = controller.activeTab?.session;
+    final session = state.runController.activeTab?.session;
     if (session == null) {
       state.visibleTranscript.warn('No app running.');
       return CommandResult.ok;

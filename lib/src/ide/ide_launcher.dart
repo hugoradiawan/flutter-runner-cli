@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../app/app_state.dart';
-import '../config/config.dart';
+import '../domain/value_objects/config_values.dart';
 import 'source_location.dart';
 
 /// Opens a [SourceLocation] in the user's configured IDE by shelling out to

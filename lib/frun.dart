@@ -26,14 +26,17 @@ import 'src/app/commands/quit_command.dart';
 import 'src/app/commands/reload_command.dart';
 import 'src/app/commands/run_command.dart';
 import 'src/app/commands/status_command.dart';
-import 'src/config/config_store.dart';
 import 'src/daemon/flutter_daemon.dart';
+import 'src/data/datasources/config_datasource.dart';
+import 'src/data/datasources/config_store.dart';
 import 'src/data/repositories/config_repository_impl.dart';
 import 'src/data/repositories/device_repository_impl.dart';
 import 'src/data/repositories/diagnostics_repository_impl.dart';
 import 'src/data/repositories/emulator_repository_impl.dart';
+import 'src/data/repositories/session_repository_impl.dart';
 import 'src/devices/device_manager.dart';
 import 'src/devices/emulator_manager.dart';
+import 'src/domain/entities/app_config.entity.dart';
 import 'src/platform/windows_console.dart';
 import 'src/project/project_detector.dart';
 import 'src/tui/clipboard.dart';
@@ -67,25 +70,41 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   }
   final project = detection.project!;
   final configStore = configStoreOverride ?? ConfigStore();
-  final config = configStore.load();
+  final configDataSource = ConfigDataSource(configStore);
+  final configRepository = ConfigRepositoryImpl(configDataSource);
+  final configResult = await configRepository.getConfig();
+  final configEntity = configResult.fold(
+    (_) => AppConfigEntity.defaults(),
+    (e) => e,
+  );
 
-  final state = AppState(project: project, config: config)
-    ..configRepository = ConfigRepositoryImpl(configStore);
+  final state = AppState(project: project, config: configEntity)
+    ..configRepository = configRepository;
+
+  state.sessionRepository = SessionRepositoryImpl(
+    projectRoot: project.root,
+    sessionLookup: (tabId) {
+      for (final tab in state.runController.tabs) {
+        if (tab.id == tabId) return tab.session;
+      }
+      return null;
+    },
+  );
 
   final registry = CommandRegistry()
     ..register(QuitCommand())
     ..register(ClearCommand())
     ..register(CopyCommand(copyToClipboard))
-    ..register(ConfigCommand(configStore))
+    ..register(ConfigCommand())
     ..register(DevicesCommand())
     ..register(EmulatorsCommand())
     ..register(DevToolsCommand())
     ..register(RunCommand(state.runController))
-    ..register(ReloadCommand(state.runController))
-    ..register(RestartCommand(state.runController))
-    ..register(StopCommand(state.runController))
-    ..register(DetachCommand(state.runController))
-    ..register(PerformanceOverlayCommand(state.runController))
+    ..register(ReloadCommand())
+    ..register(RestartCommand())
+    ..register(StopCommand())
+    ..register(DetachCommand())
+    ..register(PerformanceOverlayCommand())
     ..register(IsolatesCommand(state.isolateManager, state.ideLauncher))
     ..register(InspectCommand())
     ..register(StatusCommand())
@@ -105,7 +124,6 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     state: state,
     registry: registry,
     onQuit: program.quit,
-    configStore: configStore,
   );
 
   // Kick the daemon off in the background so the TUI is interactive
@@ -157,7 +175,7 @@ Future<void> _bootAnalysis(AppState state) async {
     state.transcript.system(
       packages.length > 1
           ? 'Analyzing ${packages.length} packages… '
-              '(first pass can take ~20s on large monorepos)'
+                '(first pass can take ~20s on large monorepos)'
           : 'Analyzing project…',
     );
     Timer? saveDebounce;
@@ -168,7 +186,9 @@ Future<void> _bootAnalysis(AppState state) async {
       saveDebounce = Timer(const Duration(seconds: 1), () {
         try {
           store.save(items);
-        } catch (_) {/* best-effort cache */}
+        } catch (_) {
+          /* best-effort cache */
+        }
       });
     });
 
@@ -235,7 +255,9 @@ Future<void> _bootDaemon(AppState state) async {
     try {
       daemon = await FlutterDaemon.start();
       state.daemon = daemon;
-      daemon.stderrLines.listen((line) => state.transcript.warn('daemon: $line'));
+      daemon.stderrLines.listen(
+        (line) => state.transcript.warn('daemon: $line'),
+      );
       manager = DeviceManager(daemon);
       state.deviceManager = manager;
       manager.changes.listen((devices) {
@@ -247,7 +269,9 @@ Future<void> _bootDaemon(AppState state) async {
       state.daemonReady = true;
       state.daemonError = null;
       state.deviceRepository = DeviceRepositoryImpl(manager);
-      state.emulatorRepository = EmulatorRepositoryImpl(EmulatorManager(daemon));
+      state.emulatorRepository = EmulatorRepositoryImpl(
+        EmulatorManager(daemon),
+      );
       state.transcript.success(
         'Flutter daemon ready (${state.deviceManager!.devices.length} devices).',
       );
@@ -263,10 +287,14 @@ Future<void> _bootDaemon(AppState state) async {
       // orphan the `flutter daemon` process or stack stderr listeners.
       try {
         await manager?.dispose();
-      } catch (_) {/* best-effort */}
+      } catch (_) {
+        /* best-effort */
+      }
       try {
         await daemon?.shutdown();
-      } catch (_) {/* best-effort */}
+      } catch (_) {
+        /* best-effort */
+      }
       state.daemon = null;
       state.deviceManager = null;
 
@@ -303,7 +331,9 @@ Future<void> _ensureAdbServer(
       final started = await Process.run(adb, const ['start-server']);
       if (started.exitCode == 0) {
         if (announce) {
-          state.transcript.system('adb server ${restart ? 'restarted' : 'ready'}.');
+          state.transcript.system(
+            'adb server ${restart ? 'restarted' : 'ready'}.',
+          );
         }
         return;
       }
@@ -328,7 +358,9 @@ Future<void> _warmEmulators(AppState state) async {
   if (daemon == null) return;
   try {
     await daemon.getEmulators();
-  } catch (_) {/* best-effort warm-up */}
+  } catch (_) {
+    /* best-effort warm-up */
+  }
 }
 
 /// Candidate `adb` executables in priority order: explicit SDK env vars, the
@@ -356,4 +388,3 @@ Iterable<String> _adbCandidates() sync* {
   }
   yield exe; // bare — relies on PATH
 }
-

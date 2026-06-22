@@ -1,4 +1,3 @@
-import 'package:frun/src/ca/params.dart';
 import 'package:frun/src/ca/result.dart';
 import 'package:frun/src/domain/entities/app_config.entity.dart';
 import 'package:frun/src/domain/entities/device.entity.dart';
@@ -33,7 +32,7 @@ import 'package:frun/src/domain/usecases/stop_session.usecase.dart';
 import 'package:frun/src/domain/usecases/watch_devices.usecase.dart';
 import 'package:frun/src/domain/usecases/watch_diagnostics.usecase.dart';
 import 'package:frun/src/domain/usecases/watch_logs.usecase.dart';
-import 'package:frun/src/config/config.dart';
+import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 

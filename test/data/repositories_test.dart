@@ -2,20 +2,22 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:frun/src/ca/result.dart';
-import 'package:frun/src/config/config.dart';
-import 'package:frun/src/config/config_store.dart';
 import 'package:frun/src/daemon/daemon_messages.dart';
+import 'package:frun/src/data/datasources/config_datasource.dart';
+import 'package:frun/src/data/datasources/config_store.dart';
+import 'package:frun/src/data/models/frun_config.dart';
 import 'package:frun/src/data/repositories/config_repository_impl.dart';
 import 'package:frun/src/data/repositories/device_repository_impl.dart';
 import 'package:frun/src/data/repositories/emulator_repository_impl.dart';
 import 'package:frun/src/devices/device_manager.dart';
 import 'package:frun/src/devices/emulator_manager.dart';
 import 'package:frun/src/domain/entities/device.entity.dart';
+import 'package:frun/src/domain/entities/emulator.entity.dart';
 import 'package:frun/src/domain/failures/config_failure.dart';
 import 'package:frun/src/domain/failures/device_failure.dart';
-import 'package:frun/src/domain/params/emulator_launch.params.dart';
 import 'package:frun/src/domain/params/config.params.dart';
-import 'package:frun/src/domain/entities/emulator.entity.dart';
+import 'package:frun/src/domain/params/emulator_launch.params.dart';
+import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -66,7 +68,7 @@ void main() {
     setUp(() {
       tempDir = Directory.systemTemp.createTempSync('frun_config_repo_test_');
       store = ConfigStore(overridePath: p.join(tempDir.path, 'cfg.yaml'));
-      repo = ConfigRepositoryImpl(store);
+      repo = ConfigRepositoryImpl(ConfigDataSource(store));
     });
 
     tearDown(() => tempDir.deleteSync(recursive: true));
@@ -175,13 +177,16 @@ void main() {
       expect(devices.first.emulator, isTrue);
     });
 
-    test('listDevices returns Success with empty list when no devices', () async {
-      when(() => manager.devices).thenReturn([]);
+    test(
+      'listDevices returns Success with empty list when no devices',
+      () async {
+        when(() => manager.devices).thenReturn([]);
 
-      final result = await repo.listDevices();
-      expect(result.isSuccess, isTrue);
-      expect((result as Success).value, isEmpty);
-    });
+        final result = await repo.listDevices();
+        expect(result.isSuccess, isTrue);
+        expect((result as Success).value, isEmpty);
+      },
+    );
 
     test('listDevices returns DeviceFailure when manager throws', () async {
       when(() => manager.devices).thenThrow(Exception('daemon dead'));
@@ -191,25 +196,29 @@ void main() {
       expect((result as Failure).error, isA<DeviceFailure>());
     });
 
-    test('watchDevices maps FlutterDevice stream to DeviceEntity stream', () async {
-      final controller = StreamController<List<FlutterDevice>>();
-      when(() => manager.changes).thenAnswer((_) => controller.stream);
+    test(
+      'watchDevices maps FlutterDevice stream to DeviceEntity stream',
+      () async {
+        final controller = StreamController<List<FlutterDevice>>();
+        when(() => manager.changes).thenAnswer((_) => controller.stream);
 
-      final events = <List<DeviceEntity>>[];
-      final sub = repo.watchDevices().listen(events.add);
+        final events = <List<DeviceEntity>>[];
+        final sub = repo.watchDevices().listen(events.add);
 
-      controller.add([_flutterDevice]);
-      await Future<void>.delayed(Duration.zero);
-      await sub.cancel();
-      await controller.close();
+        controller.add([_flutterDevice]);
+        await Future<void>.delayed(Duration.zero);
+        await sub.cancel();
+        await controller.close();
 
-      expect(events.length, 1);
-      expect(events.first.first.id, _flutterDevice.id);
-    });
+        expect(events.length, 1);
+        expect(events.first.first.id, _flutterDevice.id);
+      },
+    );
 
     test('watchDevices emits empty list when stream emits empty', () async {
-      when(() => manager.changes)
-          .thenAnswer((_) => Stream.value(<FlutterDevice>[]));
+      when(
+        () => manager.changes,
+      ).thenAnswer((_) => Stream.value(<FlutterDevice>[]));
 
       final events = await repo.watchDevices().toList();
       expect(events.length, 1);
@@ -228,18 +237,20 @@ void main() {
       repo = EmulatorRepositoryImpl(manager);
     });
 
-    test('listEmulators returns Success with mapped EmulatorEntity list', () async {
-      when(() => manager.list())
-          .thenAnswer((_) async => [_flutterEmulator]);
+    test(
+      'listEmulators returns Success with mapped EmulatorEntity list',
+      () async {
+        when(() => manager.list()).thenAnswer((_) async => [_flutterEmulator]);
 
-      final result = await repo.listEmulators();
+        final result = await repo.listEmulators();
 
-      expect(result.isSuccess, isTrue);
-      final emulators = (result as Success).value;
-      expect(emulators.length, 1);
-      expect(emulators.first.id, _flutterEmulator.id);
-      expect(emulators.first.name, _flutterEmulator.name);
-    });
+        expect(result.isSuccess, isTrue);
+        final emulators = (result as Success).value;
+        expect(emulators.length, 1);
+        expect(emulators.first.id, _flutterEmulator.id);
+        expect(emulators.first.name, _flutterEmulator.name);
+      },
+    );
 
     test('listEmulators returns Success with empty list', () async {
       when(() => manager.list()).thenAnswer((_) async => []);
@@ -257,44 +268,54 @@ void main() {
       expect((result as Failure).error, isA<DeviceFailure>());
     });
 
-    test('launchEmulator returns Success with DeviceEntity on device found',
-        () async {
-      final params = EmulatorLaunchParams(emulator: _emulatorEntity);
-      when(() => manager.launchAndAwaitDevice(
+    test(
+      'launchEmulator returns Success with DeviceEntity on device found',
+      () async {
+        final params = EmulatorLaunchParams(emulator: _emulatorEntity);
+        when(
+          () => manager.launchAndAwaitDevice(
             _flutterEmulator.id,
             coldBoot: any(named: 'coldBoot'),
             timeout: any(named: 'timeout'),
-          )).thenAnswer((_) async => _flutterDevice);
+          ),
+        ).thenAnswer((_) async => _flutterDevice);
 
-      final result = await repo.launchEmulator(params);
+        final result = await repo.launchEmulator(params);
 
-      expect(result.isSuccess, isTrue);
-      final device = (result as Success).value;
-      expect(device.id, _flutterDevice.id);
-      expect(device, isA<DeviceEntity>());
-    });
+        expect(result.isSuccess, isTrue);
+        final device = (result as Success).value;
+        expect(device.id, _flutterDevice.id);
+        expect(device, isA<DeviceEntity>());
+      },
+    );
 
-    test('launchEmulator returns DeviceFailure when device times out (null)',
-        () async {
-      final params = EmulatorLaunchParams(emulator: _emulatorEntity);
-      when(() => manager.launchAndAwaitDevice(
+    test(
+      'launchEmulator returns DeviceFailure when device times out (null)',
+      () async {
+        final params = EmulatorLaunchParams(emulator: _emulatorEntity);
+        when(
+          () => manager.launchAndAwaitDevice(
             _flutterEmulator.id,
             coldBoot: any(named: 'coldBoot'),
             timeout: any(named: 'timeout'),
-          )).thenAnswer((_) async => null);
+          ),
+        ).thenAnswer((_) async => null);
 
-      final result = await repo.launchEmulator(params);
-      expect(result.isFailure, isTrue);
-      expect((result as Failure).error, isA<DeviceFailure>());
-    });
+        final result = await repo.launchEmulator(params);
+        expect(result.isFailure, isTrue);
+        expect((result as Failure).error, isA<DeviceFailure>());
+      },
+    );
 
     test('launchEmulator returns DeviceFailure when manager throws', () async {
       final params = EmulatorLaunchParams(emulator: _emulatorEntity);
-      when(() => manager.launchAndAwaitDevice(
-            _flutterEmulator.id,
-            coldBoot: any(named: 'coldBoot'),
-            timeout: any(named: 'timeout'),
-          )).thenThrow(Exception('avd failure'));
+      when(
+        () => manager.launchAndAwaitDevice(
+          _flutterEmulator.id,
+          coldBoot: any(named: 'coldBoot'),
+          timeout: any(named: 'timeout'),
+        ),
+      ).thenThrow(Exception('avd failure'));
 
       final result = await repo.launchEmulator(params);
       expect(result.isFailure, isTrue);
