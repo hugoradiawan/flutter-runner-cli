@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:frun/src/analysis/diagnostic.dart';
-import 'package:frun/src/analysis/diagnostics_store.dart';
+import 'package:frun/src/data/models/diagnostic.dart';
+import 'package:frun/src/data/datasources/diagnostics_store.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

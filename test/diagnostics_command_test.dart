@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:frun/src/analysis/diagnostic.dart';
+import 'package:frun/src/data/models/diagnostic.dart';
 import 'package:frun/src/app/app_state.dart';
 import 'package:frun/src/app/commands/diagnostics_command.dart';
 import 'package:frun/src/app/transcript.dart';

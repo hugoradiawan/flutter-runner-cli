@@ -1,5 +1,5 @@
-import '../../analysis/analysis_server.dart';
-import '../../analysis/diagnostic.dart' as src;
+import '../datasources/analysis_server.dart';
+import '../models/diagnostic.dart' as src;
 import '../../ca/result.dart';
 import '../../data/models/diagnostic.model.dart';
 import '../../domain/entities/diagnostic.entity.dart';

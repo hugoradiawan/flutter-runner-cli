@@ -1,4 +1,4 @@
-import '../../analysis/diagnostic.dart';
+import '../../data/models/diagnostic.dart';
 import '../app_state.dart';
 import 'command.dart';
 

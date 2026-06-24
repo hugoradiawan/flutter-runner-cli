@@ -1,4 +1,4 @@
-import 'package:frun/src/analysis/diagnostic.dart';
+import 'package:frun/src/data/models/diagnostic.dart';
 import 'package:test/test.dart';
 
 Diagnostic mk(DiagnosticSeverity sev, {String? code}) => Diagnostic(

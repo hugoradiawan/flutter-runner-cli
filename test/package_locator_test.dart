@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:frun/src/analysis/package_locator.dart';
+import 'package:frun/src/data/datasources/package_locator.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

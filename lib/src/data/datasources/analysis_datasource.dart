@@ -1,4 +1,4 @@
-import '../../analysis/analysis_server.dart';
+import 'analysis_server.dart';
 import '../../ca/data_source.dart';
 import '../../domain/failures/analysis_failure.dart';
 

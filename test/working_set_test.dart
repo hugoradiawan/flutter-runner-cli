@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:frun/src/analysis/working_set.dart';
+import 'package:frun/src/data/datasources/working_set.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

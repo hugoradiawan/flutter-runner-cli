@@ -6,10 +6,10 @@ import 'dart:io';
 
 import 'package:dart_tui/dart_tui.dart';
 
-import 'src/analysis/analysis_server.dart';
-import 'src/analysis/diagnostics_store.dart';
-import 'src/analysis/package_locator.dart';
-import 'src/analysis/working_set.dart';
+import 'src/data/datasources/analysis_server.dart';
+import 'src/data/datasources/diagnostics_store.dart';
+import 'src/data/datasources/package_locator.dart';
+import 'src/data/datasources/working_set.dart';
 import 'src/app/app_state.dart';
 import 'src/app/commands/clear_command.dart';
 import 'src/app/commands/command_registry.dart';

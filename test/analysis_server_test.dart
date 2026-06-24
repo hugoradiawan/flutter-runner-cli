@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:frun/src/analysis/analysis_server.dart';
-import 'package:frun/src/analysis/diagnostic.dart';
+import 'package:frun/src/data/datasources/analysis_server.dart';
+import 'package:frun/src/data/models/diagnostic.dart';
 import 'package:test/test.dart';
 
 List<int> _frame(Map<String, Object?> msg) {

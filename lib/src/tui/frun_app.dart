@@ -5,7 +5,7 @@ import 'dart:math' as math;
 import 'package:dart_tui/dart_tui.dart';
 import 'package:path/path.dart' as p;
 
-import '../analysis/diagnostic.dart';
+import '../data/models/diagnostic.dart';
 import '../app/app_state.dart';
 import '../app/commands/command.dart';
 import '../app/commands/command_registry.dart';
