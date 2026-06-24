@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import '../../app/run_tab.dart';
+import '../../presentation/app/run_tab.dart';
 
 enum FrunNotifEvent {
   appLaunching,

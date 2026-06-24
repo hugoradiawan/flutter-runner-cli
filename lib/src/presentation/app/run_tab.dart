@@ -2,9 +2,9 @@
 
 import 'package:path/path.dart' as p;
 
-import '../data/datasources/app_session.dart';
-import '../data/models/daemon_messages.dart';
-import '../data/models/launch_config.dart';
+import '../../data/datasources/app_session.dart';
+import '../../data/models/daemon_messages.dart';
+import '../../data/models/launch_config.dart';
 import 'transcript.dart';
 
 /// One concurrent `flutter run` session and the UI state that belongs to it

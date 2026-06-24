@@ -1,5 +1,5 @@
 import 'package:dart_tui/dart_tui.dart';
-import 'package:frun/src/tui/input_controller.dart';
+import 'package:frun/src/presentation/tui/input_controller.dart';
 
 KeyMsg rune(String ch, {Set<KeyMod> mods = const {}}) =>
     KeyPressMsg(TeaKey(code: KeyCode.rune, text: ch, modifiers: mods));

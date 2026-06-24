@@ -1,4 +1,4 @@
-import 'package:frun/src/tui/vim/tab_buffer.dart';
+import 'package:frun/src/presentation/tui/vim/tab_buffer.dart';
 import 'package:test/test.dart';
 
 void main() {

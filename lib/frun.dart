@@ -1,4 +1,4 @@
-﻿/// Public entry point for the `frun` TUI.
+/// Public entry point for the `frun` TUI.
 library;
 
 import 'dart:async';
@@ -10,22 +10,22 @@ import 'src/data/datasources/analysis_server.dart';
 import 'src/data/datasources/diagnostics_store.dart';
 import 'src/data/datasources/package_locator.dart';
 import 'src/data/datasources/working_set.dart';
-import 'src/app/app_state.dart';
-import 'src/app/commands/clear_command.dart';
-import 'src/app/commands/command_registry.dart';
-import 'src/app/commands/config_command.dart';
-import 'src/app/commands/copy_command.dart';
-import 'src/app/commands/devices_command.dart';
-import 'src/app/commands/devtools_command.dart';
-import 'src/app/commands/diagnostics_command.dart';
-import 'src/app/commands/emulators_command.dart';
-import 'src/app/commands/help_command.dart';
-import 'src/app/commands/inspect_command.dart';
-import 'src/app/commands/isolates_command.dart';
-import 'src/app/commands/quit_command.dart';
-import 'src/app/commands/reload_command.dart';
-import 'src/app/commands/run_command.dart';
-import 'src/app/commands/status_command.dart';
+import 'src/presentation/app/app_state.dart';
+import 'src/presentation/app/commands/clear_command.dart';
+import 'src/presentation/app/commands/command_registry.dart';
+import 'src/presentation/app/commands/config_command.dart';
+import 'src/presentation/app/commands/copy_command.dart';
+import 'src/presentation/app/commands/devices_command.dart';
+import 'src/presentation/app/commands/devtools_command.dart';
+import 'src/presentation/app/commands/diagnostics_command.dart';
+import 'src/presentation/app/commands/emulators_command.dart';
+import 'src/presentation/app/commands/help_command.dart';
+import 'src/presentation/app/commands/inspect_command.dart';
+import 'src/presentation/app/commands/isolates_command.dart';
+import 'src/presentation/app/commands/quit_command.dart';
+import 'src/presentation/app/commands/reload_command.dart';
+import 'src/presentation/app/commands/run_command.dart';
+import 'src/presentation/app/commands/status_command.dart';
 import 'src/data/datasources/config_datasource.dart';
 import 'src/data/datasources/config_store.dart';
 import 'src/data/datasources/dart_file_watcher.dart';
@@ -40,8 +40,8 @@ import 'src/data/repositories/emulator_repository_impl.dart';
 import 'src/data/repositories/session_repository_impl.dart';
 import 'src/domain/entities/app_config.entity.dart';
 import 'src/data/datasources/windows_console.dart';
-import 'src/tui/clipboard.dart';
-import 'src/tui/frun_app.dart';
+import 'src/presentation/tui/clipboard.dart';
+import 'src/presentation/tui/frun_app.dart';
 
 export 'src/version.dart';
 

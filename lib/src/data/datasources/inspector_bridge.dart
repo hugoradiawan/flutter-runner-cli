@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:vm_service/vm_service.dart' as vm;
 
-import '../../app/app_state.dart';
+import '../../presentation/app/app_state.dart';
 import '../models/source_location.dart';
 
 /// Bridges widget-inspector selection in the running app to a jump-to-source

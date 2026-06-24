@@ -1,4 +1,4 @@
-import 'package:frun/src/tui/vim/ex_parser.dart';
+import 'package:frun/src/presentation/tui/vim/ex_parser.dart';
 import 'package:test/test.dart';
 
 void main() {

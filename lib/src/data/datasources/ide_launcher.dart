@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import '../../app/app_state.dart';
+import '../../presentation/app/app_state.dart';
 import '../../domain/value_objects/config_values.dart';
 import '../models/source_location.dart';
 

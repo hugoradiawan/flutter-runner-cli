@@ -1,8 +1,8 @@
 import 'package:dart_tui/dart_tui.dart';
 
 import '../app/transcript.dart';
-import '../domain/entities/app_config.entity.dart';
-import '../domain/value_objects/config_values.dart';
+import '../../domain/entities/app_config.entity.dart';
+import '../../domain/value_objects/config_values.dart';
 
 class FrunTheme {
   const FrunTheme({

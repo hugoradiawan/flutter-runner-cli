@@ -1,13 +1,13 @@
 import 'dart:io';
 
-import 'package:frun/src/app/app_state.dart';
-import 'package:frun/src/app/commands/clear_command.dart';
-import 'package:frun/src/app/commands/command_registry.dart';
-import 'package:frun/src/app/commands/config_command.dart';
-import 'package:frun/src/app/commands/copy_command.dart';
-import 'package:frun/src/app/commands/help_command.dart';
-import 'package:frun/src/app/commands/quit_command.dart';
-import 'package:frun/src/app/transcript.dart';
+import 'package:frun/src/presentation/app/app_state.dart';
+import 'package:frun/src/presentation/app/commands/clear_command.dart';
+import 'package:frun/src/presentation/app/commands/command_registry.dart';
+import 'package:frun/src/presentation/app/commands/config_command.dart';
+import 'package:frun/src/presentation/app/commands/copy_command.dart';
+import 'package:frun/src/presentation/app/commands/help_command.dart';
+import 'package:frun/src/presentation/app/commands/quit_command.dart';
+import 'package:frun/src/presentation/app/transcript.dart';
 import 'package:frun/src/data/datasources/config_datasource.dart';
 import 'package:frun/src/data/datasources/config_store.dart';
 import 'package:frun/src/data/repositories/config_repository_impl.dart';

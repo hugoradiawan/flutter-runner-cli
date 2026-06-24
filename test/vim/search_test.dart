@@ -1,9 +1,9 @@
-﻿import 'package:dart_tui/dart_tui.dart';
+import 'package:dart_tui/dart_tui.dart';
 import 'package:frun/src/domain/value_objects/config_values.dart';
-import 'package:frun/src/tui/input_controller.dart';
-import 'package:frun/src/tui/vim/vim_engine.dart';
-import 'package:frun/src/tui/vim/vim_mode.dart';
-import 'package:frun/src/tui/vim/vim_state.dart';
+import 'package:frun/src/presentation/tui/input_controller.dart';
+import 'package:frun/src/presentation/tui/vim/vim_engine.dart';
+import 'package:frun/src/presentation/tui/vim/vim_mode.dart';
+import 'package:frun/src/presentation/tui/vim/vim_state.dart';
 import 'package:test/test.dart';
 
 import 'test_support.dart';

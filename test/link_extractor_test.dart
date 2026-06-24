@@ -1,4 +1,4 @@
-import 'package:frun/src/app/link_extractor.dart';
+import 'package:frun/src/presentation/app/link_extractor.dart';
 import 'package:test/test.dart';
 
 void main() {

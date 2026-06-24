@@ -1,4 +1,4 @@
-import '../../data/datasources/frun_notifier.dart';
+import '../../../data/datasources/frun_notifier.dart';
 import '../app_state.dart';
 import 'command.dart';
 

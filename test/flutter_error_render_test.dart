@@ -1,4 +1,4 @@
-import 'package:frun/src/app/run_controller.dart';
+import 'package:frun/src/presentation/app/run_controller.dart';
 import 'package:test/test.dart';
 
 /// A trimmed `Flutter.Error` payload shaped like the real one: the summary and

@@ -1,4 +1,4 @@
-﻿import '../data/models/daemon_messages.dart';
+﻿import '../../data/models/daemon_messages.dart';
 
 /// A target the user can pick from the run picker: a connected device, or an
 /// offline emulator that must be booted first ([needsBoot] = true).

@@ -1,7 +1,7 @@
-﻿import 'package:frun/src/domain/value_objects/config_values.dart';
-import 'package:frun/src/tui/input_controller.dart';
-import 'package:frun/src/tui/vim/motions.dart';
-import 'package:frun/src/tui/vim/vim_buffer.dart';
+import 'package:frun/src/domain/value_objects/config_values.dart';
+import 'package:frun/src/presentation/tui/input_controller.dart';
+import 'package:frun/src/presentation/tui/vim/motions.dart';
+import 'package:frun/src/presentation/tui/vim/vim_buffer.dart';
 import 'package:test/test.dart';
 
 InputController _buf(String text) {

@@ -1,4 +1,4 @@
-import '../../domain/params/config.params.dart';
+import '../../../domain/params/config.params.dart';
 import '../app_state.dart';
 import 'command.dart';
 

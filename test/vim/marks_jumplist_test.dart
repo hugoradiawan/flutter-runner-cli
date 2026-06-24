@@ -1,6 +1,6 @@
-import 'package:frun/src/tui/vim/jumplist.dart';
-import 'package:frun/src/tui/vim/marks.dart';
-import 'package:frun/src/tui/vim/vim_buffer.dart';
+import 'package:frun/src/presentation/tui/vim/jumplist.dart';
+import 'package:frun/src/presentation/tui/vim/marks.dart';
+import 'package:frun/src/presentation/tui/vim/vim_buffer.dart';
 import 'package:test/test.dart';
 
 void main() {
