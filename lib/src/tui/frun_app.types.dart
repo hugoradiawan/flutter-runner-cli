@@ -135,10 +135,8 @@ class _ConfigEditorEntry {
 const _configEditorEntries = <_ConfigEditorEntry>[
   _ConfigEditorEntry('ide', ['vscode', 'zed', 'neovim'], label: 'IDE'),
   _ConfigEditorEntry('editor_mode', ['normal', 'vim'], label: 'Editor mode'),
-  _ConfigEditorEntry('theme', ['dark', 'light'], label: 'Theme'),
   _ConfigEditorEntry('hot_reload_on_save', ['true', 'false'], label: 'Hot reload on save'),
   _ConfigEditorEntry('open_devtools_on_launch', ['ask', 'always', 'never'], label: 'Open devtools on launch'),
-  _ConfigEditorEntry('emulator_boot', ['quick', 'cold'], label: 'Emulator boot'),
   _ConfigEditorEntry('verbose_errors', ['false', 'true'], label: 'Verbose error logs'),
 ];
 
