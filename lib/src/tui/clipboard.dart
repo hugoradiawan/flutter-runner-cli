@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import '../platform/windows_clipboard.dart';
+import '../data/datasources/windows_clipboard.dart';
 
 /// ANSI CSI escape stripper. Matches `ESC [ ... <final-byte>` where final is
 /// `@`..`~`. Used so copied transcript text doesn't carry colour codes into
