@@ -27,7 +27,7 @@ import '../ide/inspector_bridge.dart';
 import '../project/launch_config.dart';
 import '../project/project_detector.dart';
 import '../vm/isolate_manager.dart';
-import '../watcher/dart_file_watcher.dart';
+import '../data/datasources/dart_file_watcher.dart';
 import 'run_controller.dart';
 import 'run_target.dart';
 import 'transcript.dart';

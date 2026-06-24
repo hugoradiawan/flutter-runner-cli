@@ -41,7 +41,7 @@ import 'src/platform/windows_console.dart';
 import 'src/project/project_detector.dart';
 import 'src/tui/clipboard.dart';
 import 'src/tui/frun_app.dart';
-import 'src/watcher/dart_file_watcher.dart';
+import 'src/data/datasources/dart_file_watcher.dart';
 
 export 'src/version.dart';
 

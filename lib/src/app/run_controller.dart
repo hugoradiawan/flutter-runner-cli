@@ -11,7 +11,7 @@ import '../domain/value_objects/config_values.dart';
 import '../ide/frun_notifier.dart';
 import '../ide/source_location.dart';
 import '../project/launch_config.dart';
-import '../watcher/dart_file_watcher.dart';
+import '../data/datasources/dart_file_watcher.dart';
 import 'app_state.dart';
 import 'run_tab.dart';
 
