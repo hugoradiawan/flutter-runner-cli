@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:frun/src/project/project_detector.dart';
+import 'package:frun/src/data/datasources/project_detector.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

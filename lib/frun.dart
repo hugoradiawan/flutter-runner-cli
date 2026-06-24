@@ -26,9 +26,10 @@ import 'src/app/commands/quit_command.dart';
 import 'src/app/commands/reload_command.dart';
 import 'src/app/commands/run_command.dart';
 import 'src/app/commands/status_command.dart';
-import 'src/data/datasources/flutter_daemon.dart';
 import 'src/data/datasources/config_datasource.dart';
 import 'src/data/datasources/config_store.dart';
+import 'src/data/datasources/dart_file_watcher.dart';
+import 'src/data/datasources/flutter_daemon.dart';
 import 'src/data/repositories/config_repository_impl.dart';
 import 'src/data/repositories/device_repository_impl.dart';
 import 'src/data/repositories/diagnostics_repository_impl.dart';
@@ -38,10 +39,9 @@ import 'src/devices/device_manager.dart';
 import 'src/devices/emulator_manager.dart';
 import 'src/domain/entities/app_config.entity.dart';
 import 'src/platform/windows_console.dart';
-import 'src/project/project_detector.dart';
+import 'src/data/datasources/project_detector.dart';
 import 'src/tui/clipboard.dart';
 import 'src/tui/frun_app.dart';
-import 'src/data/datasources/dart_file_watcher.dart';
 
 export 'src/version.dart';
 
@@ -388,4 +388,3 @@ Iterable<String> _adbCandidates() sync* {
   }
   yield exe; // bare â€” relies on PATH
 }
-

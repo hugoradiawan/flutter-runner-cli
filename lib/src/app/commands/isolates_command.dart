@@ -2,7 +2,7 @@ import 'package:vm_service/vm_service.dart' as vm;
 
 import '../../ide/ide_launcher.dart';
 import '../../ide/source_location.dart';
-import '../../vm/isolate_manager.dart';
+import '../../data/datasources/isolate_manager.dart';
 import '../app_state.dart';
 import 'command.dart';
 

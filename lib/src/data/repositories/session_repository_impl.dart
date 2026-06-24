@@ -7,7 +7,7 @@ import '../../domain/failures/session_failure.dart';
 import '../../domain/params/reload.params.dart';
 import '../../domain/params/run.params.dart';
 import '../../domain/repositories/session_repository.dart';
-import '../../project/launch_config.dart';
+import '../models/launch_config.dart';
 
 class SessionRepositoryImpl implements ISessionRepository {
   SessionRepositoryImpl({

@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:frun/src/project/launch_config.dart';
-import 'package:frun/src/project/main_scanner.dart';
+import 'package:frun/src/data/models/launch_config.dart';
+import 'package:frun/src/data/datasources/main_scanner.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

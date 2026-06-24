@@ -5,13 +5,13 @@ import 'package:path/path.dart' as p;
 import 'package:vm_service/vm_service.dart' as vm;
 
 import '../data/datasources/app_session.dart';
+import '../data/datasources/dart_file_watcher.dart';
 import '../data/models/daemon_messages.dart';
 import '../devices/emulator_manager.dart';
 import '../domain/value_objects/config_values.dart';
 import '../ide/frun_notifier.dart';
 import '../ide/source_location.dart';
-import '../project/launch_config.dart';
-import '../data/datasources/dart_file_watcher.dart';
+import '../data/models/launch_config.dart';
 import 'app_state.dart';
 import 'run_tab.dart';
 
@@ -198,7 +198,9 @@ class RunController {
     watcher.start();
     watcher.onChange.listen((_) {
       if (tabs.every((t) => !t.isRunning)) return;
-      state.visibleTranscript.system('File changed â€” hot reloading all tabs.');
+      state.visibleTranscript.system(
+        'File changed â€” hot reloading all tabs.',
+      );
       unawaited(hotReloadAll());
     });
     _watcher = watcher;
@@ -757,5 +759,3 @@ class _ErrorParts {
   String? widgetLoc;
   String? widgetRaw;
 }
-
-

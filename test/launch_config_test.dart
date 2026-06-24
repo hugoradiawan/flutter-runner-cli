@@ -1,4 +1,4 @@
-import 'package:frun/src/project/launch_config.dart';
+import 'package:frun/src/data/models/launch_config.dart';
 import 'package:test/test.dart';
 
 void main() {

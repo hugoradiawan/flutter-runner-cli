@@ -1,6 +1,7 @@
 ﻿import '../analysis/analysis_server.dart';
 import '../analysis/diagnostic.dart';
 import '../analysis/diagnostics_store.dart';
+import '../data/datasources/dart_file_watcher.dart';
 import '../data/datasources/flutter_daemon.dart';
 import '../devices/device_manager.dart';
 import '../domain/entities/app_config.entity.dart';
@@ -24,10 +25,9 @@ import '../domain/usecases/watch_diagnostics.usecase.dart';
 import '../ide/frun_notifier.dart';
 import '../ide/ide_launcher.dart';
 import '../ide/inspector_bridge.dart';
-import '../project/launch_config.dart';
-import '../project/project_detector.dart';
-import '../vm/isolate_manager.dart';
-import '../data/datasources/dart_file_watcher.dart';
+import '../data/models/launch_config.dart';
+import '../data/datasources/project_detector.dart';
+import '../data/datasources/isolate_manager.dart';
 import 'run_controller.dart';
 import 'run_target.dart';
 import 'transcript.dart';
@@ -224,4 +224,3 @@ class AppState {
     runTargetChoices = targets;
   }
 }
-

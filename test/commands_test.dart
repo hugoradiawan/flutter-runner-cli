@@ -13,7 +13,7 @@ import 'package:frun/src/data/datasources/config_store.dart';
 import 'package:frun/src/data/repositories/config_repository_impl.dart';
 import 'package:frun/src/domain/entities/app_config.entity.dart';
 import 'package:frun/src/domain/value_objects/config_values.dart';
-import 'package:frun/src/project/project_detector.dart';
+import 'package:frun/src/data/datasources/project_detector.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
