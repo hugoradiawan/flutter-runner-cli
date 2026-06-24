@@ -15,7 +15,7 @@ import '../app/transcript.dart';
 import '../data/datasources/history_store.dart';
 import '../domain/entities/app_config.entity.dart';
 import '../domain/value_objects/config_values.dart';
-import '../ide/source_location.dart';
+import '../data/models/source_location.dart';
 import '../version.dart';
 import 'clipboard.dart';
 import 'hit_regions.dart';

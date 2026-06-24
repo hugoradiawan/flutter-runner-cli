@@ -1,7 +1,7 @@
 import '../../ca/result.dart';
 import '../../data/models/device.model.dart';
 import '../../data/models/emulator.model.dart';
-import '../../devices/emulator_manager.dart';
+import '../datasources/emulator_manager.dart';
 import '../../domain/entities/device.entity.dart';
 import '../../domain/entities/emulator.entity.dart';
 import '../../domain/failures/device_failure.dart';

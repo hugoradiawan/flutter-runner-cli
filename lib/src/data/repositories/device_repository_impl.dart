@@ -1,6 +1,6 @@
 import '../../ca/result.dart';
 import '../../data/models/device.model.dart';
-import '../../devices/device_manager.dart';
+import '../datasources/device_manager.dart';
 import '../../domain/entities/device.entity.dart';
 import '../../domain/failures/device_failure.dart';
 import '../../domain/repositories/device_repository.dart';
