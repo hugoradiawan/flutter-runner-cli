@@ -1,14 +1,14 @@
 ﻿import '../../data/datasources/analysis_server.dart';
-import '../../data/models/diagnostic.dart';
-import '../../data/datasources/diagnostics_store.dart';
 import '../../data/datasources/dart_file_watcher.dart';
 import '../../data/datasources/device_manager.dart';
+import '../../data/datasources/diagnostics_store.dart';
 import '../../data/datasources/flutter_daemon.dart';
 import '../../data/datasources/frun_notifier.dart';
 import '../../data/datasources/ide_launcher.dart';
 import '../../data/datasources/inspector_bridge.dart';
 import '../../data/datasources/isolate_manager.dart';
 import '../../data/datasources/project_detector.dart';
+import '../../data/models/diagnostic.dart';
 import '../../data/models/launch_config.dart';
 import '../../domain/entities/app_config.entity.dart';
 import '../../domain/entities/emulator.entity.dart';

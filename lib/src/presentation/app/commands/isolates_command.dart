@@ -1,8 +1,8 @@
 import 'package:vm_service/vm_service.dart' as vm;
 
 import '../../../data/datasources/ide_launcher.dart';
-import '../../../data/models/source_location.dart';
 import '../../../data/datasources/isolate_manager.dart';
+import '../../../data/models/source_location.dart';
 import '../app_state.dart';
 import 'command.dart';
 
@@ -28,8 +28,7 @@ class IsolatesCommand extends Command {
   String get summary => 'Inspect, pause/resume, step, kill Dart isolates';
 
   @override
-  String get usage =>
-      'isolates [pause|resume|step|kill|stack `<id>`]';
+  String get usage => 'isolates [pause|resume|step|kill|stack `<id>`]';
 
   @override
   List<String> get aliases => const ['iso'];
