@@ -1,4 +1,4 @@
-import 'package:frun/src/presentation/app/run_controller.dart';
+import 'package:frun/src/presentation/app/flutter_error_renderer.dart';
 import 'package:test/test.dart';
 
 /// A trimmed `Flutter.Error` payload shaped like the real one: the summary and
@@ -62,7 +62,7 @@ Map<String, dynamic> _payload() => {
 void main() {
   group('renderFlutterError', () {
     test('compact render: summary, widget file:line, trimmed stack', () {
-      final out = RunController.renderFlutterError(
+      final out = renderFlutterError(
         _payload(),
         projectRoot: r'C:\proj',
       );
@@ -83,7 +83,7 @@ void main() {
     });
 
     test('verbose render appends the raw JSON payload', () {
-      final out = RunController.renderFlutterError(
+      final out = renderFlutterError(
         _payload(),
         verbose: true,
         projectRoot: r'C:\proj',
@@ -95,7 +95,7 @@ void main() {
     });
 
     test('unknown-shape payload falls back to a raw dump', () {
-      final out = RunController.renderFlutterError(
+      final out = renderFlutterError(
         {'library': 'something', 'mystery': 42},
       );
       expect(out, contains('raw Flutter.Error payload (nothing extracted)'));
