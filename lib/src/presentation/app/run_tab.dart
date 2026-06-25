@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:path/path.dart' as p;
 
@@ -39,10 +39,10 @@ class RunTab {
   /// basename when the launch entry has a generic name.
   String get label {
     final name = entry.name.isNotEmpty ? entry.name : p.basename(entry.program);
-    return '$name Â· $deviceId';
+    return '$name · $deviceId';
   }
 
-  /// Identity for deduping `/run` invocations â€” same launch on same device
+  /// Identity for deduping `/run` invocations — same launch on same device
   /// resolves to the same tab.
   String get dedupeKey => '${entry.name}|${entry.program}|$deviceId';
 }
