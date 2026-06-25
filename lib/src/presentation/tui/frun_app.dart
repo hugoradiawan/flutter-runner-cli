@@ -5,18 +5,18 @@ import 'dart:math' as math;
 import 'package:dart_tui/dart_tui.dart';
 import 'package:path/path.dart' as p;
 
+import '../../data/datasources/history_store.dart';
 import '../../data/models/diagnostic.dart';
+import '../../data/models/source_location.dart';
+import '../../domain/entities/app_config.entity.dart';
+import '../../domain/value_objects/config_values.dart';
+import '../../version.dart';
 import '../app/app_state.dart';
 import '../app/commands/command.dart';
 import '../app/commands/command_registry.dart';
 import '../app/link_extractor.dart';
 import '../app/run_tab.dart';
 import '../app/transcript.dart';
-import '../../data/datasources/history_store.dart';
-import '../../domain/entities/app_config.entity.dart';
-import '../../domain/value_objects/config_values.dart';
-import '../../data/models/source_location.dart';
-import '../../version.dart';
 import 'clipboard.dart';
 import 'hit_regions.dart';
 import 'input_controller.dart';
@@ -28,15 +28,15 @@ import 'vim/vim_engine.dart';
 import 'vim/vim_mode.dart';
 import 'vim/vim_state.dart';
 
-part 'frun_app.messages.dart';
-part 'frun_app.types.dart';
-part 'frun_app.reducer.dart';
-part 'frun_app.keys.dart';
 part 'frun_app.engine.dart';
+part 'frun_app.keys.dart';
+part 'frun_app.messages.dart';
 part 'frun_app.mouse.dart';
-part 'frun_app.view.dart';
-part 'frun_app.paint.dart';
 part 'frun_app.overlays.dart';
+part 'frun_app.paint.dart';
+part 'frun_app.reducer.dart';
+part 'frun_app.types.dart';
+part 'frun_app.view.dart';
 
 /// Top-level TUI:
 ///   0..bodyH-1:  transcript (full width, borderless)
@@ -99,7 +99,8 @@ abstract class _FrunModelBase extends TeaModel {
   // non-vim editor mode when the drag began.
   VimMode? _mousePriorVimMode;
   bool _mousePriorTcActive = false;
-  int _autoScrollDirection = 0; // -1 = toward newer (down), +1 = toward older (up), 0 = none
+  int _autoScrollDirection =
+      0; // -1 = toward newer (down), +1 = toward older (up), 0 = none
 
   // Cached layout state, refreshed each view() call.
   List<_VisibleLink> _visibleLinks = const <_VisibleLink>[];
