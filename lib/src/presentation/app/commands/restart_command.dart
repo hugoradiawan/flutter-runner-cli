@@ -3,15 +3,15 @@ import '../../../domain/params/reload.params.dart';
 import '../app_state.dart';
 import 'command.dart';
 
-class ReloadCommand extends Command {
+class RestartCommand extends Command {
   @override
-  String get name => 'reload';
+  String get name => 'restart';
 
   @override
-  String get summary => 'Hot reload the running app';
+  String get summary => 'Hot restart the running app';
 
   @override
-  List<String> get aliases => const ['r'];
+  List<String> get aliases => const ['R'];
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
@@ -20,19 +20,19 @@ class ReloadCommand extends Command {
       state.transcript.warn('No app running. Use /run first.');
       return CommandResult.ok;
     }
-    final useCase = state.hotReloadUseCase;
+    final useCase = state.hotRestartUseCase;
     if (useCase == null) {
       state.transcript.warn('No app running. Use /run first.');
       return CommandResult.ok;
     }
-    state.notifier.notifyTab(tab, FrunNotifEvent.hotReloading);
+    state.notifier.notifyTab(tab, FrunNotifEvent.restarting);
     final result = await useCase.call(ReloadParams(tabId: tab.id));
     result.fold(
       (failure) =>
-          tab.transcript.error('Hot reload failed: ${failure.message}'),
+          tab.transcript.error('Hot restart failed: ${failure.message}'),
       (_) {
-        state.notifier.notifyTab(tab, FrunNotifEvent.hotReloaded);
-        tab.transcript.success('Hot reload requested.');
+        state.notifier.notifyTab(tab, FrunNotifEvent.restarted);
+        tab.transcript.success('Hot restart requested.');
       },
     );
     return CommandResult.ok;
