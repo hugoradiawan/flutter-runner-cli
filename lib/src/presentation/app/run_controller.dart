@@ -1,26 +1,35 @@
 import 'dart:async';
 
-import 'package:vm_service/vm_service.dart' as vm;
-
 import '../../data/datasources/app_session.dart';
-import '../../data/datasources/dart_file_watcher.dart';
 import '../../data/datasources/emulator_manager.dart';
 import '../../data/datasources/frun_notifier.dart';
 import '../../data/models/daemon_messages.dart';
 import '../../data/models/launch_config.dart';
 import '../../domain/value_objects/config_values.dart';
 import 'app_state.dart';
-import 'flutter_error_renderer.dart';
+import 'daemon_event_router.dart';
+import 'isolate_connection.dart';
+import 'reload_watcher.dart';
 import 'run_tab.dart';
 
 /// Owns all concurrent `flutter run` sessions as a list of [RunTab]s. Tabs are
-/// added on `run`, removed on `stop`, and one is "active" â€” that's the tab
+/// added on `run`, removed on `stop`, and one is "active" — that's the tab
 /// the TUI renders and the one `reload`, `restart`, `stop` operate on.
 ///
-/// The file watcher is shared: when any `.dart` file is saved, every running
-/// session is hot-reloaded.
+/// Three collaborators handle the cross-cutting concerns: [IsolateConnection]
+/// (the shared VM service that follows the active tab), [DaemonEventRouter]
+/// (per-tab `flutter run` event handling), and [ReloadWatcher] (the shared
+/// file watcher that hot-reloads every running session on save).
 class RunController {
-  RunController(this.state);
+  RunController(this.state) {
+    _isolates = IsolateConnection(state, () => activeTab);
+    _events = DaemonEventRouter(state, _isolates, () => activeTab);
+    _watcher = ReloadWatcher(
+      state,
+      anyRunning: () => tabs.any((t) => t.isRunning),
+      onReload: hotReloadAll,
+    );
+  }
 
   final AppState state;
 
@@ -28,12 +37,9 @@ class RunController {
   int _activeIndex = -1;
   int _nextTabId = 1;
 
-  DartFileWatcher? _watcher;
-  StreamSubscription<vm.Event>? _extensionSub;
-
-  /// VM-service ws URI the shared [IsolateManager] is currently connected to.
-  /// Guards against redundant reconnects when re-pointing to the active tab.
-  String? _connectedVmUri;
+  late final IsolateConnection _isolates;
+  late final DaemonEventRouter _events;
+  late final ReloadWatcher _watcher;
 
   RunTab? get activeTab => (_activeIndex >= 0 && _activeIndex < tabs.length)
       ? tabs[_activeIndex]
@@ -105,7 +111,7 @@ class RunController {
         return null;
       }
       final coldBoot = state.config.emulatorBoot == FrunEmulatorBoot.cold;
-      state.visibleTranscript.system('Launching emulator ${target.id}â€¦');
+      state.visibleTranscript.system('Launching emulator ${target.id}…');
       try {
         final device = await EmulatorManager(
           daemon,
@@ -139,7 +145,7 @@ class RunController {
       if (tabs[i].dedupeKey == dedupeKey && tabs[i].isRunning) {
         _activeIndex = i;
         state.transcript.system(
-          'Already running â€” focused tab ${i + 1} (${tabs[i].label}).',
+          'Already running — focused tab ${i + 1} (${tabs[i].label}).',
         );
         return tabs[i];
       }
@@ -149,7 +155,7 @@ class RunController {
     tabs.add(tab);
     _activeIndex = tabs.length - 1;
     tab.transcript.system(
-      'Launching ${entry.name} on $deviceId (${entry.program})â€¦',
+      'Launching ${entry.name} on $deviceId (${entry.program})…',
     );
     state.notifier.notifyTab(tab, FrunNotifEvent.appLaunching);
     try {
@@ -161,14 +167,16 @@ class RunController {
       final diag = AppRunSession.lastSpawnDiagnostic;
       if (diag != null) tab.transcript.system(diag);
       tab.session = session;
-      tab.eventsSub = session.events.listen((e) => _onEvent(tab, e));
+      tab.eventsSub = session.events.listen((e) => _events.onEvent(tab, e));
       // Capture the session in the callback so a late exit from an older
       // process can't clobber a newer session (happens when an app dies
       // after we already wired a new one up).
       unawaited(
-        session.exitCode.then((code) => _onProcessExit(tab, session, code)),
+        session.exitCode.then(
+          (code) => _events.onProcessExit(tab, session, code),
+        ),
       );
-      _ensureWatcher();
+      _watcher.ensure();
       return tab;
     } catch (e) {
       tab.transcript.error('Failed to launch: $e');
@@ -178,37 +186,8 @@ class RunController {
     }
   }
 
-  void _ensureWatcher() {
-    if (!state.config.hotReloadOnSave) return;
-    if (_watcher != null) return;
-    // Watch the repo/workspace root so monorepo feature packages are included.
-    final root = state.project.watchRoot;
-    state.visibleTranscript.system('File watcher started on $root');
-    final watcher = DartFileWatcher(
-      root: root,
-      onFileChanged: (path) {
-        state.visibleTranscript.system('[watcher] changed: $path');
-      },
-      onWatcherError: (e) {
-        state.visibleTranscript.warn('[watcher] error: $e');
-      },
-    );
-    watcher.start();
-    watcher.onChange.listen((_) {
-      if (tabs.every((t) => !t.isRunning)) return;
-      state.visibleTranscript.system(
-        'File changed â€” hot reloading all tabs.',
-      );
-      unawaited(hotReloadAll());
-    });
-    _watcher = watcher;
-  }
-
-  Future<void> _disposeWatcherIfIdle() async {
-    if (tabs.isNotEmpty) return;
-    await _watcher?.dispose();
-    _watcher = null;
-  }
+  Future<void> _disposeWatcherIfIdle() =>
+      _watcher.disposeIfIdle(idle: tabs.isEmpty);
 
   Future<void> hotReloadAll() async {
     for (final tab in tabs) {
@@ -330,7 +309,7 @@ class RunController {
   Future<void> _detachTab(RunTab tab) async {
     final s = tab.session;
     if (s != null) {
-      tab.transcript.system('Detaching from appâ€¦');
+      tab.transcript.system('Detaching from app…');
       try {
         await s.detach();
       } catch (e) {
@@ -356,7 +335,7 @@ class RunController {
   Future<void> _stopTab(RunTab tab) async {
     final s = tab.session;
     if (s != null) {
-      tab.transcript.system('Stopping appâ€¦');
+      tab.transcript.system('Stopping app…');
       try {
         await s.stop();
       } catch (e) {
@@ -381,148 +360,7 @@ class RunController {
     _activeIndex = index;
   }
 
-  /// Re-point the shared [IsolateManager] connection at the active tab's VM
-  /// service. Commands that act on the running app (`inspect`, `devtools`,
-  /// `isolates`) call this first so they operate on the *selected* tab's
-  /// device rather than whichever device connected last.
-  ///
+  /// Re-point the shared isolate connection at the active tab's VM service.
   /// Returns `true` when a live VM service is connected for the active tab.
-  Future<bool> ensureIsolatesForActiveTab() async {
-    final ws = activeTab?.session?.vmServiceUri;
-    if (ws == null) {
-      await _disconnectIsolates();
-      return false;
-    }
-    if (_connectedVmUri == ws && state.isolateManager.service != null) {
-      return true;
-    }
-    await _connectIsolates(ws);
-    return state.isolateManager.service != null;
-  }
-
-  void _onEvent(RunTab tab, DaemonEvent event) {
-    switch (event.name) {
-      case 'app.start':
-        tab.transcript.success('App started (appId=${event.params['appId']}).');
-        state.notifier.notifyTab(tab, FrunNotifEvent.appStarted);
-      case 'app.debugPort':
-        final ws = event.params['wsUri']?.toString();
-        if (ws != null) {
-          tab.transcript.info('VM service: $ws');
-          // Isolate connection is shared across the process â€” only the active
-          // tab drives it to keep the UX coherent.
-          if (tab == activeTab) _connectIsolates(ws);
-        }
-      case 'app.devTools':
-        final uri = event.params['wsUri'] ?? event.params['uri'];
-        if (uri != null) tab.transcript.info('DevTools: $uri');
-      case 'app.log':
-        final raw = _stripLogcatPrefix(event.params['log']?.toString() ?? '');
-        final stack = event.params['stackTrace']?.toString() ?? '';
-        if (raw.isEmpty && stack.isEmpty) return;
-        final isError = event.params['error'] == true;
-        if (raw.isNotEmpty) {
-          if (isError) {
-            tab.transcript.error(raw);
-          } else {
-            tab.transcript.info(raw);
-          }
-        }
-        if (stack.isNotEmpty) {
-          if (isError) {
-            tab.transcript.error(stack);
-          } else {
-            tab.transcript.info(stack);
-          }
-        }
-      case 'app.progress':
-        final msg = event.params['message']?.toString() ?? '';
-        if (msg.isNotEmpty) tab.transcript.system(msg);
-      case 'app.stop':
-        final err = event.params['error']?.toString() ?? '';
-        final trace = event.params['trace']?.toString() ?? '';
-        if (err.isNotEmpty) tab.transcript.error(err);
-        if (trace.isNotEmpty) tab.transcript.error(trace);
-        tab.transcript.system('App stopped.');
-        if (tab == activeTab) {
-          unawaited(_disconnectIsolates());
-        }
-      case 'daemon.logMessage':
-        final msg = event.params['message']?.toString() ?? '';
-        if (msg.isEmpty) return;
-        final level = event.params['level']?.toString() ?? 'info';
-        switch (level) {
-          case 'error':
-            tab.transcript.error(msg);
-          case 'warning':
-            tab.transcript.warn(msg);
-          case 'status':
-            tab.transcript.system(msg);
-          default:
-            tab.transcript.info(msg);
-        }
-      default:
-        tab.transcript.debug('${event.name}: ${event.params}');
-    }
-  }
-
-  /// Android logcat tags each line with e.g. `I/flutter ( 7225): `. Strip it
-  /// so the transcript shows only the app's own log text.
-  static final _logcatPrefix = RegExp(
-    r'^[VDIWEF]/[^(]*\(\s*\d+\):\s?',
-    multiLine: true,
-  );
-
-  static String _stripLogcatPrefix(String log) =>
-      log.replaceAll(_logcatPrefix, '');
-
-  Future<void> _connectIsolates(String wsUri) async {
-    try {
-      await state.isolateManager.connect(wsUri);
-      _connectedVmUri = wsUri;
-      state.transcript.system(
-        'VM service connected (${state.isolateManager.isolates.length} isolates).',
-      );
-      await _extensionSub?.cancel();
-      _extensionSub = state.isolateManager.extensionEvents.listen(
-        _onExtensionEvent,
-      );
-    } catch (e) {
-      _connectedVmUri = null;
-      state.transcript.warn('VM service connect failed: $e');
-    }
-  }
-
-  Future<void> _disconnectIsolates() async {
-    await _extensionSub?.cancel();
-    _extensionSub = null;
-    _connectedVmUri = null;
-    await state.isolateManager.disconnect();
-  }
-
-  void _onExtensionEvent(vm.Event event) {
-    if (event.extensionKind != 'Flutter.Error') return;
-    final tab = activeTab;
-    if (tab == null) return;
-    final data = event.extensionData?.data ?? const <String, dynamic>{};
-    tab.transcript.error(
-      renderFlutterError(
-        data,
-        verbose: state.config.verboseErrors,
-        projectRoot: state.project.root,
-      ),
-    );
-  }
-
-  void _onProcessExit(RunTab tab, AppRunSession exitedSession, int code) {
-    if (tab.session != exitedSession) {
-      // A newer session has taken over this tab â€” ignore the older exit.
-      return;
-    }
-    tab.transcript.system('flutter run exited (code $code).');
-    tab.session = null;
-    if (tab == activeTab) {
-      unawaited(_disconnectIsolates());
-    }
-  }
+  Future<bool> ensureIsolatesForActiveTab() => _isolates.ensureForActiveTab();
 }
