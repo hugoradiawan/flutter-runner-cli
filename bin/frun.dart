@@ -12,11 +12,7 @@ Future<void> main(List<String> argv) async {
       negatable: false,
       help: 'Show this help and exit.',
     )
-    ..addFlag(
-      'version',
-      negatable: false,
-      help: 'Print version and exit.',
-    );
+    ..addFlag('version', negatable: false, help: 'Print version and exit.');
 
   final ArgResults args;
   try {
@@ -46,7 +42,9 @@ Future<void> main(List<String> argv) async {
   String? cwd;
   if (args.rest.isNotEmpty) {
     final raw = args.rest.first;
-    cwd = p.isAbsolute(raw) ? raw : p.normalize(p.join(Directory.current.path, raw));
+    cwd = p.isAbsolute(raw)
+        ? raw
+        : p.normalize(p.join(Directory.current.path, raw));
     final dir = Directory(cwd);
     if (!dir.existsSync()) {
       stderr.writeln('frun: directory does not exist: $cwd');

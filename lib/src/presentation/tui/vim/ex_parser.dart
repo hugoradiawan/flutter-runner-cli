@@ -85,14 +85,18 @@ class ExParser {
 
     // Substitute shortcut: `s/pat/rep/flags`.
     if (input.startsWith('s/') || input.startsWith('s ') || input == 's') {
-      final body = input.startsWith('s/') ? input.substring(1) : input.substring(2);
+      final body = input.startsWith('s/')
+          ? input.substring(1)
+          : input.substring(2);
       final sub = _parseSubstitute(body);
       if (sub == null) return null;
       return ExCommand(name: 's', rangeSpec: rangeSpec, substitute: sub);
     }
 
     // Command name + bang + args.
-    final cmdMatch = RegExp(r'^([A-Za-z][A-Za-z0-9_]*)(!)?\s*(.*)$').firstMatch(input);
+    final cmdMatch = RegExp(
+      r'^([A-Za-z][A-Za-z0-9_]*)(!)?\s*(.*)$',
+    ).firstMatch(input);
     if (cmdMatch == null) return null;
     final name = cmdMatch.group(1)!;
     final bang = cmdMatch.group(2) == '!';
@@ -143,7 +147,10 @@ class ExParser {
       );
     } else if (parts.length == 2) {
       return SubstituteSpec(
-          pattern: parts[0], replacement: parts[1], flags: tail);
+        pattern: parts[0],
+        replacement: parts[1],
+        flags: tail,
+      );
     }
     // Only pattern, no terminator.
     return SubstituteSpec(pattern: buf.toString(), replacement: '', flags: '');

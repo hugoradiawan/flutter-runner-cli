@@ -1,8 +1,7 @@
-import '../../ca/result.dart';
-import '../entities/device.entity.dart';
+import '../../core/result.dart';
+import '../entities/device.dart';
 import '../failures/device_failure.dart';
 
-abstract class IDeviceRepository {
-  Stream<List<DeviceEntity>> watchDevices();
+abstract class DeviceRepository {
   Future<Result<DeviceFailure, List<DeviceEntity>>> listDevices();
 }

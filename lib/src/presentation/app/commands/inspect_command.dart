@@ -1,4 +1,4 @@
-import '../../../data/datasources/frun_notifier.dart';
+import '../../../data/services/frun_notifier.dart';
 import '../app_state.dart';
 import 'command.dart';
 
@@ -26,7 +26,9 @@ class InspectCommand extends Command {
     final tab = state.runController.activeTab;
     final session = tab?.session;
     if (tab == null || session == null) {
-      state.visibleTranscript.warn('No running app. Start one with /run first.');
+      state.visibleTranscript.warn(
+        'No running app. Start one with /run first.',
+      );
       return CommandResult.ok;
     }
     // Re-point the shared VM connection at this tab's device so the inspector
@@ -34,7 +36,7 @@ class InspectCommand extends Command {
     await state.runController.ensureIsolatesForActiveTab();
     tab.inspectEnabled = !tab.inspectEnabled;
     if (tab.inspectEnabled) {
-      state.notifier.notify(FrunNotifEvent.enteringInspect);
+      state.deps.notifier.notify(FrunNotifEvent.enteringInspect);
     }
     try {
       await session.callServiceExtension(
@@ -47,14 +49,17 @@ class InspectCommand extends Command {
       return CommandResult.ok;
     }
     if (tab.inspectEnabled) {
-      state.inspectorBridge.attach(state);
-      state.notifier.notify(FrunNotifEvent.inspectReady);
+      state.deps.inspectorBridge.attach(state);
+      state.deps.notifier.notify(FrunNotifEvent.inspectReady);
       state.visibleTranscript.success(
         'Inspector ON — tap widgets in the app to jump to source.',
       );
     } else {
-      await state.inspectorBridge.detach();
-      state.notifier.notify(FrunNotifEvent.inspectReady, detail: 'Inspector OFF');
+      await state.deps.inspectorBridge.detach();
+      state.deps.notifier.notify(
+        FrunNotifEvent.inspectReady,
+        detail: 'Inspector OFF',
+      );
       state.visibleTranscript.success('Inspector OFF.');
     }
     return CommandResult.ok;

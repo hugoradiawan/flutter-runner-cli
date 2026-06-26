@@ -1,47 +1,33 @@
-import '../../data/datasources/analysis_server.dart';
-import '../../data/datasources/dart_file_watcher.dart';
-import '../../data/datasources/device_manager.dart';
-import '../../data/datasources/diagnostics_store.dart';
-import '../../data/datasources/flutter_daemon.dart';
-import '../../data/datasources/frun_notifier.dart';
-import '../../data/datasources/ide_launcher.dart';
-import '../../data/datasources/inspector_bridge.dart';
-import '../../data/datasources/isolate_manager.dart';
-import '../../data/datasources/project_detector.dart';
-import '../../data/models/diagnostic.dart';
 import '../../data/models/launch_config.dart';
-import '../../domain/entities/app_config.entity.dart';
-import '../../domain/entities/emulator.entity.dart';
-import '../../domain/repositories/config_repository.dart';
-import '../../domain/repositories/device_repository.dart';
-import '../../domain/repositories/diagnostics_repository.dart';
-import '../../domain/repositories/emulator_repository.dart';
-import '../../domain/repositories/session_repository.dart';
-import '../../domain/usecases/get_config.usecase.dart';
-import '../../domain/usecases/get_diagnostics.usecase.dart';
-import '../../domain/usecases/hot_reload.usecase.dart';
-import '../../domain/usecases/hot_restart.usecase.dart';
-import '../../domain/usecases/launch_emulator.usecase.dart';
-import '../../domain/usecases/list_devices.usecase.dart';
-import '../../domain/usecases/list_emulators.usecase.dart';
-import '../../domain/usecases/save_config.usecase.dart';
-import '../../domain/usecases/set_config.usecase.dart';
-import '../../domain/usecases/stop_session.usecase.dart';
-import '../../domain/usecases/watch_diagnostics.usecase.dart';
+import '../../data/services/project_detector.dart';
+import '../../domain/entities/app_config.dart';
+import '../../domain/entities/diagnostic.dart';
+import '../../domain/entities/emulator.dart';
+import '../di/dependencies.dart';
 import 'run_controller.dart';
 import 'run_target.dart';
 import 'transcript.dart';
 
 export 'run_target.dart';
 
-/// Mutable, observable-ish state shared between the TUI shell, commands, and
+/// Mutable, presentation-only state shared between the TUI shell, commands, and
 /// services. Components read it during build; commands and services mutate it.
+///
+/// Everything the app can *do* lives on [deps] (the dependency container);
+/// everything the app is *showing* lives here.
 class AppState {
-  AppState({required this.project, required AppConfigEntity config})
-    : _config = config,
-      transcript = Transcript();
+  AppState({
+    required this.project,
+    required AppConfigEntity config,
+    required this.deps,
+  }) : _config = config,
+       transcript = Transcript();
 
   final FlutterProject project;
+
+  /// Use cases, repositories, and infrastructure services, assembled at the
+  /// composition root. See [Dependencies].
+  final Dependencies deps;
 
   /// The "system" transcript — boot banner, project info, `/devices`, `/help`,
   /// daemon errors. Anything not tied to a specific running session. Per-tab
@@ -63,66 +49,9 @@ class AppState {
   }
 
   /// The file-system path where config is persisted.
-  String get configPath => configRepository?.getConfigPath() ?? '';
+  String get configPath => deps.configRepository?.getConfigPath() ?? '';
 
-  /// Once the daemon has started, services are populated. Until then the
-  /// status panel and `/devices` command surface a "starting" message.
-  FlutterDaemon? daemon;
-  DeviceManager? deviceManager;
-
-  // ── CA repositories (set when respective services start) ──────────────────
-  IDeviceRepository? deviceRepository;
-  IEmulatorRepository? emulatorRepository;
-  IDiagnosticsRepository? diagnosticsRepository;
-  IConfigRepository? configRepository;
-  ISessionRepository? sessionRepository;
-
-  // ── UseCase accessors (constructed on demand from repos) ──────────────────
-  ListDevicesUseCase? get listDevicesUseCase =>
-      deviceRepository != null ? ListDevicesUseCase(deviceRepository!) : null;
-
-  ListEmulatorsUseCase? get listEmulatorsUseCase => emulatorRepository != null
-      ? ListEmulatorsUseCase(emulatorRepository!)
-      : null;
-
-  LaunchEmulatorUseCase? get launchEmulatorUseCase => emulatorRepository != null
-      ? LaunchEmulatorUseCase(emulatorRepository!)
-      : null;
-
-  GetDiagnosticsUseCase? get getDiagnosticsUseCase =>
-      diagnosticsRepository != null
-      ? GetDiagnosticsUseCase(diagnosticsRepository!)
-      : null;
-
-  WatchDiagnosticsUseCase? get watchDiagnosticsUseCase =>
-      diagnosticsRepository != null
-      ? WatchDiagnosticsUseCase(diagnosticsRepository!)
-      : null;
-
-  GetConfigUseCase? get getConfigUseCase =>
-      configRepository != null ? GetConfigUseCase(configRepository!) : null;
-
-  SetConfigUseCase? get setConfigUseCase =>
-      configRepository != null ? SetConfigUseCase(configRepository!) : null;
-
-  SaveConfigUseCase? get saveConfigUseCase =>
-      configRepository != null ? SaveConfigUseCase(configRepository!) : null;
-
-  HotReloadUseCase? get hotReloadUseCase =>
-      sessionRepository != null ? HotReloadUseCase(sessionRepository!) : null;
-
-  HotRestartUseCase? get hotRestartUseCase =>
-      sessionRepository != null ? HotRestartUseCase(sessionRepository!) : null;
-
-  StopSessionUseCase? get stopSessionUseCase =>
-      sessionRepository != null ? StopSessionUseCase(sessionRepository!) : null;
   late final RunController runController = RunController(this);
-  late final IsolateManager isolateManager = IsolateManager();
-  late final IdeLauncher ideLauncher = IdeLauncher();
-  late final InspectorBridge inspectorBridge = InspectorBridge();
-  final FrunNotifier notifier = const FrunNotifier();
-  bool daemonReady = false;
-  String? daemonError;
 
   /// `true` while the user has indicated they want to quit (via `/quit` or
   /// Ctrl-C). The TUI runner watches this between events.
@@ -136,25 +65,10 @@ class AppState {
 
   // ── Diagnostics (analyzer errors / warnings / infos) ──────────────────────
 
-  /// The Dart analysis server client (LSP). Null until the analysis boot
-  /// completes, and null forever if `dart` isn't on the PATH.
-  DartAnalysisServer? analysisServer;
-
-  /// Per-project on-disk cache for [diagnostics].
-  DiagnosticsStore? diagnosticsStore;
-
-  /// Set when the analysis server fails to start.
-  String? analysisError;
-
-  /// Always-on watcher that keeps the analyzer's view of edited files in sync
-  /// with disk (re-opens/re-pushes changed `.dart` files as priority docs).
-  /// Independent of the run controller's hot-reload watcher.
-  DartFileWatcher? analysisWatcher;
-
   /// Latest project-wide analyzer diagnostics. Updated in realtime by the
   /// analysis server; seeded from the cache on launch so counters show
   /// last-known totals immediately.
-  List<Diagnostic> diagnostics = const <Diagnostic>[];
+  List<DiagnosticEntity> diagnostics = const <DiagnosticEntity>[];
 
   /// Whether the diagnostics ("problems") overlay is open. Toggled by
   /// `/diagnostics`, by clicking the prompt-box counters, or closed with esc.

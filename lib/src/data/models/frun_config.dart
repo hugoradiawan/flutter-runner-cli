@@ -1,5 +1,5 @@
-import '../../ca/model.dart';
-import '../../domain/entities/app_config.entity.dart';
+import '../../core/base/model.dart';
+import '../../domain/entities/app_config.dart';
 import '../../domain/value_objects/config_values.dart';
 
 class FrunConfig extends AppConfigEntity implements Model<FrunConfig> {

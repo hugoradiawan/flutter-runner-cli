@@ -30,17 +30,20 @@ void main() {
       expect(c.text, '');
     });
 
-    test('Shift-Enter inserts newline; plain Enter on multi-line inserts too', () {
-      final c = InputController(editorMode: FrunEditorMode.normal);
-      type(c, 'abc');
-      c.insertKey(key(KeyCode.enter, mods: const {KeyMod.shift}));
-      type(c, 'def');
-      expect(c.text, 'abc\ndef');
-      // Now buffer is multi-line; plain Enter should also insert newline.
-      final res = c.insertKey(key(KeyCode.enter));
-      expect(res, InputAction.none);
-      expect(c.text, 'abc\ndef\n');
-    });
+    test(
+      'Shift-Enter inserts newline; plain Enter on multi-line inserts too',
+      () {
+        final c = InputController(editorMode: FrunEditorMode.normal);
+        type(c, 'abc');
+        c.insertKey(key(KeyCode.enter, mods: const {KeyMod.shift}));
+        type(c, 'def');
+        expect(c.text, 'abc\ndef');
+        // Now buffer is multi-line; plain Enter should also insert newline.
+        final res = c.insertKey(key(KeyCode.enter));
+        expect(res, InputAction.none);
+        expect(c.text, 'abc\ndef\n');
+      },
+    );
 
     test('insertAt with newline splits the line', () {
       final c = InputController(editorMode: FrunEditorMode.normal);
@@ -84,8 +87,10 @@ void main() {
       final text = c.textInRange(r);
       expect(text, 'beta');
       // Insert below row 1 — append at end.
-      c.insertAt(Pos(c.lineCount - 1, c.lineAt(c.lineCount - 1).length),
-          '\n$text');
+      c.insertAt(
+        Pos(c.lineCount - 1, c.lineAt(c.lineCount - 1).length),
+        '\n$text',
+      );
       expect(c.text, 'alpha\nbeta\nbeta');
     });
   });

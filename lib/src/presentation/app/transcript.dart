@@ -46,8 +46,7 @@ class Transcript {
     String text, {
     required void Function() onClick,
     TranscriptLevel level = TranscriptLevel.info,
-  }) =>
-      _add(text, level, onClick: onClick);
+  }) => _add(text, level, onClick: onClick);
 
   void _add(String text, TranscriptLevel level, {void Function()? onClick}) {
     for (final raw in text.split('\n')) {
@@ -59,7 +58,6 @@ class Transcript {
           onClick: onClick,
         ),
       );
-
     }
     _revision++;
   }

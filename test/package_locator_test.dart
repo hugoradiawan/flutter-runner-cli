@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:frun/src/data/datasources/package_locator.dart';
+import 'package:frun/src/data/services/package_locator.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -13,8 +13,9 @@ void main() {
   void pkg(String rel) {
     final dir = Directory(p.join(temp.path, rel));
     dir.createSync(recursive: true);
-    File(p.join(dir.path, 'pubspec.yaml'))
-        .writeAsStringSync('name: ${p.basename(dir.path)}\n');
+    File(
+      p.join(dir.path, 'pubspec.yaml'),
+    ).writeAsStringSync('name: ${p.basename(dir.path)}\n');
   }
 
   test('finds the root and nested monorepo packages', () {

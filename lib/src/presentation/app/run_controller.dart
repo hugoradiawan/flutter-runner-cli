@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import '../../data/datasources/app_session.dart';
-import '../../data/datasources/emulator_manager.dart';
-import '../../data/datasources/frun_notifier.dart';
-import '../../data/models/daemon_messages.dart';
 import '../../data/models/launch_config.dart';
+import '../../data/services/frun_notifier.dart';
+import '../../domain/entities/device.dart';
+import '../../domain/entities/emulator.dart';
+import '../../domain/params/emulator_launch_params.dart';
+import '../../domain/params/reload_params.dart';
 import '../../domain/value_objects/config_values.dart';
 import 'app_state.dart';
 import 'daemon_event_router.dart';
@@ -15,6 +17,12 @@ import 'run_tab.dart';
 /// Owns all concurrent `flutter run` sessions as a list of [RunTab]s. Tabs are
 /// added on `run`, removed on `stop`, and one is "active" — that's the tab
 /// the TUI renders and the one `reload`, `restart`, `stop` operate on.
+///
+/// The controller keeps the live [AppRunSession] objects (it needs them for
+/// per-tab event/log wiring) but drives every reload / restart / stop through
+/// the domain use cases on [AppState.deps], so the domain is the single control
+/// surface shared with the slash-command handlers. Device and emulator
+/// discovery for the run picker likewise go through use cases.
 ///
 /// Three collaborators handle the cross-cutting concerns: [IsolateConnection]
 /// (the shared VM service that follows the active tab), [DaemonEventRouter]
@@ -61,21 +69,19 @@ class RunController {
   Future<void> openRunTargetPicker(LaunchEntry entry) async {
     state.pendingRunEntry = entry;
 
-    final devices = state.deviceManager?.devices ?? const [];
+    final devicesResult = await state.deps.listDevicesUseCase?.call();
+    final devices =
+        devicesResult?.fold((_) => const <DeviceEntity>[], (d) => d) ??
+        const <DeviceEntity>[];
     final connectedAvdIds = devices
         .where((d) => d.emulatorId != null)
         .map((d) => d.emulatorId!)
         .toSet();
 
-    var emulators = const <FlutterEmulator>[];
-    final daemon = state.daemon;
-    if (daemon != null) {
-      try {
-        emulators = await EmulatorManager(
-          daemon,
-        ).list().timeout(const Duration(seconds: 10));
-      } catch (_) {}
-    }
+    final emulatorsResult = await state.deps.listEmulatorsUseCase?.call();
+    final emulators =
+        emulatorsResult?.fold((_) => const <EmulatorEntity>[], (e) => e) ??
+        const <EmulatorEntity>[];
 
     final targets = <RunTarget>[
       for (final d in devices) RunTarget.device(d),
@@ -103,8 +109,8 @@ class RunController {
 
     String deviceId;
     if (target.needsBoot) {
-      final daemon = state.daemon;
-      if (daemon == null) {
+      final launchUseCase = state.deps.launchEmulatorUseCase;
+      if (launchUseCase == null) {
         state.visibleTranscript.warn(
           'Flutter daemon is still starting. Try /run again shortly.',
         );
@@ -112,23 +118,25 @@ class RunController {
       }
       final coldBoot = state.config.emulatorBoot == FrunEmulatorBoot.cold;
       state.visibleTranscript.system('Launching emulator ${target.id}…');
-      try {
-        final device = await EmulatorManager(
-          daemon,
-        ).launchAndAwaitDevice(target.id, coldBoot: coldBoot);
-        if (device == null) {
-          state.visibleTranscript.warn(
-            'Emulator ${target.id} launched but no device appeared within the timeout.',
-          );
-          return null;
-        }
-        deviceId = device.id;
-      } catch (e) {
+      final result = await launchUseCase.call(
+        EmulatorLaunchParams(
+          emulator: EmulatorEntity(
+            id: target.id,
+            name: target.name,
+            platformType: target.platform,
+          ),
+          coldBoot: coldBoot,
+        ),
+      );
+      final device = result.fold((_) => null, (d) => d);
+      if (device == null) {
         state.visibleTranscript.error(
-          'Failed to launch emulator ${target.id}: $e',
+          'Failed to launch emulator ${target.id}: '
+          '${result.fold((f) => f.message, (_) => '')}',
         );
         return null;
       }
+      deviceId = device.id;
     } else {
       deviceId = target.id;
     }
@@ -157,7 +165,7 @@ class RunController {
     tab.transcript.system(
       'Launching ${entry.name} on $deviceId (${entry.program})…',
     );
-    state.notifier.notifyTab(tab, FrunNotifEvent.appLaunching);
+    state.deps.notifier.notifyTab(tab, FrunNotifEvent.appLaunching);
     try {
       final session = await AppRunSession.start(
         projectRoot: state.project.root,
@@ -191,16 +199,7 @@ class RunController {
 
   Future<void> hotReloadAll() async {
     for (final tab in tabs) {
-      final s = tab.session;
-      if (s == null) continue;
-      state.notifier.notifyTab(tab, FrunNotifEvent.hotReloading);
-      try {
-        await s.hotReload();
-        state.notifier.notifyTab(tab, FrunNotifEvent.hotReloaded);
-        tab.transcript.success('Hot reload requested.');
-      } catch (e) {
-        tab.transcript.error('Hot reload failed: $e');
-      }
+      if (tab.session != null) await _reload(tab);
     }
   }
 
@@ -212,14 +211,23 @@ class RunController {
       state.transcript.warn('No app running. Use /run first.');
       return;
     }
-    state.notifier.notifyTab(tab, FrunNotifEvent.hotReloading);
-    try {
-      await tab.session!.hotReload();
-      state.notifier.notifyTab(tab, FrunNotifEvent.hotReloaded);
-      tab.transcript.success('Hot reload requested.');
-    } catch (e) {
-      tab.transcript.error('Hot reload failed: $e');
-    }
+    await _reload(tab);
+  }
+
+  /// Drive a hot reload for [tab] through the domain use case. Assumes the tab
+  /// has a live session (callers guard).
+  Future<void> _reload(RunTab tab) async {
+    final useCase = state.deps.hotReloadUseCase;
+    if (useCase == null) return;
+    state.deps.notifier.notifyTab(tab, FrunNotifEvent.hotReloading);
+    final result = await useCase.call(ReloadParams(tabId: tab.id));
+    result.fold(
+      (f) => tab.transcript.error('Hot reload failed: ${f.message}'),
+      (_) {
+        state.deps.notifier.notifyTab(tab, FrunNotifEvent.hotReloaded);
+        tab.transcript.success('Hot reload requested.');
+      },
+    );
   }
 
   Future<void> hotRestartTab(RunTab? tab) async {
@@ -227,14 +235,17 @@ class RunController {
       state.transcript.warn('No app running. Use /run first.');
       return;
     }
-    state.notifier.notifyTab(tab, FrunNotifEvent.restarting);
-    try {
-      await tab.session!.hotRestart();
-      state.notifier.notifyTab(tab, FrunNotifEvent.restarted);
-      tab.transcript.success('Hot restart requested.');
-    } catch (e) {
-      tab.transcript.error('Hot restart failed: $e');
-    }
+    final useCase = state.deps.hotRestartUseCase;
+    if (useCase == null) return;
+    state.deps.notifier.notifyTab(tab, FrunNotifEvent.restarting);
+    final result = await useCase.call(ReloadParams(tabId: tab.id));
+    result.fold(
+      (f) => tab.transcript.error('Hot restart failed: ${f.message}'),
+      (_) {
+        state.deps.notifier.notifyTab(tab, FrunNotifEvent.restarted);
+        tab.transcript.success('Hot restart requested.');
+      },
+    );
   }
 
   /// Stop and remove an arbitrary tab (not necessarily the active one).
@@ -333,13 +344,15 @@ class RunController {
   }
 
   Future<void> _stopTab(RunTab tab) async {
-    final s = tab.session;
-    if (s != null) {
+    if (tab.session != null) {
       tab.transcript.system('Stopping app…');
-      try {
-        await s.stop();
-      } catch (e) {
-        tab.transcript.warn('Stop reported error: $e');
+      final useCase = state.deps.stopSessionUseCase;
+      if (useCase != null) {
+        final result = await useCase.call(ReloadParams(tabId: tab.id));
+        result.fold(
+          (f) => tab.transcript.warn('Stop reported error: ${f.message}'),
+          (_) {},
+        );
       }
     }
     await tab.eventsSub?.cancel();

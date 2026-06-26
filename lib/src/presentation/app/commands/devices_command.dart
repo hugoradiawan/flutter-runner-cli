@@ -20,7 +20,7 @@ class DevicesCommand extends Command {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    final useCase = state.listDevicesUseCase;
+    final useCase = state.deps.listDevicesUseCase;
     if (useCase == null) {
       state.visibleTranscript.warn(
         'Flutter daemon is still starting. Try devices again in a moment.',

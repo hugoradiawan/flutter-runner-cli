@@ -48,18 +48,18 @@ const String _pickerCloseLabel = ' x ';
 /// Single-cell glyph for each diagnostic category (used in the counters and the
 /// overlay rows). Chosen from widely-supported, single-width symbols.
 String _categoryIcon(DiagnosticCategory c) => switch (c) {
-      DiagnosticCategory.error => '✘',
-      DiagnosticCategory.warning => '▲',
-      DiagnosticCategory.info => 'ⓘ',
-      DiagnosticCategory.todo => '✎',
-    };
+  DiagnosticCategory.error => '✘',
+  DiagnosticCategory.warning => '▲',
+  DiagnosticCategory.info => 'ⓘ',
+  DiagnosticCategory.todo => '✎',
+};
 
 Style _categoryStyle(FrunTheme theme, DiagnosticCategory c) => switch (c) {
-      DiagnosticCategory.error => theme.errorStyle,
-      DiagnosticCategory.warning => theme.warnStyle,
-      DiagnosticCategory.info => theme.accentStyle,
-      DiagnosticCategory.todo => theme.successStyle,
-    };
+  DiagnosticCategory.error => theme.errorStyle,
+  DiagnosticCategory.warning => theme.warnStyle,
+  DiagnosticCategory.info => theme.accentStyle,
+  DiagnosticCategory.todo => theme.successStyle,
+};
 
 enum _DiagRowKind { fileHeader, issue }
 
@@ -67,17 +67,17 @@ enum _DiagRowKind { fileHeader, issue }
 /// issue count) or a single issue. Selection only ever lands on [issue] rows.
 class _DiagRow {
   const _DiagRow.fileHeader(this.file, this.count)
-      : kind = _DiagRowKind.fileHeader,
-        diagnostic = null;
-  const _DiagRow.issue(Diagnostic this.diagnostic)
-      : kind = _DiagRowKind.issue,
-        file = '',
-        count = 0;
+    : kind = _DiagRowKind.fileHeader,
+      diagnostic = null;
+  const _DiagRow.issue(DiagnosticEntity this.diagnostic)
+    : kind = _DiagRowKind.issue,
+      file = '',
+      count = 0;
 
   final _DiagRowKind kind;
   final String file;
   final int count;
-  final Diagnostic? diagnostic;
+  final DiagnosticEntity? diagnostic;
 }
 
 // ─── Per-tab button table ──────────────────────────────────────────────────
@@ -135,9 +135,19 @@ class _ConfigEditorEntry {
 const _configEditorEntries = <_ConfigEditorEntry>[
   _ConfigEditorEntry('ide', ['vscode', 'zed', 'neovim'], label: 'IDE'),
   _ConfigEditorEntry('editor_mode', ['normal', 'vim'], label: 'Editor mode'),
-  _ConfigEditorEntry('hot_reload_on_save', ['true', 'false'], label: 'Hot reload on save'),
-  _ConfigEditorEntry('open_devtools_on_launch', ['ask', 'always', 'never'], label: 'Open devtools on launch'),
-  _ConfigEditorEntry('verbose_errors', ['false', 'true'], label: 'Verbose error logs'),
+  _ConfigEditorEntry('hot_reload_on_save', [
+    'true',
+    'false',
+  ], label: 'Hot reload on save'),
+  _ConfigEditorEntry('open_devtools_on_launch', [
+    'ask',
+    'always',
+    'never',
+  ], label: 'Open devtools on launch'),
+  _ConfigEditorEntry('verbose_errors', [
+    'false',
+    'true',
+  ], label: 'Verbose error logs'),
 ];
 
 /// Number of *visible* columns in [raw] before raw string index [rawEnd]

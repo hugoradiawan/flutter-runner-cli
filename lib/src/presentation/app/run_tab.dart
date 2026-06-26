@@ -11,11 +11,8 @@ import 'transcript.dart';
 /// (per-tab transcript, event subscription). Tabs are owned by [RunController]
 /// and rendered by the TUI in a strip just above the input field.
 class RunTab {
-  RunTab({
-    required this.id,
-    required this.entry,
-    required this.deviceId,
-  }) : transcript = Transcript();
+  RunTab({required this.id, required this.entry, required this.deviceId})
+    : transcript = Transcript();
 
   /// Stable identity assigned by [RunController] (monotonic counter).
   final int id;
@@ -46,5 +43,3 @@ class RunTab {
   /// resolves to the same tab.
   String get dedupeKey => '${entry.name}|${entry.program}|$deviceId';
 }
-
-

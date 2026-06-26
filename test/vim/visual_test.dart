@@ -11,11 +11,11 @@ import 'package:test/test.dart';
 import 'test_support.dart';
 
 VimEngine _engine(VimState s) => VimEngine(
-      state: s,
-      viewport: (_) => (top: 0, height: 10),
-      runExCmd: (_, __) {},
-      runSearch: (_, __, ___) {},
-    );
+  state: s,
+  viewport: (_) => (top: 0, height: 10),
+  runExCmd: (_, __) {},
+  runSearch: (_, __, ___) {},
+);
 
 void main() {
   group('Visual mode', () {
@@ -145,4 +145,3 @@ void main() {
     });
   });
 }
-

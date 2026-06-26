@@ -1,4 +1,4 @@
-import '../../ca/data_source.dart';
+import '../../core/base/data_source.dart';
 import '../../domain/failures/config_failure.dart';
 import '../models/frun_config.dart';
 import 'config_store.dart';

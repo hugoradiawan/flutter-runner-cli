@@ -5,8 +5,12 @@ import 'vim_buffer.dart';
 /// Engine routes `[count]{op}[motion]` and `[count]{op}{textObject}` here.
 class Operators {
   /// Delete a range. For linewise, also removes the trailing newline.
-  static void delete(VimBuffer b, Range r, RegisterBank regs,
-      {String register = '"'}) {
+  static void delete(
+    VimBuffer b,
+    Range r,
+    RegisterBank regs, {
+    String register = '"',
+  }) {
     if (!b.isEditable) return;
     final norm = r.normalized();
     final text = b.textInRange(norm);
@@ -17,16 +21,24 @@ class Operators {
   }
 
   /// Yank without mutation.
-  static void yank(VimBuffer b, Range r, RegisterBank regs,
-      {String register = '"'}) {
+  static void yank(
+    VimBuffer b,
+    Range r,
+    RegisterBank regs, {
+    String register = '"',
+  }) {
     final norm = r.normalized();
     final text = b.textInRange(norm);
     regs.yank(text, norm.kind, name: register);
   }
 
   /// Delete + enter insert mode (the engine flips mode after this returns).
-  static void change(VimBuffer b, Range r, RegisterBank regs,
-      {String register = '"'}) {
+  static void change(
+    VimBuffer b,
+    Range r,
+    RegisterBank regs, {
+    String register = '"',
+  }) {
     delete(b, r, regs, register: register);
   }
 
@@ -80,10 +92,14 @@ class Operators {
     for (var row = norm.start.row; row <= norm.end.row; row++) {
       final line = b.lineAt(row);
       b.replaceRange(
-          Range(Pos(row, 0), Pos(row, line.isEmpty ? 0 : line.length - 1),
-              RangeKind.linewise),
-          pad + line,
-          RangeKind.linewise);
+        Range(
+          Pos(row, 0),
+          Pos(row, line.isEmpty ? 0 : line.length - 1),
+          RangeKind.linewise,
+        ),
+        pad + line,
+        RangeKind.linewise,
+      );
     }
   }
 
@@ -99,16 +115,19 @@ class Operators {
       }
       if (strip == 0) continue;
       b.replaceRange(
-          Range(Pos(row, 0), Pos(row, line.isEmpty ? 0 : line.length - 1),
-              RangeKind.linewise),
-          line.substring(strip),
-          RangeKind.linewise);
+        Range(
+          Pos(row, 0),
+          Pos(row, line.isEmpty ? 0 : line.length - 1),
+          RangeKind.linewise,
+        ),
+        line.substring(strip),
+        RangeKind.linewise,
+      );
     }
   }
 
   /// `p` / `P` — paste from register.
-  static void paste(VimBuffer b, RegisterEntry entry,
-      {required bool before}) {
+  static void paste(VimBuffer b, RegisterEntry entry, {required bool before}) {
     if (!b.isEditable || entry.isEmpty) return;
     final p = b.cursor;
     if (entry.kind == RangeKind.linewise) {
@@ -158,9 +177,10 @@ class Operators {
       final joined = cur.isEmpty || next.isEmpty ? cur + next : '$cur $next';
       // Range covers current line end + next line.
       b.replaceRange(
-          Range(Pos(r, 0), Pos(r + 1, b.rowLength(r + 1)), RangeKind.linewise),
-          joined,
-          RangeKind.linewise);
+        Range(Pos(r, 0), Pos(r + 1, b.rowLength(r + 1)), RangeKind.linewise),
+        joined,
+        RangeKind.linewise,
+      );
       b.cursor = Pos(r, cur.length);
     }
   }

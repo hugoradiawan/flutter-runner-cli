@@ -18,11 +18,9 @@ import '../models/daemon_messages.dart';
 ///
 /// This class owns the [Process] and an internal stream of [DaemonEvent]s.
 class FlutterDaemon {
-  FlutterDaemon._({
-    required Process process,
-    required String executable,
-  })  : _process = process,
-        _executable = executable;
+  FlutterDaemon._({required Process process, required String executable})
+    : _process = process,
+      _executable = executable;
 
   final Process _process;
   // The resolved `flutter` (or `flutter.bat`) path we launched. Useful for
@@ -32,7 +30,8 @@ class FlutterDaemon {
   final Map<int, Completer<Object?>> _pending = <int, Completer<Object?>>{};
   final StreamController<DaemonEvent> _events =
       StreamController<DaemonEvent>.broadcast();
-  final StreamController<String> _stderrLines = StreamController<String>.broadcast();
+  final StreamController<String> _stderrLines =
+      StreamController<String>.broadcast();
   StreamSubscription<String>? _stdoutSub;
   StreamSubscription<String>? _stderrSub;
   bool _disposed = false;
@@ -77,9 +76,9 @@ class FlutterDaemon {
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen((line) {
-      if (_disposed || _stderrLines.isClosed) return;
-      if (line.isNotEmpty) _stderrLines.add(line);
-    });
+          if (_disposed || _stderrLines.isClosed) return;
+          if (line.isNotEmpty) _stderrLines.add(line);
+        });
     unawaited(_process.exitCode.whenComplete(_failPending));
   }
 
@@ -101,15 +100,14 @@ class FlutterDaemon {
       final completer = _pending.remove(id);
       if (completer == null) return;
       if (map.containsKey('error')) {
-        completer.completeError(
-          DaemonRequestException('id=$id', map['error']),
-        );
+        completer.completeError(DaemonRequestException('id=$id', map['error']));
       } else {
         completer.complete(map['result']);
       }
     } else if (map.containsKey('event')) {
       final name = map['event'] as String? ?? '';
-      final params = (map['params'] as Map?)?.cast<String, Object?>() ??
+      final params =
+          (map['params'] as Map?)?.cast<String, Object?>() ??
           <String, Object?>{};
       if (!_events.isClosed) {
         _events.add(DaemonEvent(name: name, params: params));
@@ -198,7 +196,9 @@ class FlutterDaemon {
     if (_disposed) return;
     try {
       await request('daemon.shutdown');
-    } catch (_) {/* daemon may already be gone */}
+    } catch (_) {
+      /* daemon may already be gone */
+    }
     _disposed = true;
     // Cancel pipes BEFORE closing the controllers so late lines don't crash.
     await _stdoutSub?.cancel();
@@ -207,7 +207,9 @@ class FlutterDaemon {
     _stderrSub = null;
     try {
       _process.kill();
-    } catch (_) {/* already dead */}
+    } catch (_) {
+      /* already dead */
+    }
     await _events.close();
     await _stderrLines.close();
   }

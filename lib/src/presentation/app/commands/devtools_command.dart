@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import '../../../data/datasources/frun_notifier.dart';
+import '../../../data/services/frun_notifier.dart';
 import '../app_state.dart';
 import 'command.dart';
 
@@ -18,12 +18,14 @@ class DevToolsCommand extends Command {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    final daemon = state.daemon;
+    final daemon = state.deps.daemon;
     if (daemon == null) {
-      state.visibleTranscript.warn('Flutter daemon not ready yet. Try again shortly.');
+      state.visibleTranscript.warn(
+        'Flutter daemon not ready yet. Try again shortly.',
+      );
       return CommandResult.ok;
     }
-    state.notifier.notify(FrunNotifEvent.openingDevTools);
+    state.deps.notifier.notify(FrunNotifEvent.openingDevTools);
     Map<String, Object?> served;
     try {
       served = await daemon.serveDevTools();
@@ -50,12 +52,12 @@ class DevToolsCommand extends Command {
     // Re-point the shared VM connection at this tab's device so DevTools widget
     // clicks open source from the selected app.
     await state.runController.ensureIsolatesForActiveTab();
-    state.inspectorBridge.attach(state);
+    state.deps.inspectorBridge.attach(state);
     state.visibleTranscript.system(
       'Inspector bridge ON — leaf clicks in DevTools open in ${state.config.ide.id}.',
     );
 
-    state.notifier.notify(FrunNotifEvent.devToolsReady, detail: full);
+    state.deps.notifier.notify(FrunNotifEvent.devToolsReady, detail: full);
     _open(full, state);
     return CommandResult.ok;
   }
@@ -73,10 +75,12 @@ class DevToolsCommand extends Command {
       exe = 'xdg-open';
       args = [url];
     }
-    Process.start(exe, args, runInShell: Platform.isWindows).then((p) {
-      state.visibleTranscript.system('Opened DevTools in browser.');
-    }).catchError((Object e) {
-      state.visibleTranscript.warn('Could not auto-open browser: $e');
-    });
+    Process.start(exe, args, runInShell: Platform.isWindows)
+        .then((p) {
+          state.visibleTranscript.system('Opened DevTools in browser.');
+        })
+        .catchError((Object e) {
+          state.visibleTranscript.warn('Could not auto-open browser: $e');
+        });
   }
 }

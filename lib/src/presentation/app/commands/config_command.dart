@@ -1,4 +1,4 @@
-import '../../../domain/params/config.params.dart';
+import '../../../domain/params/config_params.dart';
 import '../app_state.dart';
 import 'command.dart';
 
@@ -45,24 +45,24 @@ class ConfigCommand extends Command {
   }
 
   Future<void> _set(String key, String value, AppState state) async {
-    final setUseCase = state.setConfigUseCase;
+    final setUseCase = state.deps.setConfigUseCase;
     if (setUseCase == null) {
       state.visibleTranscript.warn('Config not ready.');
       return;
     }
-    final setResult =
-        await setUseCase.call(ConfigSetParams(key: key, value: value));
+    final setResult = await setUseCase.call(
+      ConfigSetParams(key: key, value: value),
+    );
     await setResult.fold(
       (failure) async => state.visibleTranscript.warn(failure.message),
       (_) async {
-        final getResult = await state.getConfigUseCase?.call();
-        getResult?.fold(
-          (f) => state.visibleTranscript.warn(f.message),
-          (entity) {
-            state.setConfig(entity);
-            state.visibleTranscript.success('Set $key = $value');
-          },
-        );
+        final getResult = await state.deps.getConfigUseCase?.call();
+        getResult?.fold((f) => state.visibleTranscript.warn(f.message), (
+          entity,
+        ) {
+          state.setConfig(entity);
+          state.visibleTranscript.success('Set $key = $value');
+        });
         if (getResult == null) {
           state.visibleTranscript.success('Set $key = $value');
         }

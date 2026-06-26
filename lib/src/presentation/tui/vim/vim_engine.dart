@@ -12,13 +12,15 @@ import 'vim_state.dart';
 enum KeyResult {
   /// The engine consumed the key — caller should not act further.
   consumed,
+
   /// Engine declined; caller should pass the key to the buffer's insert handler.
   passInsert,
 }
 
 typedef ViewportProvider = ({int top, int height}) Function(VimBuffer);
 typedef ExCmdRunner = void Function(ExCommand cmd, VimBuffer buffer);
-typedef SearchRunner = void Function(String pattern, bool forward, VimBuffer buffer);
+typedef SearchRunner =
+    void Function(String pattern, bool forward, VimBuffer buffer);
 typedef SubmitHandler = void Function();
 typedef TabSwitcher = void Function(int? tabNumber, {required bool forward});
 
@@ -34,12 +36,12 @@ class VimEngine {
     required SearchRunner runSearch,
     SubmitHandler? onSubmit,
     TabSwitcher? onTabSwitch,
-  })  : _state = state,
-        _viewport = viewport,
-        _runExCmd = runExCmd,
-        _runSearch = runSearch,
-        _onSubmit = onSubmit,
-        _onTabSwitch = onTabSwitch;
+  }) : _state = state,
+       _viewport = viewport,
+       _runExCmd = runExCmd,
+       _runSearch = runSearch,
+       _onSubmit = onSubmit,
+       _onTabSwitch = onTabSwitch;
 
   final VimState _state;
   final ViewportProvider _viewport;
@@ -182,10 +184,15 @@ class VimEngine {
     }
     _state.mode = kind;
     _state.visualAnchor = buffer.cursor;
-    buffer.selection = Range(buffer.cursor, buffer.cursor,
-        kind == VimMode.visualLine ? RangeKind.linewise
-            : kind == VimMode.visualBlock ? RangeKind.blockwise
-                : RangeKind.charwise);
+    buffer.selection = Range(
+      buffer.cursor,
+      buffer.cursor,
+      kind == VimMode.visualLine
+          ? RangeKind.linewise
+          : kind == VimMode.visualBlock
+          ? RangeKind.blockwise
+          : RangeKind.charwise,
+    );
     buffer.visualKind = kind;
     buffer.onModeChanged(kind);
   }
@@ -259,8 +266,10 @@ class VimEngine {
     }
     if (ke.code == KeyCode.backspace) {
       if (_state.searchDraft.isNotEmpty) {
-        _state.searchDraft =
-            _state.searchDraft.substring(0, _state.searchDraft.length - 1);
+        _state.searchDraft = _state.searchDraft.substring(
+          0,
+          _state.searchDraft.length - 1,
+        );
       } else {
         _state.mode = VimMode.normal;
         buffer.onModeChanged(VimMode.normal);
@@ -311,8 +320,13 @@ class VimEngine {
       final count = _consumeCount();
       _state.pendingFind = '';
       _state.lastFind = LastFind(ch, forward, till);
-      final motion = Motions.findChar(buffer, ch, count,
-          forward: forward, till: till);
+      final motion = Motions.findChar(
+        buffer,
+        ch,
+        count,
+        forward: forward,
+        till: till,
+      );
       _applyMotion(buffer, motion);
       return;
     }
@@ -361,7 +375,8 @@ class VimEngine {
       _state.pendingRegister = ch;
       return;
     }
-    if (ch == '"' && _state.pendingOperator.isEmpty &&
+    if (ch == '"' &&
+        _state.pendingOperator.isEmpty &&
         _state.pendingRegister.isEmpty) {
       _state.pendingRegister = '"';
       return;
@@ -369,7 +384,9 @@ class VimEngine {
 
     // Count digits (but not when an op-pending text-object would expect a count).
     if (RegExp(r'\d').hasMatch(ch) &&
-        !(ch == '0' && _state.pendingCount == 0 && _state.pendingOperator.isEmpty)) {
+        !(ch == '0' &&
+            _state.pendingCount == 0 &&
+            _state.pendingOperator.isEmpty)) {
       _state.pendingCount = _state.pendingCount * 10 + int.parse(ch);
       return;
     }
@@ -377,7 +394,8 @@ class VimEngine {
     // Text-object detection (only when operator pending OR in visual).
     if (_state.pendingOperator.isNotEmpty || _isVisual()) {
       if (ch == 'i' || ch == 'a') {
-        _state.pendingMarkOp = ch; // reuse field as "text-object inner/around prefix"
+        _state.pendingMarkOp =
+            ch; // reuse field as "text-object inner/around prefix"
         return;
       }
     }
@@ -458,10 +476,16 @@ class VimEngine {
         _toggleVisual(buffer, VimMode.visualBlock);
       case 'd':
         final vp = _viewport(buffer);
-        _applyMotion(buffer, Motions.down(buffer, (vp.height ~/ 2).clamp(1, 100)));
+        _applyMotion(
+          buffer,
+          Motions.down(buffer, (vp.height ~/ 2).clamp(1, 100)),
+        );
       case 'u':
         final vp = _viewport(buffer);
-        _applyMotion(buffer, Motions.up(buffer, (vp.height ~/ 2).clamp(1, 100)));
+        _applyMotion(
+          buffer,
+          Motions.up(buffer, (vp.height ~/ 2).clamp(1, 100)),
+        );
       case 'f':
         final vp = _viewport(buffer);
         _applyMotion(buffer, Motions.down(buffer, vp.height));
@@ -514,7 +538,10 @@ class VimEngine {
       case 'w':
         _applyMotion(buffer, Motions.nextWordStart(buffer, count));
       case 'W':
-        _applyMotion(buffer, Motions.nextWordStart(buffer, count, bigWord: true));
+        _applyMotion(
+          buffer,
+          Motions.nextWordStart(buffer, count, bigWord: true),
+        );
       case 'e':
         _applyMotion(buffer, Motions.wordEnd(buffer, count));
       case 'E':
@@ -522,7 +549,10 @@ class VimEngine {
       case 'b':
         _applyMotion(buffer, Motions.prevWordStart(buffer, count));
       case 'B':
-        _applyMotion(buffer, Motions.prevWordStart(buffer, count, bigWord: true));
+        _applyMotion(
+          buffer,
+          Motions.prevWordStart(buffer, count, bigWord: true),
+        );
       case '0':
         _applyMotion(buffer, Motions.lineStart(buffer));
       case '^':
@@ -564,8 +594,13 @@ class VimEngine {
         if (lf != null) {
           _applyMotion(
             buffer,
-            Motions.findChar(buffer, lf.ch, count,
-                forward: lf.forward, till: lf.till),
+            Motions.findChar(
+              buffer,
+              lf.ch,
+              count,
+              forward: lf.forward,
+              till: lf.till,
+            ),
           );
         }
       case ',':
@@ -573,8 +608,13 @@ class VimEngine {
         if (lf != null) {
           _applyMotion(
             buffer,
-            Motions.findChar(buffer, lf.ch, count,
-                forward: !lf.forward, till: lf.till),
+            Motions.findChar(
+              buffer,
+              lf.ch,
+              count,
+              forward: !lf.forward,
+              till: lf.till,
+            ),
           );
         }
       case 'n':
@@ -586,7 +626,10 @@ class VimEngine {
       case 'i':
         _enterInsert(buffer, entry: 'i');
       case 'I':
-        buffer.cursor = Pos(buffer.cursor.row, buffer.firstNonBlankCol(buffer.cursor.row));
+        buffer.cursor = Pos(
+          buffer.cursor.row,
+          buffer.firstNonBlankCol(buffer.cursor.row),
+        );
         _enterInsert(buffer, entry: 'I');
       case 'a':
         final c = buffer.cursor;
@@ -594,7 +637,10 @@ class VimEngine {
         if (len > 0 && c.col < len) buffer.cursor = Pos(c.row, c.col + 1);
         _enterInsert(buffer, entry: 'a');
       case 'A':
-        buffer.cursor = Pos(buffer.cursor.row, buffer.rowLength(buffer.cursor.row));
+        buffer.cursor = Pos(
+          buffer.cursor.row,
+          buffer.rowLength(buffer.cursor.row),
+        );
         _enterInsert(buffer, entry: 'A');
       case 'o':
         if (buffer.isMultiLine && buffer.isEditable) {
@@ -634,8 +680,11 @@ class VimEngine {
           for (var i = 0; i < count; i++) {
             final c = buffer.cursor;
             if (c.col > 0) {
-              final range = Range(Pos(c.row, c.col - 1),
-                  Pos(c.row, c.col - 1), RangeKind.charwise);
+              final range = Range(
+                Pos(c.row, c.col - 1),
+                Pos(c.row, c.col - 1),
+                RangeKind.charwise,
+              );
               Operators.delete(buffer, range, _state.registers, register: reg);
             }
           }
@@ -653,8 +702,11 @@ class VimEngine {
         if (buffer.isEditable) {
           buffer.pushUndo();
           final r = buffer.cursor.row;
-          final range = Range(Pos(r, 0), Pos(r, buffer.rowLength(r)),
-              RangeKind.linewise);
+          final range = Range(
+            Pos(r, 0),
+            Pos(r, buffer.rowLength(r)),
+            RangeKind.linewise,
+          );
           Operators.delete(buffer, range, _state.registers, register: reg);
           _enterInsert(buffer, entry: 'S', pushUndo: false);
         }
@@ -792,7 +844,12 @@ class VimEngine {
   }
 
   /// Resolve an operator + motion pair (`{count}{op}{motion}`).
-  void _resolveOperatorMotion(String ch, VimBuffer buffer, int count, String reg) {
+  void _resolveOperatorMotion(
+    String ch,
+    VimBuffer buffer,
+    int count,
+    String reg,
+  ) {
     // `dd` / `yy` / `cc` — operator doubled = whole line(s).
     if (ch == _state.pendingOperator) {
       final op = _state.pendingOperator;
@@ -842,7 +899,10 @@ class VimEngine {
       case '%':
         motion = Motions.matchBracket(buffer);
       case 'G':
-        motion = Motions.goLine(buffer, _state.pendingCount == 0 ? null : _state.pendingCount);
+        motion = Motions.goLine(
+          buffer,
+          _state.pendingCount == 0 ? null : _state.pendingCount,
+        );
       case '{':
         motion = Motions.paragraph(buffer, count, forward: false);
       case '}':
@@ -873,8 +933,11 @@ class VimEngine {
 
   Range _rangeFromMotion(Pos from, MotionResult motion) {
     if (motion.kind == RangeKind.linewise) {
-      return Range(Pos(from.row, 0), Pos(motion.target.row, 0),
-          RangeKind.linewise);
+      return Range(
+        Pos(from.row, 0),
+        Pos(motion.target.row, 0),
+        RangeKind.linewise,
+      );
     }
     if (motion.exclusive) {
       // Motion target is exclusive — back off by one before forming range.
@@ -890,7 +953,11 @@ class VimEngine {
     return Range(from, motion.target, RangeKind.charwise);
   }
 
-  Range? _resolveTextObject(VimBuffer buffer, String ch, {required bool inner}) {
+  Range? _resolveTextObject(
+    VimBuffer buffer,
+    String ch, {
+    required bool inner,
+  }) {
     switch (ch) {
       case 'w':
         return TextObjects.word(buffer, inner: inner);
@@ -934,7 +1001,9 @@ class VimEngine {
       return;
     }
     if (_state.pendingOperator.isEmpty) return;
-    final reg = _state.pendingRegister.length == 1 ? _state.pendingRegister : '"';
+    final reg = _state.pendingRegister.length == 1
+        ? _state.pendingRegister
+        : '"';
     final op = _state.pendingOperator;
     _runOperator(op, buffer, range, reg);
     _state.pendingOperator = '';
@@ -969,19 +1038,30 @@ class VimEngine {
     }
   }
 
-  void _applyLinewiseOperator(VimBuffer buffer, String op, int count, String reg) {
+  void _applyLinewiseOperator(
+    VimBuffer buffer,
+    String op,
+    int count,
+    String reg,
+  ) {
     final startRow = buffer.cursor.row;
     final endRow = (startRow + count - 1).clamp(0, buffer.lineCount - 1);
-    final range = Range(Pos(startRow, 0), Pos(endRow, buffer.rowLength(endRow)),
-        RangeKind.linewise);
+    final range = Range(
+      Pos(startRow, 0),
+      Pos(endRow, buffer.rowLength(endRow)),
+      RangeKind.linewise,
+    );
     _runOperator(op, buffer, range, reg);
   }
 
   void _yankCurrentLine(VimBuffer buffer, int count, String reg) {
     final startRow = buffer.cursor.row;
     final endRow = (startRow + count - 1).clamp(0, buffer.lineCount - 1);
-    final range = Range(Pos(startRow, 0), Pos(endRow, buffer.rowLength(endRow)),
-        RangeKind.linewise);
+    final range = Range(
+      Pos(startRow, 0),
+      Pos(endRow, buffer.rowLength(endRow)),
+      RangeKind.linewise,
+    );
     Operators.yank(buffer, range, _state.registers, register: reg);
   }
 
@@ -1000,9 +1080,11 @@ class VimEngine {
       buffer.cursor = motion.target;
       // Extend selection.
       final anchor = _state.visualAnchor ?? buffer.cursor;
-      final kind = _state.mode == VimMode.visualLine ? RangeKind.linewise
-          : _state.mode == VimMode.visualBlock ? RangeKind.blockwise
-              : RangeKind.charwise;
+      final kind = _state.mode == VimMode.visualLine
+          ? RangeKind.linewise
+          : _state.mode == VimMode.visualBlock
+          ? RangeKind.blockwise
+          : RangeKind.charwise;
       buffer.selection = Range(anchor, motion.target, kind).normalized();
       return;
     }
@@ -1039,7 +1121,10 @@ class VimEngine {
       case 'e':
         _applyMotion(buffer, Motions.prevWordEnd(buffer, _consumeCount()));
       case 'E':
-        _applyMotion(buffer, Motions.prevWordEnd(buffer, _consumeCount(), bigWord: true));
+        _applyMotion(
+          buffer,
+          Motions.prevWordEnd(buffer, _consumeCount(), bigWord: true),
+        );
       case 'u':
         _state.pendingOperator = 'gu';
       case 'U':
@@ -1047,11 +1132,15 @@ class VimEngine {
       case '~':
         _state.pendingOperator = '~';
       case 't':
-        _onTabSwitch?.call(_state.pendingCount == 0 ? null : _state.pendingCount,
-            forward: true);
+        _onTabSwitch?.call(
+          _state.pendingCount == 0 ? null : _state.pendingCount,
+          forward: true,
+        );
       case 'T':
-        _onTabSwitch?.call(_state.pendingCount == 0 ? null : _state.pendingCount,
-            forward: false);
+        _onTabSwitch?.call(
+          _state.pendingCount == 0 ? null : _state.pendingCount,
+          forward: false,
+        );
       case '_':
         _applyMotion(buffer, Motions.lastNonBlank(buffer));
       case 'd':
@@ -1119,8 +1208,12 @@ class VimEngine {
         for (var i = 0; i < count; i++) {
           final c = buffer.cursor;
           if (c.col < buffer.rowLength(c.row)) {
-            Operators.delete(buffer, Range(c, c, RangeKind.charwise),
-                _state.registers, register: reg);
+            Operators.delete(
+              buffer,
+              Range(c, c, RangeKind.charwise),
+              _state.registers,
+              register: reg,
+            );
           }
         }
       case 'X':
@@ -1128,11 +1221,15 @@ class VimEngine {
           final c = buffer.cursor;
           if (c.col > 0) {
             Operators.delete(
-                buffer,
-                Range(Pos(c.row, c.col - 1), Pos(c.row, c.col - 1),
-                    RangeKind.charwise),
-                _state.registers,
-                register: reg);
+              buffer,
+              Range(
+                Pos(c.row, c.col - 1),
+                Pos(c.row, c.col - 1),
+                RangeKind.charwise,
+              ),
+              _state.registers,
+              register: reg,
+            );
           }
         }
       case 'D':
@@ -1140,10 +1237,11 @@ class VimEngine {
         final len = buffer.rowLength(c.row);
         if (len > 0) {
           Operators.delete(
-              buffer,
-              Range(c, Pos(c.row, len - 1), RangeKind.charwise),
-              _state.registers,
-              register: reg);
+            buffer,
+            Range(c, Pos(c.row, len - 1), RangeKind.charwise),
+            _state.registers,
+            register: reg,
+          );
         }
       case 'J':
         Operators.joinLines(buffer, count);
@@ -1165,15 +1263,19 @@ class VimEngine {
     // Reposition cursor matching the original entry key.
     switch (a.insertEntry) {
       case 'I':
-        buffer.cursor =
-            Pos(buffer.cursor.row, buffer.firstNonBlankCol(buffer.cursor.row));
+        buffer.cursor = Pos(
+          buffer.cursor.row,
+          buffer.firstNonBlankCol(buffer.cursor.row),
+        );
       case 'a':
         final c = buffer.cursor;
         final len = buffer.rowLength(c.row);
         if (len > 0 && c.col < len) buffer.cursor = Pos(c.row, c.col + 1);
       case 'A':
-        buffer.cursor =
-            Pos(buffer.cursor.row, buffer.rowLength(buffer.cursor.row));
+        buffer.cursor = Pos(
+          buffer.cursor.row,
+          buffer.rowLength(buffer.cursor.row),
+        );
       case 'o':
         if (buffer.isMultiLine) {
           final r = buffer.cursor.row;
@@ -1188,22 +1290,30 @@ class VimEngine {
         }
       case 's':
         final c = buffer.cursor;
-        Operators.delete(buffer, Range(c, c, RangeKind.charwise),
-            _state.registers, register: a.register);
+        Operators.delete(
+          buffer,
+          Range(c, c, RangeKind.charwise),
+          _state.registers,
+          register: a.register,
+        );
       case 'S':
         final r = buffer.cursor.row;
         Operators.delete(
-            buffer,
-            Range(Pos(r, 0), Pos(r, buffer.rowLength(r)), RangeKind.linewise),
-            _state.registers,
-            register: a.register);
+          buffer,
+          Range(Pos(r, 0), Pos(r, buffer.rowLength(r)), RangeKind.linewise),
+          _state.registers,
+          register: a.register,
+        );
       case 'C':
         final c = buffer.cursor;
         final len = buffer.rowLength(c.row);
         if (len > 0) {
-          Operators.delete(buffer,
-              Range(c, Pos(c.row, len - 1), RangeKind.charwise),
-              _state.registers, register: a.register);
+          Operators.delete(
+            buffer,
+            Range(c, Pos(c.row, len - 1), RangeKind.charwise),
+            _state.registers,
+            register: a.register,
+          );
         }
       case 'i':
       case 'c':

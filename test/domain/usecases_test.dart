@@ -1,52 +1,46 @@
-import 'package:frun/src/ca/result.dart';
-import 'package:frun/src/domain/entities/app_config.entity.dart';
-import 'package:frun/src/domain/entities/device.entity.dart';
-import 'package:frun/src/domain/entities/diagnostic.entity.dart';
-import 'package:frun/src/domain/entities/emulator.entity.dart';
-import 'package:frun/src/domain/entities/launch_entry.entity.dart';
-import 'package:frun/src/domain/entities/run_session.entity.dart';
+import 'package:frun/src/core/result.dart';
+import 'package:frun/src/domain/entities/app_config.dart';
+import 'package:frun/src/domain/entities/device.dart';
+import 'package:frun/src/domain/entities/diagnostic.dart';
+import 'package:frun/src/domain/entities/emulator.dart';
 import 'package:frun/src/domain/failures/analysis_failure.dart';
 import 'package:frun/src/domain/failures/config_failure.dart';
 import 'package:frun/src/domain/failures/device_failure.dart';
 import 'package:frun/src/domain/failures/session_failure.dart';
-import 'package:frun/src/domain/params/config.params.dart';
-import 'package:frun/src/domain/params/diagnostics_filter.params.dart';
-import 'package:frun/src/domain/params/emulator_launch.params.dart';
-import 'package:frun/src/domain/params/reload.params.dart';
-import 'package:frun/src/domain/params/run.params.dart';
+import 'package:frun/src/domain/params/config_params.dart';
+import 'package:frun/src/domain/params/diagnostics_filter_params.dart';
+import 'package:frun/src/domain/params/emulator_launch_params.dart';
+import 'package:frun/src/domain/params/reload_params.dart';
 import 'package:frun/src/domain/repositories/config_repository.dart';
 import 'package:frun/src/domain/repositories/device_repository.dart';
 import 'package:frun/src/domain/repositories/diagnostics_repository.dart';
 import 'package:frun/src/domain/repositories/emulator_repository.dart';
 import 'package:frun/src/domain/repositories/session_repository.dart';
-import 'package:frun/src/domain/usecases/get_config.usecase.dart';
-import 'package:frun/src/domain/usecases/get_diagnostics.usecase.dart';
-import 'package:frun/src/domain/usecases/hot_reload.usecase.dart';
-import 'package:frun/src/domain/usecases/hot_restart.usecase.dart';
-import 'package:frun/src/domain/usecases/launch_app.usecase.dart';
-import 'package:frun/src/domain/usecases/launch_emulator.usecase.dart';
-import 'package:frun/src/domain/usecases/list_devices.usecase.dart';
-import 'package:frun/src/domain/usecases/list_emulators.usecase.dart';
-import 'package:frun/src/domain/usecases/set_config.usecase.dart';
-import 'package:frun/src/domain/usecases/stop_session.usecase.dart';
-import 'package:frun/src/domain/usecases/watch_devices.usecase.dart';
-import 'package:frun/src/domain/usecases/watch_diagnostics.usecase.dart';
-import 'package:frun/src/domain/usecases/watch_logs.usecase.dart';
+import 'package:frun/src/domain/usecases/get_config.dart';
+import 'package:frun/src/domain/usecases/get_diagnostics.dart';
+import 'package:frun/src/domain/usecases/hot_reload.dart';
+import 'package:frun/src/domain/usecases/hot_restart.dart';
+import 'package:frun/src/domain/usecases/launch_emulator.dart';
+import 'package:frun/src/domain/usecases/list_devices.dart';
+import 'package:frun/src/domain/usecases/list_emulators.dart';
+import 'package:frun/src/domain/usecases/set_config.dart';
+import 'package:frun/src/domain/usecases/stop_session.dart';
+import 'package:frun/src/domain/usecases/watch_diagnostics.dart';
 import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
-class MockDeviceRepository extends Mock implements IDeviceRepository {}
+class MockDeviceRepository extends Mock implements DeviceRepository {}
 
-class MockEmulatorRepository extends Mock implements IEmulatorRepository {}
+class MockEmulatorRepository extends Mock implements EmulatorRepository {}
 
-class MockSessionRepository extends Mock implements ISessionRepository {}
+class MockSessionRepository extends Mock implements SessionRepository {}
 
-class MockDiagnosticsRepository extends Mock implements IDiagnosticsRepository {}
+class MockDiagnosticsRepository extends Mock implements DiagnosticsRepository {}
 
-class MockConfigRepository extends Mock implements IConfigRepository {}
+class MockConfigRepository extends Mock implements ConfigRepository {}
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -60,15 +54,6 @@ const _device = DeviceEntity(
 
 const _emulator = EmulatorEntity(id: 'Pixel_7_API_34', name: 'Pixel 7 API 34');
 
-const _entry = LaunchEntryEntity(name: 'main', program: 'lib/main.dart');
-
-const _session = RunSessionEntity(
-  tabId: 1,
-  entry: _entry,
-  deviceId: 'emulator-5554',
-  isRunning: true,
-);
-
 const _diagnostic = DiagnosticEntity(
   filePath: '/app/lib/main.dart',
   line: 10,
@@ -77,7 +62,7 @@ const _diagnostic = DiagnosticEntity(
   message: 'Undefined name',
 );
 
-AppConfigEntity _config() => AppConfigEntity(
+AppConfigEntity _config() => const AppConfigEntity(
   ide: FrunIde.vscode,
   editorMode: FrunEditorMode.normal,
   theme: FrunThemeMode.dark,
@@ -105,8 +90,7 @@ void main() {
     registerFallbackValue(const DiagnosticsFilterParams());
     registerFallbackValue(const ConfigSetParams(key: '', value: ''));
     registerFallbackValue(const ReloadParams(tabId: 0));
-    registerFallbackValue(EmulatorLaunchParams(emulator: _emulator));
-    registerFallbackValue(RunParams(entry: _entry, device: _device));
+    registerFallbackValue(const EmulatorLaunchParams(emulator: _emulator));
   });
   // ── ListDevicesUseCase ───────────────────────────────────────────────────────
   group('ListDevicesUseCase', () {
@@ -115,8 +99,9 @@ void main() {
     setUp(() => repo = MockDeviceRepository());
 
     test('returns Success with devices from repo', () async {
-      when(() => repo.listDevices())
-          .thenAnswer((_) async => Result.success([_device]));
+      when(
+        () => repo.listDevices(),
+      ).thenAnswer((_) async => Result.success([_device]));
 
       final result = await ListDevicesUseCase(repo).call();
 
@@ -135,24 +120,6 @@ void main() {
     });
   });
 
-  // ── WatchDevicesUseCase ──────────────────────────────────────────────────────
-  group('WatchDevicesUseCase', () {
-    late MockDeviceRepository repo;
-
-    setUp(() => repo = MockDeviceRepository());
-
-    test('maps repo stream to Result.success', () async {
-      when(() => repo.watchDevices())
-          .thenAnswer((_) => Stream.value([_device]));
-
-      final events =
-          await WatchDevicesUseCase(repo).call().toList();
-
-      expect(events.length, 1);
-      _expectSuccess(events.first, [_device]);
-    });
-  });
-
   // ── ListEmulatorsUseCase ─────────────────────────────────────────────────────
   group('ListEmulatorsUseCase', () {
     late MockEmulatorRepository repo;
@@ -160,8 +127,9 @@ void main() {
     setUp(() => repo = MockEmulatorRepository());
 
     test('returns Success with emulators', () async {
-      when(() => repo.listEmulators())
-          .thenAnswer((_) async => Result.success([_emulator]));
+      when(
+        () => repo.listEmulators(),
+      ).thenAnswer((_) async => Result.success([_emulator]));
 
       final result = await ListEmulatorsUseCase(repo).call();
 
@@ -191,9 +159,10 @@ void main() {
     });
 
     test('delegates to repo and returns device', () async {
-      final params = EmulatorLaunchParams(emulator: _emulator);
-      when(() => repo.launchEmulator(any()))
-          .thenAnswer((_) async => Result.success(_device));
+      const params = EmulatorLaunchParams(emulator: _emulator);
+      when(
+        () => repo.launchEmulator(any()),
+      ).thenAnswer((_) async => Result.success(_device));
 
       final result = await LaunchEmulatorUseCase(repo).call(params);
 
@@ -202,46 +171,12 @@ void main() {
     });
 
     test('propagates DeviceFailure from repo', () async {
-      final params = EmulatorLaunchParams(emulator: _emulator);
+      const params = EmulatorLaunchParams(emulator: _emulator);
       when(() => repo.launchEmulator(any())).thenAnswer(
         (_) async => Result.failure(const DeviceFailure(message: 'timeout')),
       );
 
       _expectFailure(await LaunchEmulatorUseCase(repo).call(params));
-    });
-  });
-
-  // ── LaunchAppUseCase ─────────────────────────────────────────────────────────
-  group('LaunchAppUseCase', () {
-    late MockSessionRepository repo;
-
-    setUp(() => repo = MockSessionRepository());
-
-    test('returns SessionFailure when params is null', () async {
-      final result = await LaunchAppUseCase(repo).call(null);
-      _expectFailure(result);
-      verifyNever(() => repo.launch(any()));
-    });
-
-    test('delegates to repo on success', () async {
-      final params = RunParams(entry: _entry, device: _device);
-      when(() => repo.launch(any()))
-          .thenAnswer((_) async => Result.success(_session));
-
-      final result = await LaunchAppUseCase(repo).call(params);
-
-      _expectSuccess(result, _session);
-      verify(() => repo.launch(any())).called(1);
-    });
-
-    test('propagates SessionFailure', () async {
-      final params = RunParams(entry: _entry, device: _device);
-      when(() => repo.launch(any())).thenAnswer(
-        (_) async =>
-            Result.failure(const SessionFailure(message: 'build failed')),
-      );
-
-      _expectFailure(await LaunchAppUseCase(repo).call(params));
     });
   });
 
@@ -257,9 +192,10 @@ void main() {
     });
 
     test('delegates to repo.hotReload', () async {
-      final params = ReloadParams(tabId: 1);
-      when(() => repo.hotReload(any()))
-          .thenAnswer((_) async => Result.success(null));
+      const params = ReloadParams(tabId: 1);
+      when(
+        () => repo.hotReload(any()),
+      ).thenAnswer((_) async => Result.success(null));
 
       final result = await HotReloadUseCase(repo).call(params);
 
@@ -268,7 +204,7 @@ void main() {
     });
 
     test('propagates SessionFailure from repo', () async {
-      final params = ReloadParams(tabId: 1);
+      const params = ReloadParams(tabId: 1);
       when(() => repo.hotReload(any())).thenAnswer(
         (_) async => Result.failure(const SessionFailure(message: 'no app')),
       );
@@ -288,9 +224,10 @@ void main() {
     });
 
     test('delegates to repo.hotRestart', () async {
-      final params = ReloadParams(tabId: 2);
-      when(() => repo.hotRestart(any()))
-          .thenAnswer((_) async => Result.success(null));
+      const params = ReloadParams(tabId: 2);
+      when(
+        () => repo.hotRestart(any()),
+      ).thenAnswer((_) async => Result.success(null));
 
       expect((await HotRestartUseCase(repo).call(params)).isSuccess, isTrue);
       verify(() => repo.hotRestart(any())).called(1);
@@ -308,38 +245,13 @@ void main() {
     });
 
     test('delegates to repo.stop', () async {
-      final params = ReloadParams(tabId: 1);
-      when(() => repo.stop(any()))
-          .thenAnswer((_) async => Result.success(null));
+      const params = ReloadParams(tabId: 1);
+      when(
+        () => repo.stop(any()),
+      ).thenAnswer((_) async => Result.success(null));
 
       expect((await StopSessionUseCase(repo).call(params)).isSuccess, isTrue);
       verify(() => repo.stop(any())).called(1);
-    });
-  });
-
-  // ── WatchLogsUseCase ─────────────────────────────────────────────────────────
-  group('WatchLogsUseCase', () {
-    late MockSessionRepository repo;
-
-    setUp(() => repo = MockSessionRepository());
-
-    test('returns single SessionFailure event when params is null', () async {
-      final events = await WatchLogsUseCase(repo).call(null).toList();
-      expect(events.length, 1);
-      _expectFailure(events.first);
-    });
-
-    test('maps repo log stream to Result.success', () async {
-      final params = ReloadParams(tabId: 1);
-      when(() => repo.watchLogs(any()))
-          .thenAnswer((_) => Stream.fromIterable(['line 1', 'line 2']));
-
-      final events = await WatchLogsUseCase(repo).call(params).toList();
-
-      expect(events.length, 2);
-      expect(events.every((r) => r.isSuccess), isTrue);
-      expect((events.first as Success).value, 'line 1');
-      expect((events.last as Success).value, 'line 2');
     });
   });
 
@@ -350,21 +262,25 @@ void main() {
     setUp(() => repo = MockDiagnosticsRepository());
 
     test('calls repo with empty filter when no params', () async {
-      when(() => repo.getDiagnostics(any()))
-          .thenAnswer((_) async => Result.success([_diagnostic]));
+      when(
+        () => repo.getDiagnostics(any()),
+      ).thenAnswer((_) async => Result.success([_diagnostic]));
 
       final result = await GetDiagnosticsUseCase(repo).call();
 
       _expectSuccess(result, [_diagnostic]);
-      verify(() => repo.getDiagnostics(const DiagnosticsFilterParams()))
-          .called(1);
+      verify(
+        () => repo.getDiagnostics(const DiagnosticsFilterParams()),
+      ).called(1);
     });
 
     test('passes filter params to repo', () async {
-      const params =
-          DiagnosticsFilterParams(category: DiagnosticCategory.error);
-      when(() => repo.getDiagnostics(any()))
-          .thenAnswer((_) async => Result.success([_diagnostic]));
+      const params = DiagnosticsFilterParams(
+        category: DiagnosticCategory.error,
+      );
+      when(
+        () => repo.getDiagnostics(any()),
+      ).thenAnswer((_) async => Result.success([_diagnostic]));
 
       final result = await GetDiagnosticsUseCase(repo).call(params);
 
@@ -388,11 +304,11 @@ void main() {
     setUp(() => repo = MockDiagnosticsRepository());
 
     test('maps repo stream to Result.success events', () async {
-      when(() => repo.watchDiagnostics(any()))
-          .thenAnswer((_) => Stream.value([_diagnostic]));
+      when(
+        () => repo.watchDiagnostics(any()),
+      ).thenAnswer((_) => Stream.value([_diagnostic]));
 
-      final events =
-          await WatchDiagnosticsUseCase(repo).call().toList();
+      final events = await WatchDiagnosticsUseCase(repo).call().toList();
 
       expect(events.length, 1);
       _expectSuccess(events.first, [_diagnostic]);
@@ -407,8 +323,9 @@ void main() {
 
     test('returns AppConfigEntity from repo', () async {
       final entity = _config();
-      when(() => repo.getConfig())
-          .thenAnswer((_) async => Result.success(entity));
+      when(
+        () => repo.getConfig(),
+      ).thenAnswer((_) async => Result.success(entity));
 
       final result = await GetConfigUseCase(repo).call();
 
@@ -439,8 +356,9 @@ void main() {
 
     test('delegates to repo.setConfig', () async {
       const params = ConfigSetParams(key: 'ide', value: 'zed');
-      when(() => repo.setConfig(any()))
-          .thenAnswer((_) async => Result.success(null));
+      when(
+        () => repo.setConfig(any()),
+      ).thenAnswer((_) async => Result.success(null));
 
       expect((await SetConfigUseCase(repo).call(params)).isSuccess, isTrue);
       verify(() => repo.setConfig(any())).called(1);

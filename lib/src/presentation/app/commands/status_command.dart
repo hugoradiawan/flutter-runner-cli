@@ -14,8 +14,9 @@ class StatusCommand extends Command {
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
     state.showStatusPanel = !state.showStatusPanel;
-    state.transcript
-        .system('Status panel ${state.showStatusPanel ? "shown" : "hidden"}.');
+    state.transcript.system(
+      'Status panel ${state.showStatusPanel ? "shown" : "hidden"}.',
+    );
     return CommandResult.ok;
   }
 }

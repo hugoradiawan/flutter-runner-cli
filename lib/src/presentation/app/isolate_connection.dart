@@ -39,22 +39,22 @@ class IsolateConnection {
       await disconnect();
       return false;
     }
-    if (_connectedVmUri == ws && _state.isolateManager.service != null) {
+    if (_connectedVmUri == ws && _state.deps.isolateManager.service != null) {
       return true;
     }
     await connect(ws);
-    return _state.isolateManager.service != null;
+    return _state.deps.isolateManager.service != null;
   }
 
   Future<void> connect(String wsUri) async {
     try {
-      await _state.isolateManager.connect(wsUri);
+      await _state.deps.isolateManager.connect(wsUri);
       _connectedVmUri = wsUri;
       _state.transcript.system(
-        'VM service connected (${_state.isolateManager.isolates.length} isolates).',
+        'VM service connected (${_state.deps.isolateManager.isolates.length} isolates).',
       );
       await _extensionSub?.cancel();
-      _extensionSub = _state.isolateManager.extensionEvents.listen(
+      _extensionSub = _state.deps.isolateManager.extensionEvents.listen(
         _onExtensionEvent,
       );
     } catch (e) {
@@ -67,7 +67,7 @@ class IsolateConnection {
     await _extensionSub?.cancel();
     _extensionSub = null;
     _connectedVmUri = null;
-    await _state.isolateManager.disconnect();
+    await _state.deps.isolateManager.disconnect();
   }
 
   void _onExtensionEvent(vm.Event event) {

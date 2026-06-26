@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:frun/src/data/datasources/working_set.dart';
+import 'package:frun/src/data/services/working_set.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -29,12 +29,20 @@ void main() {
 M  app/lib/main.dart
 ?? app/pubspec.yaml
 ''';
-    final found = parseGitPorcelainDartFiles(out, temp.path).map(p.normalize).toSet();
+    final found = parseGitPorcelainDartFiles(
+      out,
+      temp.path,
+    ).map(p.normalize).toSet();
     expect(
       found,
-      contains(p.normalize(p.join(temp.path, 'features/youchat/lib/chat.page.dart'))),
+      contains(
+        p.normalize(p.join(temp.path, 'features/youchat/lib/chat.page.dart')),
+      ),
     );
-    expect(found, contains(p.normalize(p.join(temp.path, 'app/lib/main.dart'))));
+    expect(
+      found,
+      contains(p.normalize(p.join(temp.path, 'app/lib/main.dart'))),
+    );
     expect(found.any((f) => f.endsWith('.yaml')), isFalse);
   });
 
@@ -44,8 +52,14 @@ M  app/lib/main.dart
 R  lib/old_name.dart -> lib/new_name.dart
  D lib/deleted.dart
 ''';
-    final found = parseGitPorcelainDartFiles(out, temp.path).map(p.normalize).toSet();
-    expect(found, contains(p.normalize(p.join(temp.path, 'lib/new_name.dart'))));
+    final found = parseGitPorcelainDartFiles(
+      out,
+      temp.path,
+    ).map(p.normalize).toSet();
+    expect(
+      found,
+      contains(p.normalize(p.join(temp.path, 'lib/new_name.dart'))),
+    );
     // The deleted file no longer exists on disk → excluded.
     expect(found.any((f) => f.endsWith('deleted.dart')), isFalse);
     // The pre-rename path is not what exists → excluded.

@@ -113,13 +113,7 @@ void _collectNode(
   if (depth > 12) return;
   if (node is List) {
     for (final child in node) {
-      _collectNode(
-        child,
-        parts,
-        projectRoot,
-        depth: depth,
-        inWidget: inWidget,
-      );
+      _collectNode(child, parts, projectRoot, depth: depth, inWidget: inWidget);
     }
     return;
   }

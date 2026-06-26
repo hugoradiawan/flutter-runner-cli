@@ -32,23 +32,31 @@ class TextObjects {
         start--;
       }
       end = c;
-      while (end + 1 < line.length && (line[end + 1] == ' ' || line[end + 1] == '\t')) {
+      while (end + 1 < line.length &&
+          (line[end + 1] == ' ' || line[end + 1] == '\t')) {
         end++;
       }
     } else {
       start = c;
-      while (start > 0 && !isW(line[start - 1]) && line[start - 1] != ' ' && line[start - 1] != '\t') {
+      while (start > 0 &&
+          !isW(line[start - 1]) &&
+          line[start - 1] != ' ' &&
+          line[start - 1] != '\t') {
         start--;
       }
       end = c;
-      while (end + 1 < line.length && !isW(line[end + 1]) && line[end + 1] != ' ' && line[end + 1] != '\t') {
+      while (end + 1 < line.length &&
+          !isW(line[end + 1]) &&
+          line[end + 1] != ' ' &&
+          line[end + 1] != '\t') {
         end++;
       }
     }
     if (!inner) {
       // Extend by trailing whitespace, else leading.
       var ex = end;
-      while (ex + 1 < line.length && (line[ex + 1] == ' ' || line[ex + 1] == '\t')) {
+      while (ex + 1 < line.length &&
+          (line[ex + 1] == ' ' || line[ex + 1] == '\t')) {
         ex++;
       }
       if (ex == end) {
@@ -66,8 +74,12 @@ class TextObjects {
 
   /// `i(` / `a(` and friends. Brackets must be on the same line for
   /// charwise scope, but we walk across lines for nesting depth.
-  static Range? bracket(VimBuffer b, String open, String close,
-      {required bool inner}) {
+  static Range? bracket(
+    VimBuffer b,
+    String open,
+    String close, {
+    required bool inner,
+  }) {
     final cursor = b.cursor;
     // Scan backward for the unmatched `open`.
     Pos? openPos;
@@ -157,7 +169,9 @@ class TextObjects {
     }
     if (left < 0 || right < 0) return null;
     if (inner) {
-      if (right - left <= 1) return Range(Pos(r, left + 1), Pos(r, left + 1), RangeKind.charwise);
+      if (right - left <= 1) {
+        return Range(Pos(r, left + 1), Pos(r, left + 1), RangeKind.charwise);
+      }
       return Range(Pos(r, left + 1), Pos(r, right - 1), RangeKind.charwise);
     }
     return Range(Pos(r, left), Pos(r, right), RangeKind.charwise);
@@ -175,8 +189,10 @@ class TextObjects {
     while (r >= 0) {
       final line = b.lineAt(r);
       while (c >= 0) {
-        if (c < line.length && line[c] == '<' &&
-            c + 1 < line.length && line[c + 1] != '/') {
+        if (c < line.length &&
+            line[c] == '<' &&
+            c + 1 < line.length &&
+            line[c + 1] != '/') {
           // parse tag name
           var j = c + 1;
           final nameStart = j;
@@ -226,8 +242,11 @@ class TextObjects {
     if (closeStart == null || closeEnd == null) return null;
 
     if (inner) {
-      return Range(Pos(openEnd.row, openEnd.col + 1),
-          Pos(closeStart.row, closeStart.col - 1), RangeKind.charwise);
+      return Range(
+        Pos(openEnd.row, openEnd.col + 1),
+        Pos(closeStart.row, closeStart.col - 1),
+        RangeKind.charwise,
+      );
     }
     return Range(openStart, closeEnd, RangeKind.charwise);
   }
@@ -250,8 +269,11 @@ class TextObjects {
         endRow++;
       }
     }
-    return Range(Pos(startRow, 0), Pos(endRow, b.rowLength(endRow)),
-        RangeKind.linewise);
+    return Range(
+      Pos(startRow, 0),
+      Pos(endRow, b.rowLength(endRow)),
+      RangeKind.linewise,
+    );
   }
 
   /// `is` / `as` — sentence. Best-effort: split on `.`, `!`, `?` + space.
@@ -263,7 +285,8 @@ class TextObjects {
     var start = 0;
     for (var i = c - 1; i >= 0; i--) {
       if ((line[i] == '.' || line[i] == '!' || line[i] == '?') &&
-          (i + 1 < line.length && (line[i + 1] == ' ' || line[i + 1] == '\t'))) {
+          (i + 1 < line.length &&
+              (line[i + 1] == ' ' || line[i + 1] == '\t'))) {
         start = i + 2;
         break;
       }

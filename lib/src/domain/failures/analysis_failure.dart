@@ -1,4 +1,4 @@
-import '../../ca/failures/app_failure.dart';
+import '../../core/error/failure.dart';
 
 class AnalysisFailure extends AppFailure {
   const AnalysisFailure({

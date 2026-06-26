@@ -1,22 +1,21 @@
-﻿import 'dart:async';
 import 'dart:io';
 
-import 'package:frun/src/ca/result.dart';
-import 'package:frun/src/data/models/daemon_messages.dart';
+import 'package:frun/src/core/result.dart';
 import 'package:frun/src/data/datasources/config_datasource.dart';
 import 'package:frun/src/data/datasources/config_store.dart';
+import 'package:frun/src/data/datasources/device_manager.dart';
+import 'package:frun/src/data/datasources/emulator_manager.dart';
+import 'package:frun/src/data/models/daemon_messages.dart';
 import 'package:frun/src/data/models/frun_config.dart';
 import 'package:frun/src/data/repositories/config_repository_impl.dart';
 import 'package:frun/src/data/repositories/device_repository_impl.dart';
 import 'package:frun/src/data/repositories/emulator_repository_impl.dart';
-import 'package:frun/src/data/datasources/device_manager.dart';
-import 'package:frun/src/data/datasources/emulator_manager.dart';
-import 'package:frun/src/domain/entities/device.entity.dart';
-import 'package:frun/src/domain/entities/emulator.entity.dart';
+import 'package:frun/src/domain/entities/device.dart';
+import 'package:frun/src/domain/entities/emulator.dart';
 import 'package:frun/src/domain/failures/config_failure.dart';
 import 'package:frun/src/domain/failures/device_failure.dart';
-import 'package:frun/src/domain/params/config.params.dart';
-import 'package:frun/src/domain/params/emulator_launch.params.dart';
+import 'package:frun/src/domain/params/config_params.dart';
+import 'package:frun/src/domain/params/emulator_launch_params.dart';
 import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:path/path.dart' as p;
@@ -30,7 +29,7 @@ class MockEmulatorManager extends Mock implements EmulatorManager {}
 
 // â”€â”€ Fixtures â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-final _flutterDevice = FlutterDevice(
+const _flutterDevice = FlutterDevice(
   id: 'emulator-5554',
   name: 'Pixel 7',
   platform: 'android-x64',
@@ -41,7 +40,7 @@ final _flutterDevice = FlutterDevice(
   emulatorId: 'Pixel_7_API_34',
 );
 
-final _flutterEmulator = FlutterEmulator(
+const _flutterEmulator = FlutterEmulator(
   id: 'Pixel_7_API_34',
   name: 'Pixel 7 API 34',
   category: 'mobile',
@@ -85,7 +84,7 @@ void main() {
 
     test('getConfig maps non-default values', () async {
       store.save(
-        FrunConfig(
+        const FrunConfig(
           ide: FrunIde.zed,
           editorMode: FrunEditorMode.vim,
           theme: FrunThemeMode.light,
@@ -144,7 +143,7 @@ void main() {
     });
 
     test('setConfig(nvim_server, empty) clears the server', () async {
-      store.save(FrunConfig(nvimServer: '/tmp/nvim.sock'));
+      store.save(const FrunConfig(nvimServer: '/tmp/nvim.sock'));
       await repo.setConfig(
         const ConfigSetParams(key: 'nvim_server', value: ''),
       );
@@ -195,35 +194,6 @@ void main() {
       expect(result.isFailure, isTrue);
       expect((result as Failure).error, isA<DeviceFailure>());
     });
-
-    test(
-      'watchDevices maps FlutterDevice stream to DeviceEntity stream',
-      () async {
-        final controller = StreamController<List<FlutterDevice>>();
-        when(() => manager.changes).thenAnswer((_) => controller.stream);
-
-        final events = <List<DeviceEntity>>[];
-        final sub = repo.watchDevices().listen(events.add);
-
-        controller.add([_flutterDevice]);
-        await Future<void>.delayed(Duration.zero);
-        await sub.cancel();
-        await controller.close();
-
-        expect(events.length, 1);
-        expect(events.first.first.id, _flutterDevice.id);
-      },
-    );
-
-    test('watchDevices emits empty list when stream emits empty', () async {
-      when(
-        () => manager.changes,
-      ).thenAnswer((_) => Stream.value(<FlutterDevice>[]));
-
-      final events = await repo.watchDevices().toList();
-      expect(events.length, 1);
-      expect(events.first, isEmpty);
-    });
   });
 
   // â”€â”€ EmulatorRepositoryImpl â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -271,7 +241,7 @@ void main() {
     test(
       'launchEmulator returns Success with DeviceEntity on device found',
       () async {
-        final params = EmulatorLaunchParams(emulator: _emulatorEntity);
+        const params = EmulatorLaunchParams(emulator: _emulatorEntity);
         when(
           () => manager.launchAndAwaitDevice(
             _flutterEmulator.id,
@@ -292,7 +262,7 @@ void main() {
     test(
       'launchEmulator returns DeviceFailure when device times out (null)',
       () async {
-        final params = EmulatorLaunchParams(emulator: _emulatorEntity);
+        const params = EmulatorLaunchParams(emulator: _emulatorEntity);
         when(
           () => manager.launchAndAwaitDevice(
             _flutterEmulator.id,
@@ -308,7 +278,7 @@ void main() {
     );
 
     test('launchEmulator returns DeviceFailure when manager throws', () async {
-      final params = EmulatorLaunchParams(emulator: _emulatorEntity);
+      const params = EmulatorLaunchParams(emulator: _emulatorEntity);
       when(
         () => manager.launchAndAwaitDevice(
           _flutterEmulator.id,
@@ -323,4 +293,3 @@ void main() {
     });
   });
 }
-

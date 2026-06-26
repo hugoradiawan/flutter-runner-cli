@@ -1,13 +1,13 @@
-import '../../ca/result.dart';
+import '../../core/result.dart';
 import '../../data/datasources/config_datasource.dart';
 import '../../data/models/frun_config.dart';
-import '../../domain/entities/app_config.entity.dart';
+import '../../domain/entities/app_config.dart';
 import '../../domain/failures/config_failure.dart';
-import '../../domain/params/config.params.dart';
+import '../../domain/params/config_params.dart';
 import '../../domain/repositories/config_repository.dart';
 import '../../domain/value_objects/config_values.dart';
 
-class ConfigRepositoryImpl implements IConfigRepository {
+class ConfigRepositoryImpl implements ConfigRepository {
   ConfigRepositoryImpl(this._source);
 
   final ConfigDataSource _source;

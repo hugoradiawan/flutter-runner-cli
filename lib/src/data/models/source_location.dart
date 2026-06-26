@@ -5,11 +5,7 @@ import 'package:path/path.dart' as p;
 
 /// A file location to open in the user's IDE.
 class SourceLocation {
-  const SourceLocation({
-    required this.file,
-    this.line = 1,
-    this.column = 1,
-  });
+  const SourceLocation({required this.file, this.line = 1, this.column = 1});
 
   /// Absolute path on disk.
   final String file;
@@ -34,7 +30,11 @@ class SourceLocation {
     final parsed = Uri.tryParse(uri);
     if (parsed == null) return null;
     if (parsed.scheme == 'file') {
-      return SourceLocation(file: parsed.toFilePath(), line: line, column: column);
+      return SourceLocation(
+        file: parsed.toFilePath(),
+        line: line,
+        column: column,
+      );
     }
     if (parsed.scheme == 'package' && projectRoot != null) {
       final resolved = _resolvePackageUri(parsed, projectRoot);
@@ -46,7 +46,11 @@ class SourceLocation {
   }
 
   static String? _resolvePackageUri(Uri uri, String projectRoot) {
-    final pkgConfigPath = p.join(projectRoot, '.dart_tool', 'package_config.json');
+    final pkgConfigPath = p.join(
+      projectRoot,
+      '.dart_tool',
+      'package_config.json',
+    );
     final file = File(pkgConfigPath);
     if (!file.existsSync()) return null;
     final Object? decoded;
@@ -68,11 +72,15 @@ class SourceLocation {
       final base = Uri.parse(rootUri);
       final resolvedBase = base.hasScheme
           ? base.resolve(packageUri)
-          : Uri.parse(p.normalize(p.join(p.dirname(pkgConfigPath), base.toFilePath()))).resolve(packageUri);
+          : Uri.parse(
+              p.normalize(p.join(p.dirname(pkgConfigPath), base.toFilePath())),
+            ).resolve(packageUri);
       final abs = resolvedBase.resolve(rest);
       if (abs.scheme == 'file') return abs.toFilePath();
       // Relative URI — resolve manually against pkg config dir.
-      return p.normalize(p.join(p.dirname(pkgConfigPath), base.path, packageUri, rest));
+      return p.normalize(
+        p.join(p.dirname(pkgConfigPath), base.path, packageUri, rest),
+      );
     }
     return null;
   }

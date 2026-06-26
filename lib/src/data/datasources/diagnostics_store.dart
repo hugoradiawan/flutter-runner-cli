@@ -16,8 +16,8 @@ import '../models/diagnostic.dart';
 /// before the analysis server finishes its first pass.
 class DiagnosticsStore {
   DiagnosticsStore({required String projectRoot, String? overrideDir})
-      : _projectRoot = p.normalize(projectRoot),
-        _overrideDir = overrideDir;
+    : _projectRoot = p.normalize(projectRoot),
+      _overrideDir = overrideDir;
 
   final String _projectRoot;
   final String? _overrideDir;
@@ -35,8 +35,9 @@ class DiagnosticsStore {
       return p.join(userProfile, 'AppData', 'Roaming', 'frun', 'diagnostics');
     }
     final xdg = Platform.environment['XDG_CONFIG_HOME'];
-    final base =
-        xdg != null && xdg.isNotEmpty ? xdg : p.join(_homeDir(), '.config');
+    final base = xdg != null && xdg.isNotEmpty
+        ? xdg
+        : p.join(_homeDir(), '.config');
     return p.join(base, 'frun', 'diagnostics');
   }
 
@@ -64,28 +65,27 @@ class DiagnosticsStore {
         lo.toRadixString(16).padLeft(8, '0');
   }
 
-  List<Diagnostic> load() {
+  List<DiagnosticModel> load() {
     final file = File(path);
-    if (!file.existsSync()) return const <Diagnostic>[];
+    if (!file.existsSync()) return const <DiagnosticModel>[];
     try {
       final decoded = json.decode(file.readAsStringSync());
-      if (decoded is! Map) return const <Diagnostic>[];
+      if (decoded is! Map) return const <DiagnosticModel>[];
       final list = decoded['diagnostics'];
-      if (list is! List) return const <Diagnostic>[];
-      final out = <Diagnostic>[];
+      if (list is! List) return const <DiagnosticModel>[];
+      final out = <DiagnosticModel>[];
       for (final item in list) {
-        if (item is Map) {
-          final d = Diagnostic.fromJson(item.cast<String, Object?>());
-          if (d != null) out.add(d);
+        if (item is Map && item['file'] is String) {
+          out.add(DiagnosticModel.fromJson(item.cast<String, Object?>()));
         }
       }
       return out;
     } catch (_) {
-      return const <Diagnostic>[];
+      return const <DiagnosticModel>[];
     }
   }
 
-  void save(List<Diagnostic> diagnostics) {
+  void save(List<DiagnosticModel> diagnostics) {
     final file = File(path);
     file.parent.createSync(recursive: true);
     file.writeAsStringSync(

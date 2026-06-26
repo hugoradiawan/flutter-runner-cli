@@ -4,8 +4,8 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
-import '../models/launch_config.dart';
 import '../models/daemon_messages.dart';
+import '../models/launch_config.dart';
 
 /// A single `flutter run --machine` invocation.
 ///
@@ -50,8 +50,8 @@ class AppRunSession {
     String? flutterExecutable,
     Map<String, String>? environment,
   }) async {
-    final exe = flutterExecutable ??
-        (Platform.isWindows ? 'flutter.bat' : 'flutter');
+    final exe =
+        flutterExecutable ?? (Platform.isWindows ? 'flutter.bat' : 'flutter');
 
     // Flutter requires the working directory to be the package root (where
     // pubspec.yaml lives). Launching from a workspace ancestor breaks Gradle
@@ -105,13 +105,15 @@ class AppRunSession {
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen((line) {
-      if (_disposed || _events.isClosed) return;
-      if (line.isEmpty) return;
-      _events.add(DaemonEvent(
-        name: 'app.log',
-        params: <String, Object?>{'log': line, 'error': true},
-      ));
-    });
+          if (_disposed || _events.isClosed) return;
+          if (line.isEmpty) return;
+          _events.add(
+            DaemonEvent(
+              name: 'app.log',
+              params: <String, Object?>{'log': line, 'error': true},
+            ),
+          );
+        });
     unawaited(_process.exitCode.whenComplete(_close));
   }
 
@@ -120,10 +122,9 @@ class AppRunSession {
     if (!line.startsWith('[')) {
       // Non-RPC chatter — surface as a log line.
       if (line.isNotEmpty) {
-        _events.add(DaemonEvent(
-          name: 'app.log',
-          params: <String, Object?>{'log': line},
-        ));
+        _events.add(
+          DaemonEvent(name: 'app.log', params: <String, Object?>{'log': line}),
+        );
       }
       return;
     }
@@ -153,7 +154,8 @@ class AppRunSession {
     if (map.containsKey('event')) {
       final name = map['event'] as String? ?? '';
       final params =
-          (map['params'] as Map?)?.cast<String, Object?>() ?? <String, Object?>{};
+          (map['params'] as Map?)?.cast<String, Object?>() ??
+          <String, Object?>{};
       _absorb(name, params);
       if (!_events.isClosed) {
         _events.add(DaemonEvent(name: name, params: params));
@@ -170,7 +172,10 @@ class AppRunSession {
       case 'app.debugPort':
         vmServiceUri = params['wsUri'] as String? ?? vmServiceUri;
       case 'app.devTools':
-        devToolsUri = params['wsUri'] as String? ?? params['uri'] as String? ?? devToolsUri;
+        devToolsUri =
+            params['wsUri'] as String? ??
+            params['uri'] as String? ??
+            devToolsUri;
     }
   }
 
@@ -236,7 +241,9 @@ class AppRunSession {
     if (id != null) {
       try {
         await _request('app.stop', <String, Object?>{'appId': id});
-      } catch (_) {/* may already be stopped */}
+      } catch (_) {
+        /* may already be stopped */
+      }
     }
     _close();
   }
@@ -280,7 +287,9 @@ class AppRunSession {
     _stderrSub = null;
     try {
       _process.kill();
-    } catch (_) {/* already dead */}
+    } catch (_) {
+      /* already dead */
+    }
     for (final completer in _pending.values) {
       if (!completer.isCompleted) {
         completer.completeError(StateError('flutter run exited'));

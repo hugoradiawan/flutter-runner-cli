@@ -91,16 +91,18 @@ class LaunchConfigParser {
         ...substList(raw['toolArgs']),
         ...substList(raw['args']),
       ];
-      out.add(LaunchEntry(
-        name: name,
-        program: program,
-        cwd: cwd,
-        deviceId: deviceId,
-        flutterMode: mode,
-        flavor: flavor,
-        args: const <String>[],
-        toolArgs: toolArgs,
-      ));
+      out.add(
+        LaunchEntry(
+          name: name,
+          program: program,
+          cwd: cwd,
+          deviceId: deviceId,
+          flutterMode: mode,
+          flavor: flavor,
+          args: const <String>[],
+          toolArgs: toolArgs,
+        ),
+      );
     }
     return out;
   }

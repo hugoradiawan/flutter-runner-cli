@@ -13,13 +13,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     int height,
   ) {
     if (height <= 0 || width <= 0) return;
-    _hits.add(
-      x: 0,
-      y: y,
-      w: width,
-      h: height,
-      msg: const TickWakeMsg(),
-    );
+    _hits.add(x: 0, y: y, w: width, h: height, msg: const TickWakeMsg());
     final lines = state.visibleTranscript.lines;
     final displayRows = _layoutDisplayRows(lines, width);
     _lastDisplayRows = displayRows;
@@ -36,12 +30,19 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
 
     if (_tc.searchQuery.isNotEmpty) _recomputeMatches();
 
-    _visibleLinks = _collectVisibleLinks(lines, displayRows, start, endExclusive);
+    _visibleLinks = _collectVisibleLinks(
+      lines,
+      displayRows,
+      start,
+      endExclusive,
+    );
     if (_focusedLinkIndex >= _visibleLinks.length) {
       _focusedLinkIndex = _visibleLinks.isEmpty ? -1 : _visibleLinks.length - 1;
     }
 
-    final focused = _focusedLinkIndex < 0 ? null : _visibleLinks[_focusedLinkIndex];
+    final focused = _focusedLinkIndex < 0
+        ? null
+        : _visibleLinks[_focusedLinkIndex];
     final selection = _tc.selectionRange();
     final visualKind = _tc.visualKind;
 
@@ -60,10 +61,15 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
         final overlapStart = math.max(focused.visStart, rowStart);
         final overlapEnd = math.min(focused.visEnd, rowEnd);
         if (overlapEnd > overlapStart) {
-          final substring =
-              row.text.substring(overlapStart - rowStart, overlapEnd - rowStart);
-          canvas.paint(overlapStart - rowStart, yRow,
-              theme.linkHighlightStyle.render(substring));
+          final substring = row.text.substring(
+            overlapStart - rowStart,
+            overlapEnd - rowStart,
+          );
+          canvas.paint(
+            overlapStart - rowStart,
+            yRow,
+            theme.linkHighlightStyle.render(substring),
+          );
         }
       }
 
@@ -72,7 +78,9 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
         final m = _tc.matches[mi];
         if (m.row != r) continue;
         final isActive = mi == _tc.activeMatchIndex;
-        final style = isActive ? theme.searchActiveStyle : theme.searchMatchStyle;
+        final style = isActive
+            ? theme.searchActiveStyle
+            : theme.searchMatchStyle;
         final text = row.text.substring(m.col, m.col + m.length);
         canvas.paint(m.col, yRow, style.render(text), zIndex: 2);
       }
@@ -82,8 +90,8 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
         final selStyle = visualKind == VimMode.visualLine
             ? theme.visualLineStyle
             : visualKind == VimMode.visualBlock
-                ? theme.visualBlockStyle
-                : theme.selectionStyle;
+            ? theme.visualBlockStyle
+            : theme.selectionStyle;
         if (visualKind == VimMode.visualLine) {
           if (row.text.isNotEmpty) {
             canvas.paint(0, yRow, selStyle.render(row.text), zIndex: 3);
@@ -146,12 +154,14 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       final visBuf = StringBuffer(); // visible (ANSI-stripped) chunk text
 
       void flush(int rawEnd) {
-        out.add(_DisplayRow(
-          i,
-          chunkVisStart,
-          visBuf.toString(),
-          rendered: chunkAnsiPrefix + text.substring(chunkRawStart, rawEnd),
-        ));
+        out.add(
+          _DisplayRow(
+            i,
+            chunkVisStart,
+            visBuf.toString(),
+            rendered: chunkAnsiPrefix + text.substring(chunkRawStart, rawEnd),
+          ),
+        );
       }
 
       while (rawPos < text.length) {
@@ -177,8 +187,9 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
           flush(rawPos);
           chunkRawStart = rawPos;
           chunkVisStart = totalVis;
-          chunkAnsiPrefix =
-              activeSgr.isEmpty ? '' : '\x1b[${activeSgr.join(';')}m';
+          chunkAnsiPrefix = activeSgr.isEmpty
+              ? ''
+              : '\x1b[${activeSgr.join(';')}m';
           visCol = 0;
           visBuf.clear();
         }
@@ -215,7 +226,11 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     ];
     for (var i = 0; i < rows.length && i + 1 < height; i++) {
       final (label, value) = rows[i];
-      canvas.paint(0, y + 1 + i, theme.titleStyle.render('$label:'.padRight(12)));
+      canvas.paint(
+        0,
+        y + 1 + i,
+        theme.titleStyle.render('$label:'.padRight(12)),
+      );
       final clipped = value.length > width - 12
           ? value.substring(0, width - 12)
           : value;
@@ -238,18 +253,26 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     for (final i in sorted) {
       final src = lines[i].text;
       for (final link in LinkExtractor.extract(src)) {
-        out.add(_VisibleLink(
-          i,
-          link,
-          _visibleWidth(src, link.start),
-          _visibleWidth(src, link.end),
-        ));
+        out.add(
+          _VisibleLink(
+            i,
+            link,
+            _visibleWidth(src, link.start),
+            _visibleWidth(src, link.end),
+          ),
+        );
       }
     }
     return out;
   }
 
-  void _paintInput(Canvas canvas, FrunTheme theme, int width, int y, int height) {
+  void _paintInput(
+    Canvas canvas,
+    FrunTheme theme,
+    int width,
+    int y,
+    int height,
+  ) {
     if (height <= 0) return;
 
     // Borders: top at y, content at y+1..y+height, bottom at y+height+1
@@ -296,8 +319,19 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
         canvas.paint(1, yRow, theme.promptStyle.render(prompt));
         // Run button at far right inside border
         final btnX = width - 1 - _runButtonLabel.length;
-        canvas.paint(btnX, yRow, theme.buttonStyle.render(_runButtonLabel), zIndex: 1);
-        _hits.add(x: btnX, y: yRow, w: _runButtonLabel.length, h: 1, msg: const RunButtonMsg());
+        canvas.paint(
+          btnX,
+          yRow,
+          theme.buttonStyle.render(_runButtonLabel),
+          zIndex: 1,
+        );
+        _hits.add(
+          x: btnX,
+          y: yRow,
+          w: _runButtonLabel.length,
+          h: 1,
+          msg: const RunButtonMsg(),
+        );
         // Right info shifted left to make room for button
         final rightX = btnX - rightInfo.length;
         if (rightX > 1 + prompt.length) {
@@ -306,7 +340,13 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
         // Diagnostics counters sit just left of the right info, inside the box.
         // The input text must stop before whichever of them is leftmost.
         var leftEdge = rightX;
-        leftEdge = _paintDiagnosticsCounters(canvas, theme, rightX, yRow, prompt.length);
+        leftEdge = _paintDiagnosticsCounters(
+          canvas,
+          theme,
+          rightX,
+          yRow,
+          prompt.length,
+        );
         final usable = math.max(0, leftEdge - 1 - prompt.length);
         var visible = line;
         var cursorOffset = cur.col;
@@ -315,13 +355,17 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
           visible = visible.substring(start);
           cursorOffset -= start;
         }
-        final clipped = visible.length > usable ? visible.substring(0, usable) : visible;
+        final clipped = visible.length > usable
+            ? visible.substring(0, usable)
+            : visible;
         canvas.paint(1 + prompt.length, yRow, clipped);
         final showSoftCursor = r == cur.row && !_tc.active;
         if (showSoftCursor) {
           final cx = 1 + prompt.length + cursorOffset;
           if (cx < rightX) {
-            final ch = cursorOffset < visible.length ? visible[cursorOffset] : ' ';
+            final ch = cursorOffset < visible.length
+                ? visible[cursorOffset]
+                : ' ';
             canvas.paint(cx, yRow, theme.cursorStyle.render(ch), zIndex: 2);
           }
         }
@@ -335,13 +379,17 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
           visible = visible.substring(start);
           cursorOffset -= start;
         }
-        final clipped = visible.length > usable ? visible.substring(0, usable) : visible;
+        final clipped = visible.length > usable
+            ? visible.substring(0, usable)
+            : visible;
         canvas.paint(3, yRow, clipped);
         final showSoftCursor = r == cur.row && !_tc.active;
         if (showSoftCursor) {
           final cx = 3 + cursorOffset;
           if (cx < width - 1) {
-            final ch = cursorOffset < visible.length ? visible[cursorOffset] : ' ';
+            final ch = cursorOffset < visible.length
+                ? visible[cursorOffset]
+                : ' ';
             canvas.paint(cx, yRow, theme.cursorStyle.render(ch), zIndex: 2);
           }
         }
@@ -375,7 +423,8 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     if (diags.isEmpty) {
       // Server is up but the first pass hasn't reported yet — show a hint so the
       // slot doesn't look empty/stuck (large monorepos take ~20s to settle).
-      if (state.analysisServer != null && state.analysisError == null) {
+      if (state.deps.analysisServer != null &&
+          state.deps.analysisError == null) {
         const label = ' analyzing… ';
         final x = rightX - label.length;
         if (x > 1 + promptLen + 4) {
@@ -385,7 +434,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       }
       return rightX;
     }
-    final (e, w, i, t) = Diagnostic.counts(diags);
+    final (e, w, i, t) = DiagnosticEntity.counts(diags);
     // Only show categories with a non-zero count.
     final segs = <(String, Style)>[
       if (e > 0)

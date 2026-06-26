@@ -16,7 +16,7 @@ enum InputAction { none, submit }
 /// there motions/operators apply.
 class InputController extends VimBuffer {
   InputController({required FrunEditorMode editorMode})
-      : _editorMode = editorMode {
+    : _editorMode = editorMode {
     _mode = VimMode.insert;
   }
 
@@ -366,7 +366,9 @@ class InputController extends VimBuffer {
         final line = _lines[row];
         final endExclusive = (norm.end.col + 1).clamp(0, line.length);
         _lines[row] =
-            line.substring(0, norm.start.col) + text + line.substring(endExclusive);
+            line.substring(0, norm.start.col) +
+            text +
+            line.substring(endExclusive);
         _cursor = _clampPos(Pos(row, norm.start.col + text.length));
         return;
       }
@@ -388,18 +390,24 @@ class InputController extends VimBuffer {
     final left = norm.start.col;
     final right = norm.end.col;
     final replacedLines = text.split('\n');
-    for (var row = norm.start.row; row <= norm.end.row && row < _lines.length; row++) {
+    for (
+      var row = norm.start.row;
+      row <= norm.end.row && row < _lines.length;
+      row++
+    ) {
       final line = _lines[row];
       final padded = line.padRight(right + 1);
       final replacementForRow = (row - norm.start.row) < replacedLines.length
           ? replacedLines[row - norm.start.row]
           : '';
-      _lines[row] = padded.substring(0, left) +
+      _lines[row] =
+          padded.substring(0, left) +
           replacementForRow +
           padded.substring((right + 1).clamp(0, padded.length));
     }
     _cursor = _clampPos(
-        Pos(norm.start.row, left + (text.isEmpty ? 0 : text.length)));
+      Pos(norm.start.row, left + (text.isEmpty ? 0 : text.length)),
+    );
   }
 
   @override
@@ -407,9 +415,11 @@ class InputController extends VimBuffer {
     final norm = r.normalized();
     if (norm.kind == RangeKind.linewise) {
       final lines = <String>[];
-      for (var i = norm.start.row;
-          i <= norm.end.row && i < _lines.length;
-          i++) {
+      for (
+        var i = norm.start.row;
+        i <= norm.end.row && i < _lines.length;
+        i++
+      ) {
         lines.add(_lines[i]);
       }
       return lines.join('\n');
@@ -421,9 +431,11 @@ class InputController extends VimBuffer {
         return line.substring(norm.start.col, endExclusive);
       }
       final buf = StringBuffer();
-      for (var i = norm.start.row;
-          i <= norm.end.row && i < _lines.length;
-          i++) {
+      for (
+        var i = norm.start.row;
+        i <= norm.end.row && i < _lines.length;
+        i++
+      ) {
         final line = _lines[i];
         if (i == norm.start.row) {
           buf.write(line.substring(norm.start.col));
@@ -440,7 +452,11 @@ class InputController extends VimBuffer {
     final left = norm.start.col;
     final right = norm.end.col;
     final out = <String>[];
-    for (var row = norm.start.row; row <= norm.end.row && row < _lines.length; row++) {
+    for (
+      var row = norm.start.row;
+      row <= norm.end.row && row < _lines.length;
+      row++
+    ) {
       final line = _lines[row];
       if (left >= line.length) {
         out.add('');

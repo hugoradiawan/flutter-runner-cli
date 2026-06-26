@@ -71,15 +71,15 @@ class LspMessageFramer {
 }
 
 /// Parse the `diagnostics` array of a `textDocument/publishDiagnostics`
-/// notification into [Diagnostic]s. Returns `null` when the URI isn't a local
+/// notification into [DiagnosticModel]s. Returns `null` when the URI isn't a local
 /// file (those can't be jumped to). Visible for testing.
-List<Diagnostic>? parsePublishDiagnostics(Map<String, Object?> params) {
+List<DiagnosticModel>? parsePublishDiagnostics(Map<String, Object?> params) {
   final uri = params['uri'];
   if (uri is! String) return null;
   final filePath = _uriToPath(uri);
   if (filePath == null) return null;
   final raw = params['diagnostics'];
-  final out = <Diagnostic>[];
+  final out = <DiagnosticModel>[];
   if (raw is List) {
     for (final item in raw) {
       if (item is! Map) continue;
@@ -90,12 +90,13 @@ List<Diagnostic>? parsePublishDiagnostics(Map<String, Object?> params) {
       final char = (start?['character'] as num?)?.toInt() ?? 0;
       final code = m['code'];
       out.add(
-        Diagnostic(
+        DiagnosticModel(
           filePath: filePath,
           line: line + 1,
           column: char + 1,
-          severity:
-              Diagnostic.severityFromLsp((m['severity'] as num?)?.toInt()),
+          severity: DiagnosticModel.severityFromLsp(
+            (m['severity'] as num?)?.toInt(),
+          ),
           message: (m['message'] as String? ?? '').replaceAll('\n', ' ').trim(),
           code: code is String ? code : code?.toString(),
         ),
@@ -109,7 +110,7 @@ List<Diagnostic>? parsePublishDiagnostics(Map<String, Object?> params) {
 /// replace the file's whole list, or remove the key when the list is empty
 /// (the analyzer's way of clearing a file). Visible for testing.
 void applyPublishDiagnostics(
-  Map<String, List<Diagnostic>> byUri,
+  Map<String, List<DiagnosticModel>> byUri,
   Map<String, Object?> params,
 ) {
   final uri = params['uri'];
@@ -138,7 +139,11 @@ String? _uriToPath(String uri) {
 /// every file with issues (the same mechanism that fills the VS Code "Problems"
 /// panel). We aggregate those into a flat, debounced [diagnostics] stream.
 class DartAnalysisServer {
-  DartAnalysisServer._(this._process, this._projectRoot, this._workspaceFolders);
+  DartAnalysisServer._(
+    this._process,
+    this._projectRoot,
+    this._workspaceFolders,
+  );
 
   final Process _process;
   final String _projectRoot;
@@ -150,7 +155,8 @@ class DartAnalysisServer {
   final List<String> _workspaceFolders;
 
   final LspMessageFramer _framer = LspMessageFramer();
-  final Map<String, List<Diagnostic>> _byUri = <String, List<Diagnostic>>{};
+  final Map<String, List<DiagnosticModel>> _byUri =
+      <String, List<DiagnosticModel>>{};
 
   /// Documents we've pushed to the server via `didOpen`, mapped to their
   /// current sync version. Opening a file makes it a *priority* document the
@@ -167,23 +173,22 @@ class DartAnalysisServer {
   bool _initialized = false;
   bool _disposed = false;
 
-  final StreamController<List<Diagnostic>> _diagnostics =
-      StreamController<List<Diagnostic>>.broadcast();
-  final StreamController<String> _stderr =
-      StreamController<String>.broadcast();
+  final StreamController<List<DiagnosticModel>> _diagnostics =
+      StreamController<List<DiagnosticModel>>.broadcast();
+  final StreamController<String> _stderr = StreamController<String>.broadcast();
   StreamSubscription<List<int>>? _stdoutSub;
   StreamSubscription<String>? _stderrSub;
   Timer? _coalesce;
 
   /// Debounced stream of the full project diagnostic set (all files flattened).
   /// Emits at most once per ~250 ms burst of per-file pushes.
-  Stream<List<Diagnostic>> get diagnostics => _diagnostics.stream;
+  Stream<List<DiagnosticModel>> get diagnostics => _diagnostics.stream;
 
   /// stderr lines from the language-server process (surfaces startup failures).
   Stream<String> get stderrLines => _stderr.stream;
 
   /// The latest known full diagnostic set across all files.
-  List<Diagnostic> get snapshot =>
+  List<DiagnosticModel> get snapshot =>
       _byUri.values.expand((e) => e).toList(growable: false);
 
   static String _defaultDartExecutable() =>
@@ -226,14 +231,11 @@ class DartAnalysisServer {
     _stderrSub = _process.stderr
         .transform(utf8.decoder)
         .transform(const LineSplitter())
-        .listen(
-      (line) {
-        if (!_disposed && !_stderr.isClosed && line.isNotEmpty) {
-          _stderr.add(line);
-        }
-      },
-      onError: (Object _) {},
-    );
+        .listen((line) {
+          if (!_disposed && !_stderr.isClosed && line.isNotEmpty) {
+            _stderr.add(line);
+          }
+        }, onError: (Object _) {});
   }
 
   void _onBytes(List<int> chunk) {
@@ -274,10 +276,9 @@ class DartAnalysisServer {
         // default in the server, so the todo counter is populated.
         _respond(
           msg['id'],
-          List<Object?>.filled(
-            items.length,
-            const <String, Object?>{'showTodos': true},
-          ),
+          List<Object?>.filled(items.length, const <String, Object?>{
+            'showTodos': true,
+          }),
         );
       } else {
         _respond(msg['id'], null);
@@ -294,7 +295,10 @@ class DartAnalysisServer {
   }
 
   void _initialize() {
-    final rootUri = Uri.file(_projectRoot, windows: Platform.isWindows).toString();
+    final rootUri = Uri.file(
+      _projectRoot,
+      windows: Platform.isWindows,
+    ).toString();
     _initializeId = _request('initialize', <String, Object?>{
       'processId': pid,
       'clientInfo': <String, Object?>{'name': 'frun', 'version': '0.1.0'},
@@ -319,7 +323,9 @@ class DartAnalysisServer {
     if (_disposed) return;
     final body = utf8.encode(json.encode(message));
     try {
-      _process.stdin.add(latin1.encode('Content-Length: ${body.length}\r\n\r\n'));
+      _process.stdin.add(
+        latin1.encode('Content-Length: ${body.length}\r\n\r\n'),
+      );
       _process.stdin.add(body);
     } catch (_) {
       // stdin closed (server gone) — ignore.
@@ -404,14 +410,18 @@ class DartAnalysisServer {
     try {
       _request('shutdown');
       _notify('exit');
-    } catch (_) {/* server may already be gone */}
+    } catch (_) {
+      /* server may already be gone */
+    }
     await _stdoutSub?.cancel();
     await _stderrSub?.cancel();
     _stdoutSub = null;
     _stderrSub = null;
     try {
       _process.kill();
-    } catch (_) {/* already dead */}
+    } catch (_) {
+      /* already dead */
+    }
     if (!_diagnostics.isClosed) await _diagnostics.close();
     if (!_stderr.isClosed) await _stderr.close();
   }

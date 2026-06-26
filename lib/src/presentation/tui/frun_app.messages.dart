@@ -99,5 +99,5 @@ final class SetDiagnosticsFilterMsg extends Msg {
 
 final class JumpToDiagnosticMsg extends Msg {
   const JumpToDiagnosticMsg(this.diagnostic);
-  final Diagnostic diagnostic;
+  final DiagnosticEntity diagnostic;
 }

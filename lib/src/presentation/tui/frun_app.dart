@@ -5,10 +5,10 @@ import 'dart:math' as math;
 import 'package:dart_tui/dart_tui.dart';
 import 'package:path/path.dart' as p;
 
-import '../../data/datasources/history_store.dart';
-import '../../data/models/diagnostic.dart';
 import '../../data/models/source_location.dart';
-import '../../domain/entities/app_config.entity.dart';
+import '../../data/services/history_store.dart';
+import '../../domain/entities/app_config.dart';
+import '../../domain/entities/diagnostic.dart';
 import '../../domain/value_objects/config_values.dart';
 import '../../version.dart';
 import '../app/app_state.dart';

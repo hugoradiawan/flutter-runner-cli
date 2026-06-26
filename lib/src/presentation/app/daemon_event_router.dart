@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import '../../data/datasources/app_session.dart';
-import '../../data/datasources/frun_notifier.dart';
 import '../../data/models/daemon_messages.dart';
+import '../../data/services/frun_notifier.dart';
 import 'app_state.dart';
 import 'isolate_connection.dart';
 import 'run_tab.dart';
@@ -23,7 +23,7 @@ class DaemonEventRouter {
     switch (event.name) {
       case 'app.start':
         tab.transcript.success('App started (appId=${event.params['appId']}).');
-        _state.notifier.notifyTab(tab, FrunNotifEvent.appStarted);
+        _state.deps.notifier.notifyTab(tab, FrunNotifEvent.appStarted);
       case 'app.debugPort':
         final ws = event.params['wsUri']?.toString();
         if (ws != null) {

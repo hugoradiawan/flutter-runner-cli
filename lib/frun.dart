@@ -9,21 +9,21 @@ import 'package:dart_tui/dart_tui.dart';
 import 'src/data/datasources/analysis_server.dart';
 import 'src/data/datasources/config_datasource.dart';
 import 'src/data/datasources/config_store.dart';
-import 'src/data/datasources/dart_file_watcher.dart';
 import 'src/data/datasources/device_manager.dart';
 import 'src/data/datasources/diagnostics_store.dart';
 import 'src/data/datasources/emulator_manager.dart';
 import 'src/data/datasources/flutter_daemon.dart';
-import 'src/data/datasources/package_locator.dart';
-import 'src/data/datasources/project_detector.dart';
-import 'src/data/datasources/windows_console.dart';
-import 'src/data/datasources/working_set.dart';
 import 'src/data/repositories/config_repository_impl.dart';
 import 'src/data/repositories/device_repository_impl.dart';
 import 'src/data/repositories/diagnostics_repository_impl.dart';
 import 'src/data/repositories/emulator_repository_impl.dart';
 import 'src/data/repositories/session_repository_impl.dart';
-import 'src/domain/entities/app_config.entity.dart';
+import 'src/data/services/dart_file_watcher.dart';
+import 'src/data/services/package_locator.dart';
+import 'src/data/services/project_detector.dart';
+import 'src/data/services/windows_console.dart';
+import 'src/data/services/working_set.dart';
+import 'src/domain/entities/app_config.dart';
 import 'src/presentation/app/app_state.dart';
 import 'src/presentation/app/commands/clear_command.dart';
 import 'src/presentation/app/commands/command_registry.dart';
@@ -44,6 +44,7 @@ import 'src/presentation/app/commands/restart_command.dart';
 import 'src/presentation/app/commands/run_command.dart';
 import 'src/presentation/app/commands/status_command.dart';
 import 'src/presentation/app/commands/stop_command.dart';
+import 'src/presentation/di/dependencies.dart';
 import 'src/presentation/tui/clipboard.dart';
 import 'src/presentation/tui/frun_app.dart';
 
@@ -82,11 +83,10 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     (e) => e,
   );
 
-  final state = AppState(project: project, config: configEntity)
-    ..configRepository = configRepository;
+  final deps = Dependencies()..configRepository = configRepository;
+  final state = AppState(project: project, config: configEntity, deps: deps);
 
-  state.sessionRepository = SessionRepositoryImpl(
-    projectRoot: project.root,
+  deps.sessionRepository = SessionRepositoryImpl(
     sessionLookup: (tabId) {
       for (final tab in state.runController.tabs) {
         if (tab.id == tabId) return tab.session;
@@ -109,7 +109,9 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     ..register(StopCommand())
     ..register(DetachCommand())
     ..register(PerformanceOverlayCommand())
-    ..register(IsolatesCommand(state.isolateManager, state.ideLauncher))
+    ..register(
+      IsolatesCommand(state.deps.isolateManager, state.deps.ideLauncher),
+    )
     ..register(InspectCommand())
     ..register(StatusCommand())
     ..register(DiagnosticsCommand());
@@ -142,10 +144,10 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     restoreConsole();
   }
   await state.runController.stopAll();
-  await state.isolateManager.disconnect();
-  await state.analysisWatcher?.dispose();
-  await state.analysisServer?.shutdown();
-  await state.daemon?.shutdown();
+  await state.deps.isolateManager.disconnect();
+  await state.deps.analysisWatcher?.dispose();
+  await state.deps.analysisServer?.shutdown();
+  await state.deps.daemon?.shutdown();
   return 0;
 }
 
@@ -154,7 +156,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
 /// instantly, then live-updates and re-caches as the analyzer reports.
 Future<void> _bootAnalysis(AppState state) async {
   final store = DiagnosticsStore(projectRoot: state.project.root);
-  state.diagnosticsStore = store;
+  state.deps.diagnosticsStore = store;
   // Seed from cache before the first analysis pass completes.
   final cached = store.load();
   if (cached.isNotEmpty) state.diagnostics = cached;
@@ -173,8 +175,8 @@ Future<void> _bootAnalysis(AppState state) async {
       projectRoot: state.project.root,
       workspaceFolders: packages,
     );
-    state.analysisServer = server;
-    state.diagnosticsRepository = DiagnosticsRepositoryImpl(server);
+    state.deps.analysisServer = server;
+    state.deps.diagnosticsRepository = DiagnosticsRepositoryImpl(server);
     server.stderrLines.listen((l) => state.transcript.warn('analysis: $l'));
     state.transcript.system(
       packages.length > 1
@@ -219,9 +221,9 @@ Future<void> _bootAnalysis(AppState state) async {
       onFileChanged: server.openFile,
     );
     watcher.start();
-    state.analysisWatcher = watcher;
+    state.deps.analysisWatcher = watcher;
   } catch (e) {
-    state.analysisError = e.toString();
+    state.deps.analysisError = e.toString();
     state.transcript.warn(
       'Diagnostics unavailable — could not start "dart language-server". '
       'Is the Dart SDK on your PATH? ($e)',
@@ -258,26 +260,26 @@ Future<void> _bootDaemon(AppState state) async {
     DeviceManager? manager;
     try {
       daemon = await FlutterDaemon.start();
-      state.daemon = daemon;
+      state.deps.daemon = daemon;
       daemon.stderrLines.listen(
         (line) => state.transcript.warn('daemon: $line'),
       );
       manager = DeviceManager(daemon);
-      state.deviceManager = manager;
+      state.deps.deviceManager = manager;
       manager.changes.listen((devices) {
         state.transcript.system(
           'Devices changed: ${devices.length} connected.',
         );
       });
       await manager.start();
-      state.daemonReady = true;
-      state.daemonError = null;
-      state.deviceRepository = DeviceRepositoryImpl(manager);
-      state.emulatorRepository = EmulatorRepositoryImpl(
+      state.deps.daemonReady = true;
+      state.deps.daemonError = null;
+      state.deps.deviceRepository = DeviceRepositoryImpl(manager);
+      state.deps.emulatorRepository = EmulatorRepositoryImpl(
         EmulatorManager(daemon),
       );
       state.transcript.success(
-        'Flutter daemon ready (${state.deviceManager!.devices.length} devices).',
+        'Flutter daemon ready (${state.deps.deviceManager!.devices.length} devices).',
       );
       // Warm the emulator subsystem in the background. The daemon's first
       // `emulator.getEmulators` does cold Android-SDK / AVD discovery that can
@@ -286,7 +288,7 @@ Future<void> _bootDaemon(AppState state) async {
       unawaited(_warmEmulators(state));
       return;
     } catch (e) {
-      state.daemonError = e.toString();
+      state.deps.daemonError = e.toString();
       // Tear down the partial daemon so the retry starts clean and we don't
       // orphan the `flutter daemon` process or stack stderr listeners.
       try {
@@ -299,8 +301,8 @@ Future<void> _bootDaemon(AppState state) async {
       } catch (_) {
         /* best-effort */
       }
-      state.daemon = null;
-      state.deviceManager = null;
+      state.deps.daemon = null;
+      state.deps.deviceManager = null;
 
       if (attempt < _daemonStartAttempts) {
         state.transcript.warn(
@@ -358,7 +360,7 @@ Future<void> _ensureAdbServer(
 /// boot so the user's later `emu` command hits a warm daemon. Best-effort — any
 /// failure is swallowed here; the `emu` command surfaces real errors itself.
 Future<void> _warmEmulators(AppState state) async {
-  final daemon = state.daemon;
+  final daemon = state.deps.daemon;
   if (daemon == null) return;
   try {
     await daemon.getEmulators();

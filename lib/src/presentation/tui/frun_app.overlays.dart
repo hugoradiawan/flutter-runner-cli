@@ -51,7 +51,9 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     }
     if (state.runTargetChoices.isNotEmpty) {
       if (idx < 0 || idx >= state.runTargetChoices.length) return;
-      unawaited(state.runController.launchOnTarget(state.runTargetChoices[idx]));
+      unawaited(
+        state.runController.launchOnTarget(state.runTargetChoices[idx]),
+      );
       return;
     }
   }
@@ -210,8 +212,9 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     if (height <= 0) return;
 
     final header = spec.header;
-    final headerClipped =
-        header.length > width ? header.substring(0, width) : header;
+    final headerClipped = header.length > width
+        ? header.substring(0, width)
+        : header;
     canvas.paint(0, y, theme.dimStyle.render(headerClipped));
     final closeX = (width - _pickerCloseLabel.length).clamp(0, width);
     if (closeX > headerClipped.length) {
@@ -254,8 +257,10 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       } else if (_pickerSelectedIndex >= _pickerScrollOffset + visibleCount) {
         _pickerScrollOffset = _pickerSelectedIndex - visibleCount + 1;
       }
-      _pickerScrollOffset =
-          _pickerScrollOffset.clamp(0, math.max(0, chips.length - visibleCount));
+      _pickerScrollOffset = _pickerScrollOffset.clamp(
+        0,
+        math.max(0, chips.length - visibleCount),
+      );
     }
 
     final chipStyle = _pickerChipStyle(spec.kind, theme);
@@ -275,7 +280,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         msg: _pickerPickMsg(spec.kind, chips[chipIdx].index),
       );
     }
-    final hidden = math.max(0, chips.length - _pickerScrollOffset - visibleCount) +
+    final hidden =
+        math.max(0, chips.length - _pickerScrollOffset - visibleCount) +
         _pickerScrollOffset;
     if (hidden > 0) {
       final rowY = innerStartY + visibleCount * 2;
@@ -325,7 +331,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         return c.copyWith(ide: vals[idx]);
       case 'editor_mode':
         const vals = FrunEditorMode.values;
-        final idx = (vals.indexOf(c.editorMode) + delta + vals.length) % vals.length;
+        final idx =
+            (vals.indexOf(c.editorMode) + delta + vals.length) % vals.length;
         return c.copyWith(editorMode: vals[idx]);
       case 'theme':
         const vals = FrunThemeMode.values;
@@ -335,11 +342,14 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         return c.copyWith(hotReloadOnSave: !c.hotReloadOnSave);
       case 'open_devtools_on_launch':
         const vals = FrunDevToolsAutoOpen.values;
-        final idx = (vals.indexOf(c.openDevtoolsOnLaunch) + delta + vals.length) % vals.length;
+        final idx =
+            (vals.indexOf(c.openDevtoolsOnLaunch) + delta + vals.length) %
+            vals.length;
         return c.copyWith(openDevtoolsOnLaunch: vals[idx]);
       case 'emulator_boot':
         const vals = FrunEmulatorBoot.values;
-        final idx = (vals.indexOf(c.emulatorBoot) + delta + vals.length) % vals.length;
+        final idx =
+            (vals.indexOf(c.emulatorBoot) + delta + vals.length) % vals.length;
         return c.copyWith(emulatorBoot: vals[idx]);
       case 'verbose_errors':
         return c.copyWith(verboseErrors: !c.verboseErrors);
@@ -393,7 +403,11 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       const contentX = innerGap + indicatorWidth + keyWidth + valGap;
 
       if (isSelected) {
-        canvas.paint(innerGap, rowY, theme.accentStyle.render(indicator + keyPadded));
+        canvas.paint(
+          innerGap,
+          rowY,
+          theme.accentStyle.render(indicator + keyPadded),
+        );
       } else {
         canvas.paint(innerGap, rowY, indicator + keyPadded);
       }
@@ -401,7 +415,11 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       if (contentX < width - 1) {
         if (isSelected && entry.values.isNotEmpty) {
           final chip = '◄ $currentVal ►';
-          canvas.paint(contentX, rowY, theme.pickerChipSelectedStyle.render(chip));
+          canvas.paint(
+            contentX,
+            rowY,
+            theme.pickerChipSelectedStyle.render(chip),
+          );
         } else {
           canvas.paint(contentX, rowY, theme.dimStyle.render(currentVal));
         }
@@ -412,7 +430,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
   // ── Diagnostics overlay ──────────────────────────────────────────────────
 
   /// The project diagnostics after applying the active category + text filters.
-  List<Diagnostic> _filteredDiagnostics() {
+  List<DiagnosticEntity> _filteredDiagnostics() {
     var list = state.diagnostics;
     final f = state.diagnosticsFilter;
     if (f != null) {
@@ -434,7 +452,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
 
   /// Flatten the filtered diagnostics into file-header + issue rows.
   List<_DiagRow> _diagnosticRows() {
-    final grouped = Diagnostic.groupByFile(_filteredDiagnostics());
+    final grouped = DiagnosticEntity.groupByFile(_filteredDiagnostics());
     final rows = <_DiagRow>[];
     grouped.forEach((file, items) {
       rows.add(_DiagRow.fileHeader(file, items.length));
@@ -507,7 +525,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
   }
 
   /// The diagnostic under the current selection, if any.
-  Diagnostic? _selectedDiagnostic() {
+  DiagnosticEntity? _selectedDiagnostic() {
     final rows = _diagnosticRows();
     if (rows.isEmpty) return null;
     _clampDiagSelection(rows);
@@ -534,7 +552,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     int height,
   ) {
     if (height <= 0) return;
-    final (e, w, i, t) = Diagnostic.counts(state.diagnostics);
+    final (e, w, i, t) = DiagnosticEntity.counts(state.diagnostics);
 
     // ── Header: title, clickable filter chips, search, close button ──
     var hx = 0;
@@ -662,8 +680,10 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       } else if (_diagSelectedIndex >= _diagScrollOffset + visibleCount) {
         _diagScrollOffset = _diagSelectedIndex - visibleCount + 1;
       }
-      _diagScrollOffset =
-          _diagScrollOffset.clamp(0, math.max(0, rows.length - visibleCount));
+      _diagScrollOffset = _diagScrollOffset.clamp(
+        0,
+        math.max(0, rows.length - visibleCount),
+      );
     }
 
     final maxText = width - 2;
@@ -699,8 +719,10 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     if (totalHidden > 0) {
       final rowY = innerStartY + visibleCount;
       if (rowY <= innerEndY) {
-        final hiddenBelow =
-            math.max(0, rows.length - _diagScrollOffset - visibleCount);
+        final hiddenBelow = math.max(
+          0,
+          rows.length - _diagScrollOffset - visibleCount,
+        );
         final keys = state.config.editorMode == FrunEditorMode.vim
             ? 'j/k move · gg/G ends · / filter · enter open'
             : '↑↓ move · type to filter · enter open';
@@ -812,7 +834,13 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     return labelText.length + buttonCount * 3;
   }
 
-  void _paintInfoBar(Canvas canvas, FrunTheme theme, int width, int y, int height) {
+  void _paintInfoBar(
+    Canvas canvas,
+    FrunTheme theme,
+    int width,
+    int y,
+    int height,
+  ) {
     final tabs = state.runController.tabs;
 
     if (tabs.isEmpty) {
@@ -831,7 +859,16 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         final seg = row[idx];
         if (idx > 0) x += 1;
         if (x >= width) break;
-        final next = _paintTab(canvas, theme, x, rowY, width, seg.index, seg.tab, seg.isActive);
+        final next = _paintTab(
+          canvas,
+          theme,
+          x,
+          rowY,
+          width,
+          seg.index,
+          seg.tab,
+          seg.isActive,
+        );
         if (next == x) break;
         x = next;
       }
@@ -841,7 +878,13 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         if (x + 1 + chip.length <= width) {
           x += 1;
           canvas.paint(x, rowY, theme.dimStyle.render(chip));
-          _hits.add(x: x, y: rowY, w: chip.length, h: 1, msg: const _CycleTabsForwardMsg());
+          _hits.add(
+            x: x,
+            y: rowY,
+            w: chip.length,
+            h: 1,
+            msg: const _CycleTabsForwardMsg(),
+          );
         }
       }
     }
@@ -892,26 +935,14 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         : (t.isRunning ? theme.inactiveTabStyle : theme.exitedTabStyle);
 
     canvas.paint(x, y, tabStyle.render(displayLabel));
-    _hits.add(
-      x: x,
-      y: y,
-      w: labelWidth,
-      h: 1,
-      msg: SetActiveTabMsg(tabIndex),
-    );
+    _hits.add(x: x, y: y, w: labelWidth, h: 1, msg: SetActiveTabMsg(tabIndex));
 
     var cursor = x + labelWidth;
 
     for (final b in buttons) {
       final style = b.isStop ? theme.buttonStopStyle : theme.buttonStyle;
       canvas.paint(cursor, y, style.render(' ${b.letter} '));
-      _hits.add(
-        x: cursor,
-        y: y,
-        w: 3,
-        h: 1,
-        msg: b.message(tabIndex),
-      );
+      _hits.add(x: cursor, y: y, w: 3, h: 1, msg: b.message(tabIndex));
       cursor += 3;
     }
 

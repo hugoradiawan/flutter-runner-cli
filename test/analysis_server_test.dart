@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:frun/src/data/datasources/analysis_server.dart';
 import 'package:frun/src/data/models/diagnostic.dart';
+import 'package:frun/src/domain/entities/diagnostic.dart';
 import 'package:test/test.dart';
 
 List<int> _frame(Map<String, Object?> msg) {
@@ -25,16 +26,15 @@ Map<String, Object?> _diag(
   int char,
   String message, {
   String? code,
-}) =>
-    <String, Object?>{
-      'severity': severity,
-      'range': <String, Object?>{
-        'start': <String, Object?>{'line': line, 'character': char},
-        'end': <String, Object?>{'line': line, 'character': char + 1},
-      },
-      'message': message,
-      if (code != null) 'code': code,
-    };
+}) => <String, Object?>{
+  'severity': severity,
+  'range': <String, Object?>{
+    'start': <String, Object?>{'line': line, 'character': char},
+    'end': <String, Object?>{'line': line, 'character': char + 1},
+  },
+  'message': message,
+  if (code != null) 'code': code,
+};
 
 void main() {
   group('LspMessageFramer', () {
@@ -74,15 +74,12 @@ void main() {
           _diag(4, 1, 1, 'hint'),
         ],
       })!;
-      expect(
-        parsed.map((d) => d.severity).toList(),
-        <DiagnosticSeverity>[
-          DiagnosticSeverity.error,
-          DiagnosticSeverity.warning,
-          DiagnosticSeverity.info,
-          DiagnosticSeverity.info, // hint folds into info
-        ],
-      );
+      expect(parsed.map((d) => d.severity).toList(), <DiagnosticSeverity>[
+        DiagnosticSeverity.error,
+        DiagnosticSeverity.warning,
+        DiagnosticSeverity.info,
+        DiagnosticSeverity.info, // hint folds into info
+      ]);
       expect(parsed.first.line, 6); // 5 + 1
       expect(parsed.first.column, 3); // 2 + 1
       expect(parsed[2].code, 'todo');
@@ -99,12 +96,13 @@ void main() {
 
   group('applyPublishDiagnostics', () {
     test('adds a file then clears it on an empty array', () {
-      final byUri = <String, List<Diagnostic>>{};
+      final byUri = <String, List<DiagnosticModel>>{};
       applyPublishDiagnostics(
         byUri,
         _publish('file:///C:/x.dart', <Map<String, Object?>>[
-          _diag(1, 0, 0, 'boom'),
-        ])['params']! as Map<String, Object?>,
+              _diag(1, 0, 0, 'boom'),
+            ])['params']!
+            as Map<String, Object?>,
       );
       expect(byUri, hasLength(1));
 

@@ -26,7 +26,9 @@ mixin _EngineMixin on _FrunModelBase {
     if (cmd.name == 'reg') {
       state.transcript.system('-- Registers --');
       for (final e in _vimState.registers.all()) {
-        state.transcript.info('"${e.key}  ${e.value.text.replaceAll('\n', '⏎')}');
+        state.transcript.info(
+          '"${e.key}  ${e.value.text.replaceAll('\n', '⏎')}',
+        );
       }
       return;
     }
@@ -42,8 +44,9 @@ mixin _EngineMixin on _FrunModelBase {
     final args = cmd.args.isEmpty
         ? const <String>[]
         : cmd.args.split(RegExp(r'\s+'));
-    state.visibleTranscript
-        .system(':${cmd.name}${cmd.args.isEmpty ? '' : ' ${cmd.args}'}');
+    state.visibleTranscript.system(
+      ':${cmd.name}${cmd.args.isEmpty ? '' : ' ${cmd.args}'}',
+    );
     command.run(args, state).then(_handleResult).catchError((Object e, _) {
       state.visibleTranscript.error('Command :${cmd.name} failed: $e');
     });
@@ -55,9 +58,11 @@ mixin _EngineMixin on _FrunModelBase {
     final pattern = RegExp(sub.pattern, caseSensitive: !sub.caseInsensitive);
     final newLines = <String>[];
     for (final line in lines) {
-      newLines.add(sub.global
-          ? line.replaceAll(pattern, sub.replacement)
-          : line.replaceFirst(pattern, sub.replacement));
+      newLines.add(
+        sub.global
+            ? line.replaceAll(pattern, sub.replacement)
+            : line.replaceFirst(pattern, sub.replacement),
+      );
     }
     _input.setText(newLines.join('\n'));
     _vimState.lastSubstitutePattern = sub.pattern;
@@ -86,7 +91,9 @@ mixin _EngineMixin on _FrunModelBase {
       if (r < 0 || r >= lines.length) continue;
       final hay = lines[r].toLowerCase();
       final from = (r == startRow) ? (forward ? startCol + 1 : 0) : 0;
-      final idx = forward ? hay.indexOf(needle, from) : hay.lastIndexOf(needle, from);
+      final idx = forward
+          ? hay.indexOf(needle, from)
+          : hay.lastIndexOf(needle, from);
       if (idx >= 0) {
         _input.cursor = Pos(r, idx);
         return;
@@ -111,7 +118,10 @@ mixin _EngineMixin on _FrunModelBase {
     if (_lastDisplayRows.isEmpty) return;
     final endRow = _lastVisibleEnd - 1;
     final startCursor = endRow.clamp(_lastVisibleStart, _lastVisibleEnd - 1);
-    final col = (_lastDisplayRows[startCursor].text.length - 1).clamp(0, 1 << 30);
+    final col = (_lastDisplayRows[startCursor].text.length - 1).clamp(
+      0,
+      1 << 30,
+    );
     _tc.enter(initialRow: startCursor, initialCol: col);
     _vimState.mode = VimMode.normal;
   }
@@ -139,7 +149,8 @@ mixin _EngineMixin on _FrunModelBase {
   }
 
   void _jumpToActiveMatch() {
-    if (_tc.activeMatchIndex < 0 || _tc.activeMatchIndex >= _tc.matches.length) {
+    if (_tc.activeMatchIndex < 0 ||
+        _tc.activeMatchIndex >= _tc.matches.length) {
       return;
     }
     final m = _tc.matches[_tc.activeMatchIndex];
@@ -201,7 +212,8 @@ mixin _EngineMixin on _FrunModelBase {
     final parts = line.split(RegExp(r'\s+'));
     final rawName = parts.first;
     final args = parts.length > 1 ? parts.sublist(1) : const <String>[];
-    final command = registry.lookup(rawName) ?? registry.lookup(rawName.toLowerCase());
+    final command =
+        registry.lookup(rawName) ?? registry.lookup(rawName.toLowerCase());
     if (command == null) {
       state.visibleTranscript.error('Unknown command: $rawName. Type help.');
       return;
@@ -221,8 +233,12 @@ mixin _EngineMixin on _FrunModelBase {
 
   /// Open a diagnostic's source location in the configured IDE. Reuses the same
   /// jump path as transcript links.
-  Future<void> _openDiagnostic(Diagnostic d) async {
-    final loc = SourceLocation(file: d.filePath, line: d.line, column: d.column);
-    await state.ideLauncher.open(loc, state);
+  Future<void> _openDiagnostic(DiagnosticEntity d) async {
+    final loc = SourceLocation(
+      file: d.filePath,
+      line: d.line,
+      column: d.column,
+    );
+    await state.deps.ideLauncher.open(loc, state);
   }
 }

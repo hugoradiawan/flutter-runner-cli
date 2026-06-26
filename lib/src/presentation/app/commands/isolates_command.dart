@@ -1,8 +1,8 @@
 import 'package:vm_service/vm_service.dart' as vm;
 
-import '../../../data/datasources/ide_launcher.dart';
-import '../../../data/datasources/isolate_manager.dart';
 import '../../../data/models/source_location.dart';
+import '../../../data/services/ide_launcher.dart';
+import '../../../data/services/isolate_manager.dart';
 import '../app_state.dart';
 import 'command.dart';
 

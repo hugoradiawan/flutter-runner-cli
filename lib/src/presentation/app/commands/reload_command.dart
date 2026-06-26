@@ -1,5 +1,5 @@
-import '../../../data/datasources/frun_notifier.dart';
-import '../../../domain/params/reload.params.dart';
+import '../../../data/services/frun_notifier.dart';
+import '../../../domain/params/reload_params.dart';
 import '../app_state.dart';
 import 'command.dart';
 
@@ -20,18 +20,18 @@ class ReloadCommand extends Command {
       state.transcript.warn('No app running. Use /run first.');
       return CommandResult.ok;
     }
-    final useCase = state.hotReloadUseCase;
+    final useCase = state.deps.hotReloadUseCase;
     if (useCase == null) {
       state.transcript.warn('No app running. Use /run first.');
       return CommandResult.ok;
     }
-    state.notifier.notifyTab(tab, FrunNotifEvent.hotReloading);
+    state.deps.notifier.notifyTab(tab, FrunNotifEvent.hotReloading);
     final result = await useCase.call(ReloadParams(tabId: tab.id));
     result.fold(
       (failure) =>
           tab.transcript.error('Hot reload failed: ${failure.message}'),
       (_) {
-        state.notifier.notifyTab(tab, FrunNotifEvent.hotReloaded);
+        state.deps.notifier.notifyTab(tab, FrunNotifEvent.hotReloaded);
         tab.transcript.success('Hot reload requested.');
       },
     );

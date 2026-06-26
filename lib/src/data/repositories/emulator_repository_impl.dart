@@ -1,14 +1,14 @@
-import '../../ca/result.dart';
-import '../../data/models/device.model.dart';
-import '../../data/models/emulator.model.dart';
-import '../datasources/emulator_manager.dart';
-import '../../domain/entities/device.entity.dart';
-import '../../domain/entities/emulator.entity.dart';
+import '../../core/result.dart';
+import '../../data/models/device.dart';
+import '../../data/models/emulator.dart';
+import '../../domain/entities/device.dart';
+import '../../domain/entities/emulator.dart';
 import '../../domain/failures/device_failure.dart';
-import '../../domain/params/emulator_launch.params.dart';
+import '../../domain/params/emulator_launch_params.dart';
 import '../../domain/repositories/emulator_repository.dart';
+import '../datasources/emulator_manager.dart';
 
-class EmulatorRepositoryImpl implements IEmulatorRepository {
+class EmulatorRepositoryImpl implements EmulatorRepository {
   EmulatorRepositoryImpl(this._manager);
 
   final EmulatorManager _manager;
@@ -41,7 +41,10 @@ class EmulatorRepositoryImpl implements IEmulatorRepository {
     EmulatorLaunchParams params,
   ) async {
     try {
-      final device = await _manager.launchAndAwaitDevice(params.emulator.id, coldBoot: params.coldBoot);
+      final device = await _manager.launchAndAwaitDevice(
+        params.emulator.id,
+        coldBoot: params.coldBoot,
+      );
       if (device == null) {
         return Result.failure(
           DeviceFailure(

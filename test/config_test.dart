@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 void main() {
   group('FrunConfig', () {
     test('round-trips defaults through fromMap/toJson', () {
-      final defaults = const FrunConfig();
+      const defaults = FrunConfig();
       final round = FrunConfig.fromMap(defaults.toJson());
       expect(round.ide, defaults.ide);
       expect(round.editorMode, defaults.editorMode);
@@ -55,7 +55,7 @@ void main() {
     test('saves and loads non-default values', () {
       final store = ConfigStore(overridePath: path);
       store.save(
-        FrunConfig(
+        const FrunConfig(
           ide: FrunIde.zed,
           editorMode: FrunEditorMode.vim,
           theme: FrunThemeMode.light,

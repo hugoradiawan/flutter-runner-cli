@@ -8,9 +8,13 @@ mixin _ReducerMixin on _FrunModelBase, _KeyMixin, _MouseMixin, _EngineMixin {
   Cmd? init() {
     _input.loadHistory(_historyStore.load());
     state.transcript.system('frun $frunVersion — type help for commands.');
-    state.transcript.info('Project: ${state.project.name} (${state.project.root})');
+    state.transcript.info(
+      'Project: ${state.project.name} (${state.project.root})',
+    );
     if (state.project.hasVsCodeFolder) {
-      state.transcript.info('Detected .vscode/ → launch configs available via run.');
+      state.transcript.info(
+        'Detected .vscode/ → launch configs available via run.',
+      );
     }
     if (state.config.editorMode == FrunEditorMode.vim) {
       _vimState.mode = VimMode.insert;

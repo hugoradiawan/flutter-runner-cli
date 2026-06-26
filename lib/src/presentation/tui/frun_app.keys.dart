@@ -34,7 +34,10 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
           return;
         }
         if (m != VimMode.normal) {
-          _vim.handle(KeyPressMsg(const TeaKey(code: KeyCode.escape)), _activeBuffer);
+          _vim.handle(
+            KeyPressMsg(const TeaKey(code: KeyCode.escape)),
+            _activeBuffer,
+          );
           return;
         }
       }
@@ -96,7 +99,8 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
     if (state.hasActivePicker) {
       final count = _activePickerItemCount();
       if (count > 0) {
-        final plain = ke.code == KeyCode.rune &&
+        final plain =
+            ke.code == KeyCode.rune &&
             !ke.modifiers.contains(KeyMod.ctrl) &&
             !ke.modifiers.contains(KeyMod.alt);
         final isUp = ke.code == KeyCode.up || (plain && ke.text == 'k');
@@ -127,8 +131,7 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
 
     // In vim mode, while engine is in ex/search, route everything to it.
     if (state.config.editorMode == FrunEditorMode.vim &&
-        (_vimState.mode == VimMode.exCmd ||
-            _vimState.mode == VimMode.search)) {
+        (_vimState.mode == VimMode.exCmd || _vimState.mode == VimMode.search)) {
       _vim.handle(event, _activeBuffer);
       return;
     }
@@ -178,10 +181,12 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
     if (state.config.editorMode == FrunEditorMode.vim &&
         _vimState.mode == VimMode.insert &&
         !_tc.active) {
-      if (ke.code == KeyCode.up && ke.modifiers.isEmpty &&
+      if (ke.code == KeyCode.up &&
+          ke.modifiers.isEmpty &&
           _input.cursor.row == 0) {
         if (_input.navigateHistory(-1)) return;
-      } else if (ke.code == KeyCode.down && ke.modifiers.isEmpty &&
+      } else if (ke.code == KeyCode.down &&
+          ke.modifiers.isEmpty &&
           _input.cursor.row == _input.lineCount - 1) {
         if (_input.navigateHistory(1)) return;
       }
@@ -189,10 +194,12 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
 
     // History navigation: normal editor mode, Up/Down at buffer boundaries.
     if (state.config.editorMode == FrunEditorMode.normal) {
-      if (ke.code == KeyCode.up && ke.modifiers.isEmpty &&
+      if (ke.code == KeyCode.up &&
+          ke.modifiers.isEmpty &&
           _input.cursor.row == 0) {
         if (_input.navigateHistory(-1)) return;
-      } else if (ke.code == KeyCode.down && ke.modifiers.isEmpty &&
+      } else if (ke.code == KeyCode.down &&
+          ke.modifiers.isEmpty &&
           _input.cursor.row == _input.lineCount - 1) {
         if (_input.navigateHistory(1)) return;
       }
@@ -239,7 +246,7 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
       if (_configDraft != null) {
         final draft = _configDraft!;
         state.setConfig(draft);
-        unawaited(state.saveConfigUseCase?.call(draft));
+        unawaited(state.deps.saveConfigUseCase?.call(draft));
       }
       _configEditorActive = false;
       _configDraft = null;
@@ -247,18 +254,18 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
     }
 
     final count = _configEditorEntries.length;
-    final plain = ke.code == KeyCode.rune &&
+    final plain =
+        ke.code == KeyCode.rune &&
         !ke.modifiers.contains(KeyMod.ctrl) &&
         !ke.modifiers.contains(KeyMod.alt);
 
-    final isUp = ke.code == KeyCode.up ||
-        (plain && isVim && ke.text == 'k');
-    final isDown = ke.code == KeyCode.down ||
-        (plain && isVim && ke.text == 'j');
-    final isLeft = ke.code == KeyCode.left ||
-        (plain && isVim && ke.text == 'h');
-    final isRight = ke.code == KeyCode.right ||
-        (plain && isVim && ke.text == 'l');
+    final isUp = ke.code == KeyCode.up || (plain && isVim && ke.text == 'k');
+    final isDown =
+        ke.code == KeyCode.down || (plain && isVim && ke.text == 'j');
+    final isLeft =
+        ke.code == KeyCode.left || (plain && isVim && ke.text == 'h');
+    final isRight =
+        ke.code == KeyCode.right || (plain && isVim && ke.text == 'l');
 
     if (isUp) {
       _configEditorRow = (_configEditorRow - 1 + count) % count;
@@ -271,7 +278,11 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
     if ((isLeft || isRight) && _configDraft != null) {
       final entry = _configEditorEntries[_configEditorRow];
       if (entry.values.isNotEmpty) {
-        _configDraft = _cycleConfigValue(_configDraft!, entry.key, isRight ? 1 : -1);
+        _configDraft = _cycleConfigValue(
+          _configDraft!,
+          entry.key,
+          isRight ? 1 : -1,
+        );
       }
       return;
     }
@@ -287,7 +298,8 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
   void _handleDiagnosticsKey(KeyMsg event) {
     final ke = event.keyEvent;
     final vim = state.config.editorMode == FrunEditorMode.vim;
-    final plain = ke.code == KeyCode.rune &&
+    final plain =
+        ke.code == KeyCode.rune &&
         !ke.modifiers.contains(KeyMod.ctrl) &&
         !ke.modifiers.contains(KeyMod.alt) &&
         ke.text.isNotEmpty;
@@ -415,7 +427,7 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
   /// only the *visible* chips (`all` plus categories that have problems), and
   /// reset list position.
   void _stepDiagnosticsFilter(int dir) {
-    final (e, w, i, t) = Diagnostic.counts(state.diagnostics);
+    final (e, w, i, t) = DiagnosticEntity.counts(state.diagnostics);
     final order = <DiagnosticCategory?>[
       null,
       if (e > 0) DiagnosticCategory.error,

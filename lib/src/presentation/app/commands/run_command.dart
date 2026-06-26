@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import '../../../data/datasources/main_scanner.dart';
 import '../../../data/models/launch_config.dart';
+import '../../../data/services/main_scanner.dart';
 import '../app_state.dart';
 import '../run_controller.dart';
 import 'command.dart';

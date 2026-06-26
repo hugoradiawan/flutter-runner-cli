@@ -26,8 +26,9 @@ class ConfigStore {
       return p.join(userProfile, 'AppData', 'Roaming', 'frun', 'config.yaml');
     }
     final xdg = Platform.environment['XDG_CONFIG_HOME'];
-    final base =
-        xdg != null && xdg.isNotEmpty ? xdg : p.join(_homeDir(), '.config');
+    final base = xdg != null && xdg.isNotEmpty
+        ? xdg
+        : p.join(_homeDir(), '.config');
     return p.join(base, 'frun', 'config.yaml');
   }
 
@@ -42,14 +43,14 @@ class ConfigStore {
   FrunConfig load() {
     final file = File(path);
     if (!file.existsSync()) {
-      final fresh = FrunConfig();
+      const fresh = FrunConfig();
       save(fresh);
       return fresh;
     }
     final raw = file.readAsStringSync();
-    if (raw.trim().isEmpty) return FrunConfig();
+    if (raw.trim().isEmpty) return const FrunConfig();
     final doc = loadYaml(raw);
-    if (doc is! Map) return FrunConfig();
+    if (doc is! Map) return const FrunConfig();
     return FrunConfig.fromMap(doc);
   }
 
@@ -77,8 +78,15 @@ class ConfigStore {
     final needsQuoting =
         s.isEmpty ||
         s.contains(RegExp(r'[\s:#\[\]\{\},&*!|>%@`]')) ||
-        const {'true', 'false', 'null', 'yes', 'no', 'on', 'off'}
-            .contains(s.toLowerCase());
+        const {
+          'true',
+          'false',
+          'null',
+          'yes',
+          'no',
+          'on',
+          'off',
+        }.contains(s.toLowerCase());
     if (!needsQuoting) return s;
     final escaped = s.replaceAll('"', r'\"');
     return '"$escaped"';

@@ -35,9 +35,8 @@ class EmulatorManager {
     } catch (e) {
       if (!completer.isCompleted) completer.completeError(e);
     }
-    return completer.future.timeout(
-      timeout,
-      onTimeout: () => null,
-    ).whenComplete(sub.cancel);
+    return completer.future
+        .timeout(timeout, onTimeout: () => null)
+        .whenComplete(sub.cancel);
   }
 }

@@ -4,7 +4,11 @@ import 'vim_buffer.dart';
 /// hints how an operator should interpret the range; [exclusive] flips
 /// inclusive vs exclusive (vim's `w` is exclusive; `e` inclusive).
 class MotionResult {
-  const MotionResult(this.target, {this.kind = RangeKind.charwise, this.exclusive = true});
+  const MotionResult(
+    this.target, {
+    this.kind = RangeKind.charwise,
+    this.exclusive = true,
+  });
   final Pos target;
   final RangeKind kind;
   final bool exclusive;
@@ -34,16 +38,20 @@ class Motions {
     final c = b.cursor;
     final nr = (c.row + n).clamp(0, (b.lineCount - 1).clamp(0, 1 << 30));
     final len = b.rowLength(nr);
-    return MotionResult(Pos(nr, c.col.clamp(0, (len - 1).clamp(0, 1 << 30))),
-        kind: RangeKind.linewise);
+    return MotionResult(
+      Pos(nr, c.col.clamp(0, (len - 1).clamp(0, 1 << 30))),
+      kind: RangeKind.linewise,
+    );
   }
 
   static MotionResult up(VimBuffer b, int n) {
     final c = b.cursor;
     final nr = (c.row - n).clamp(0, (b.lineCount - 1).clamp(0, 1 << 30));
     final len = b.rowLength(nr);
-    return MotionResult(Pos(nr, c.col.clamp(0, (len - 1).clamp(0, 1 << 30))),
-        kind: RangeKind.linewise);
+    return MotionResult(
+      Pos(nr, c.col.clamp(0, (len - 1).clamp(0, 1 << 30))),
+      kind: RangeKind.linewise,
+    );
   }
 
   static MotionResult lineStart(VimBuffer b) =>
@@ -68,7 +76,11 @@ class Motions {
   }
 
   /// `w` — to start of next word. `bigWord` for `W`.
-  static MotionResult nextWordStart(VimBuffer b, int n, {bool bigWord = false}) {
+  static MotionResult nextWordStart(
+    VimBuffer b,
+    int n, {
+    bool bigWord = false,
+  }) {
     var p = b.cursor;
     final isW = bigWord ? _isWORDCh : _isWordCh;
     for (var i = 0; i < n; i++) {
@@ -77,13 +89,19 @@ class Motions {
     return MotionResult(p);
   }
 
-  static Pos _advanceWordStart(VimBuffer b, Pos from, bool Function(String) isW) {
+  static Pos _advanceWordStart(
+    VimBuffer b,
+    Pos from,
+    bool Function(String) isW,
+  ) {
     var row = from.row;
     var col = from.col;
     while (row < b.lineCount) {
       final line = b.lineAt(row);
       if (col >= line.length) {
-        if (row == b.lineCount - 1) return Pos(row, line.isEmpty ? 0 : line.length - 1);
+        if (row == b.lineCount - 1) {
+          return Pos(row, line.isEmpty ? 0 : line.length - 1);
+        }
         row++;
         col = 0;
         // empty line counts as a word boundary stop
@@ -157,7 +175,9 @@ class Motions {
           col++;
         }
       } else {
-        while (col + 1 < line.length && !isW(line[col + 1]) && !_isSpace(line[col + 1])) {
+        while (col + 1 < line.length &&
+            !isW(line[col + 1]) &&
+            !_isSpace(line[col + 1])) {
           col++;
         }
       }
@@ -167,7 +187,11 @@ class Motions {
   }
 
   /// `b` — to start of previous word.
-  static MotionResult prevWordStart(VimBuffer b, int n, {bool bigWord = false}) {
+  static MotionResult prevWordStart(
+    VimBuffer b,
+    int n, {
+    bool bigWord = false,
+  }) {
     var p = b.cursor;
     final isW = bigWord ? _isWORDCh : _isWordCh;
     for (var i = 0; i < n; i++) {
@@ -176,7 +200,11 @@ class Motions {
     return MotionResult(p);
   }
 
-  static Pos _retreatWordStart(VimBuffer b, Pos from, bool Function(String) isW) {
+  static Pos _retreatWordStart(
+    VimBuffer b,
+    Pos from,
+    bool Function(String) isW,
+  ) {
     var row = from.row;
     var col = from.col;
     while (true) {
@@ -243,18 +271,29 @@ class Motions {
 
   /// `gg` — to first line, first non-blank.
   static MotionResult firstLine(VimBuffer b) {
-    return MotionResult(Pos(0, b.firstNonBlankCol(0)), kind: RangeKind.linewise);
+    return MotionResult(
+      Pos(0, b.firstNonBlankCol(0)),
+      kind: RangeKind.linewise,
+    );
   }
 
   /// `G` (no count) — last line, first non-blank. With count `nG` → line n-1.
   static MotionResult goLine(VimBuffer b, int? n) {
     final row = n == null ? b.lineCount - 1 : (n - 1).clamp(0, b.lineCount - 1);
-    return MotionResult(Pos(row, b.firstNonBlankCol(row)), kind: RangeKind.linewise);
+    return MotionResult(
+      Pos(row, b.firstNonBlankCol(row)),
+      kind: RangeKind.linewise,
+    );
   }
 
   /// `f{ch}` — forward to nth occurrence of ch on current line.
-  static MotionResult findChar(VimBuffer b, String ch, int n,
-      {required bool forward, required bool till}) {
+  static MotionResult findChar(
+    VimBuffer b,
+    String ch,
+    int n, {
+    required bool forward,
+    required bool till,
+  }) {
     final r = b.cursor.row;
     final line = b.lineAt(r);
     var col = b.cursor.col;
@@ -344,16 +383,25 @@ class Motions {
   }
 
   /// `H` / `M` / `L` — screen-relative positions. Caller provides viewport.
-  static MotionResult viewportTop(VimBuffer b, int viewportTop) =>
-      MotionResult(Pos(viewportTop.clamp(0, b.lineCount - 1), 0),
-          kind: RangeKind.linewise);
+  static MotionResult viewportTop(VimBuffer b, int viewportTop) => MotionResult(
+    Pos(viewportTop.clamp(0, b.lineCount - 1), 0),
+    kind: RangeKind.linewise,
+  );
 
-  static MotionResult viewportMiddle(VimBuffer b, int viewportTop, int viewportHeight) {
+  static MotionResult viewportMiddle(
+    VimBuffer b,
+    int viewportTop,
+    int viewportHeight,
+  ) {
     final mid = (viewportTop + viewportHeight ~/ 2).clamp(0, b.lineCount - 1);
     return MotionResult(Pos(mid, 0), kind: RangeKind.linewise);
   }
 
-  static MotionResult viewportBottom(VimBuffer b, int viewportTop, int viewportHeight) {
+  static MotionResult viewportBottom(
+    VimBuffer b,
+    int viewportTop,
+    int viewportHeight,
+  ) {
     final bot = (viewportTop + viewportHeight - 1).clamp(0, b.lineCount - 1);
     return MotionResult(Pos(bot, 0), kind: RangeKind.linewise);
   }

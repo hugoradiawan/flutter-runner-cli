@@ -1,38 +1,20 @@
-import '../datasources/analysis_server.dart';
-import '../models/diagnostic.dart' as src;
-import '../../ca/result.dart';
-import '../../data/models/diagnostic.model.dart';
-import '../../domain/entities/diagnostic.entity.dart';
+import '../../core/result.dart';
+import '../../domain/entities/diagnostic.dart';
 import '../../domain/failures/analysis_failure.dart';
-import '../../domain/params/diagnostics_filter.params.dart';
+import '../../domain/params/diagnostics_filter_params.dart';
 import '../../domain/repositories/diagnostics_repository.dart';
+import '../datasources/analysis_server.dart';
 
-class DiagnosticsRepositoryImpl implements IDiagnosticsRepository {
+class DiagnosticsRepositoryImpl implements DiagnosticsRepository {
   DiagnosticsRepositoryImpl(this._server);
 
   final DartAnalysisServer _server;
 
-  DiagnosticModel _fromSrc(src.Diagnostic d) => DiagnosticModel(
-    filePath: d.filePath,
-    line: d.line,
-    column: d.column,
-    severity: _mapSeverity(d.severity),
-    message: d.message,
-    code: d.code,
-  );
-
-  static DiagnosticSeverity _mapSeverity(src.DiagnosticSeverity s) =>
-      switch (s) {
-        src.DiagnosticSeverity.error => DiagnosticSeverity.error,
-        src.DiagnosticSeverity.warning => DiagnosticSeverity.warning,
-        src.DiagnosticSeverity.info => DiagnosticSeverity.info,
-      };
-
-  List<DiagnosticModel> _applyFilter(
-    List<src.Diagnostic> raw,
+  List<DiagnosticEntity> _applyFilter(
+    List<DiagnosticEntity> raw,
     DiagnosticsFilterParams params,
   ) {
-    var result = raw.map(_fromSrc).toList();
+    var result = raw;
     if (params.category != null) {
       result = result.where((d) => d.category == params.category).toList();
     }
@@ -52,16 +34,14 @@ class DiagnosticsRepositoryImpl implements IDiagnosticsRepository {
   @override
   Stream<List<DiagnosticEntity>> watchDiagnostics(
     DiagnosticsFilterParams params,
-  ) =>
-      _server.diagnostics.map((raw) => _applyFilter(raw, params));
+  ) => _server.diagnostics.map((raw) => _applyFilter(raw, params));
 
   @override
   Future<Result<AnalysisFailure, List<DiagnosticEntity>>> getDiagnostics(
     DiagnosticsFilterParams params,
   ) async {
     try {
-      final current = _server.snapshot;
-      return Result.success(_applyFilter(current, params));
+      return Result.success(_applyFilter(_server.snapshot, params));
     } catch (e, st) {
       return Result.failure(
         AnalysisFailure(message: e.toString(), cause: e, stackTrace: st),

@@ -1,7 +1,8 @@
 import 'dart:io';
 
-import 'package:frun/src/data/models/diagnostic.dart';
 import 'package:frun/src/data/datasources/diagnostics_store.dart';
+import 'package:frun/src/data/models/diagnostic.dart';
+import 'package:frun/src/domain/entities/diagnostic.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -11,21 +12,21 @@ void main() {
   setUp(() => temp = Directory.systemTemp.createTempSync('frun_diag_store_'));
   tearDown(() => temp.deleteSync(recursive: true));
 
-  Diagnostic mk(String file, DiagnosticSeverity s) => Diagnostic(
-        filePath: file,
-        line: 3,
-        column: 4,
-        severity: s,
-        message: 'msg for $file',
-        code: 'rule',
-      );
+  DiagnosticModel mk(String file, DiagnosticSeverity s) => DiagnosticModel(
+    filePath: file,
+    line: 3,
+    column: 4,
+    severity: s,
+    message: 'msg for $file',
+    code: 'rule',
+  );
 
   test('round-trips diagnostics through save/load', () {
     final store = DiagnosticsStore(
       projectRoot: p.join(temp.path, 'projA'),
       overrideDir: p.join(temp.path, 'cache'),
     );
-    store.save(<Diagnostic>[
+    store.save(<DiagnosticModel>[
       mk('/a.dart', DiagnosticSeverity.error),
       mk('/b.dart', DiagnosticSeverity.info),
     ]);
@@ -58,8 +59,8 @@ void main() {
     );
     expect(a.path, isNot(b.path));
 
-    a.save(<Diagnostic>[mk('/a.dart', DiagnosticSeverity.error)]);
-    b.save(<Diagnostic>[
+    a.save(<DiagnosticModel>[mk('/a.dart', DiagnosticSeverity.error)]);
+    b.save(<DiagnosticModel>[
       mk('/b.dart', DiagnosticSeverity.warning),
       mk('/c.dart', DiagnosticSeverity.info),
     ]);

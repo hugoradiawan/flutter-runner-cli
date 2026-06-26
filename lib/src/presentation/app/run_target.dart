@@ -1,4 +1,5 @@
-﻿import '../../data/models/daemon_messages.dart';
+import '../../domain/entities/device.dart';
+import '../../domain/entities/emulator.dart';
 
 /// A target the user can pick from the run picker: a connected device, or an
 /// offline emulator that must be booted first ([needsBoot] = true).
@@ -20,18 +21,13 @@ class RunTarget {
   /// `true` when [id] is an offline emulator that must be launched before run.
   final bool needsBoot;
 
-  factory RunTarget.device(FlutterDevice d) => RunTarget(
-    id: d.id,
-    name: d.name,
-    platform: d.platform,
-    needsBoot: false,
-  );
+  factory RunTarget.device(DeviceEntity d) =>
+      RunTarget(id: d.id, name: d.name, platform: d.platform, needsBoot: false);
 
-  factory RunTarget.emulator(FlutterEmulator e) => RunTarget(
+  factory RunTarget.emulator(EmulatorEntity e) => RunTarget(
     id: e.id,
     name: e.name,
     platform: e.platformType ?? '',
     needsBoot: true,
   );
 }
-

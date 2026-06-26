@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import '../../../data/datasources/emulator_manager.dart';
-import '../../../data/datasources/frun_notifier.dart';
-import '../../../domain/entities/emulator.entity.dart';
-import '../../../domain/params/emulator_launch.params.dart';
+import '../../../data/services/frun_notifier.dart';
+import '../../../domain/entities/emulator.dart';
+import '../../../domain/params/emulator_launch_params.dart';
 import '../../../domain/value_objects/config_values.dart';
 import '../app_state.dart';
 import 'command.dart';
@@ -48,7 +48,7 @@ class EmulatorsCommand extends Command {
       return CommandResult.ok;
     }
     if (args.first == 'create') {
-      final daemon = state.daemon;
+      final daemon = state.deps.daemon;
       if (daemon == null) {
         state.visibleTranscript.warn(
           'Flutter daemon is still starting. Try emulators again shortly.',
@@ -64,7 +64,7 @@ class EmulatorsCommand extends Command {
   }
 
   Future<void> _openPicker(AppState state) async {
-    final useCase = state.listEmulatorsUseCase;
+    final useCase = state.deps.listEmulatorsUseCase;
     if (useCase == null) {
       state.visibleTranscript.warn(
         'Flutter daemon is still starting. Try emulators again shortly.',
@@ -90,7 +90,7 @@ class EmulatorsCommand extends Command {
   }
 
   Future<void> _list(AppState state) async {
-    final useCase = state.listEmulatorsUseCase;
+    final useCase = state.deps.listEmulatorsUseCase;
     if (useCase == null) {
       state.visibleTranscript.warn(
         'Flutter daemon is still starting. Try emulators again shortly.',
@@ -126,8 +126,8 @@ class EmulatorsCommand extends Command {
     AppState state, {
     bool coldBoot = false,
   }) async {
-    final listUseCase = state.listEmulatorsUseCase;
-    final launchUseCase = state.launchEmulatorUseCase;
+    final listUseCase = state.deps.listEmulatorsUseCase;
+    final launchUseCase = state.deps.launchEmulatorUseCase;
     if (listUseCase == null || launchUseCase == null) {
       state.visibleTranscript.warn(
         'Flutter daemon is still starting. Try emulators again shortly.',
@@ -155,7 +155,7 @@ class EmulatorsCommand extends Command {
 
     final bootLabel = coldBoot ? ' (cold boot)' : '';
     state.visibleTranscript.system('Launching emulator $id$bootLabel…');
-    state.notifier.notify(
+    state.deps.notifier.notify(
       FrunNotifEvent.launchingEmulator,
       detail: 'Launching emulator $id$bootLabel…',
     );
@@ -168,7 +168,7 @@ class EmulatorsCommand extends Command {
         'Failed to launch emulator $id: ${failure.message}',
       ),
       (device) {
-        state.notifier.notify(
+        state.deps.notifier.notify(
           FrunNotifEvent.emulatorReady,
           detail: 'Emulator ready: ${device.name}',
         );

@@ -1,32 +1,14 @@
-import '../../ca/result.dart';
-import '../../data/models/device.model.dart';
-import '../datasources/device_manager.dart';
-import '../../domain/entities/device.entity.dart';
+import '../../core/result.dart';
+import '../../data/models/device.dart';
+import '../../domain/entities/device.dart';
 import '../../domain/failures/device_failure.dart';
 import '../../domain/repositories/device_repository.dart';
+import '../datasources/device_manager.dart';
 
-class DeviceRepositoryImpl implements IDeviceRepository {
+class DeviceRepositoryImpl implements DeviceRepository {
   DeviceRepositoryImpl(this._manager);
 
   final DeviceManager _manager;
-
-  @override
-  Stream<List<DeviceEntity>> watchDevices() => _manager.changes.map(
-    (devices) => devices
-        .map(
-          (d) => DeviceModel(
-            id: d.id,
-            name: d.name,
-            platform: d.platform,
-            category: d.category,
-            platformType: d.platformType,
-            ephemeral: d.ephemeral,
-            emulator: d.emulator,
-            emulatorId: d.emulatorId,
-          ),
-        )
-        .toList(),
-  );
 
   @override
   Future<Result<DeviceFailure, List<DeviceEntity>>> listDevices() async {

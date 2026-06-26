@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../../data/datasources/dart_file_watcher.dart';
+import '../../data/services/dart_file_watcher.dart';
 import 'app_state.dart';
 
 /// Shared `.dart` file watcher. When any watched file is saved and at least one

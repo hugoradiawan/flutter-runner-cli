@@ -46,13 +46,15 @@ class LinkExtractor {
       final ln = int.tryParse(m.group(2)!);
       if (ln == null) continue;
       final col = m.group(3) != null ? int.tryParse(m.group(3)!) : null;
-      out.add(TranscriptLink(
-        uri: uri,
-        line: ln,
-        column: col,
-        start: m.start,
-        end: m.end,
-      ));
+      out.add(
+        TranscriptLink(
+          uri: uri,
+          line: ln,
+          column: col,
+          start: m.start,
+          end: m.end,
+        ),
+      );
     }
     return out;
   }

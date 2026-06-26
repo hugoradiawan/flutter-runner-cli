@@ -1,5 +1,11 @@
 import 'dart:io';
 
+import 'package:frun/src/data/datasources/config_datasource.dart';
+import 'package:frun/src/data/datasources/config_store.dart';
+import 'package:frun/src/data/repositories/config_repository_impl.dart';
+import 'package:frun/src/data/services/project_detector.dart';
+import 'package:frun/src/domain/entities/app_config.dart';
+import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:frun/src/presentation/app/app_state.dart';
 import 'package:frun/src/presentation/app/commands/clear_command.dart';
 import 'package:frun/src/presentation/app/commands/command_registry.dart';
@@ -8,12 +14,7 @@ import 'package:frun/src/presentation/app/commands/copy_command.dart';
 import 'package:frun/src/presentation/app/commands/help_command.dart';
 import 'package:frun/src/presentation/app/commands/quit_command.dart';
 import 'package:frun/src/presentation/app/transcript.dart';
-import 'package:frun/src/data/datasources/config_datasource.dart';
-import 'package:frun/src/data/datasources/config_store.dart';
-import 'package:frun/src/data/repositories/config_repository_impl.dart';
-import 'package:frun/src/domain/entities/app_config.entity.dart';
-import 'package:frun/src/domain/value_objects/config_values.dart';
-import 'package:frun/src/data/datasources/project_detector.dart';
+import 'package:frun/src/presentation/di/dependencies.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -35,8 +36,9 @@ void main() {
         hasZedFolder: false,
       ),
       config: AppConfigEntity.defaults(),
+      deps: Dependencies(),
     );
-    state.configRepository = ConfigRepositoryImpl(ConfigDataSource(store));
+    state.deps.configRepository = ConfigRepositoryImpl(ConfigDataSource(store));
   });
 
   tearDown(() => temp.deleteSync(recursive: true));

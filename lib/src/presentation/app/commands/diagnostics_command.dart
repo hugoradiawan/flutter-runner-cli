@@ -1,4 +1,4 @@
-import '../../../data/models/diagnostic.dart';
+import '../../../domain/entities/diagnostic.dart';
 import '../app_state.dart';
 import 'command.dart';
 
@@ -44,8 +44,9 @@ class DiagnosticsCommand extends Command {
         case 'a':
           state.diagnosticsFilter = null;
         default:
-          state.transcript
-              .warn('Unknown filter "$arg" — use error|warning|info|todo|all.');
+          state.transcript.warn(
+            'Unknown filter "$arg" — use error|warning|info|todo|all.',
+          );
           return CommandResult.ok;
       }
       state.showDiagnosticsPanel = true; // explicit filter implies "show".
@@ -54,7 +55,7 @@ class DiagnosticsCommand extends Command {
     }
 
     if (state.showDiagnosticsPanel) {
-      final (e, w, i, t) = Diagnostic.counts(state.diagnostics);
+      final (e, w, i, t) = DiagnosticEntity.counts(state.diagnostics);
       state.transcript.system(
         'Diagnostics: $e errors, $w warnings, $i infos, $t todos.',
       );

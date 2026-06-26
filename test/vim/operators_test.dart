@@ -17,8 +17,11 @@ void main() {
     test('delete charwise removes range and writes register', () {
       final b = _buf('hello world');
       final regs = RegisterBank();
-      Operators.delete(b, const Range(Pos(0, 0), Pos(0, 4), RangeKind.charwise),
-          regs);
+      Operators.delete(
+        b,
+        const Range(Pos(0, 0), Pos(0, 4), RangeKind.charwise),
+        regs,
+      );
       expect(b.text, ' world');
       expect(regs.read('"').text, 'hello');
     });
@@ -26,8 +29,11 @@ void main() {
     test('yank does not mutate buffer', () {
       final b = _buf('hello');
       final regs = RegisterBank();
-      Operators.yank(b, const Range(Pos(0, 0), Pos(0, 4), RangeKind.charwise),
-          regs);
+      Operators.yank(
+        b,
+        const Range(Pos(0, 0), Pos(0, 4), RangeKind.charwise),
+        regs,
+      );
       expect(b.text, 'hello');
       expect(regs.read('"').text, 'hello');
       expect(regs.read('0').text, 'hello');
@@ -51,18 +57,26 @@ void main() {
 
     test('toggleCase swaps cases', () {
       final b = _buf('AbC');
-      Operators.toggleCase(b,
-          const Range(Pos(0, 0), Pos(0, 2), RangeKind.charwise));
+      Operators.toggleCase(
+        b,
+        const Range(Pos(0, 0), Pos(0, 2), RangeKind.charwise),
+      );
       expect(b.text, 'aBc');
     });
 
     test('indent / dedent shift lines by shiftwidth', () {
       final b = _buf('hi\nbye');
-      Operators.indent(b,
-          const Range(Pos(0, 0), Pos(1, 0), RangeKind.linewise), 2);
+      Operators.indent(
+        b,
+        const Range(Pos(0, 0), Pos(1, 0), RangeKind.linewise),
+        2,
+      );
       expect(b.text, '  hi\n  bye');
-      Operators.dedent(b,
-          const Range(Pos(0, 0), Pos(1, 0), RangeKind.linewise), 2);
+      Operators.dedent(
+        b,
+        const Range(Pos(0, 0), Pos(1, 0), RangeKind.linewise),
+        2,
+      );
       expect(b.text, 'hi\nbye');
     });
 
@@ -73,4 +87,3 @@ void main() {
     });
   });
 }
-

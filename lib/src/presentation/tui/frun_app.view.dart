@@ -35,7 +35,8 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
             infoBarH + pickerH + totalInputH + configEditorH + diagnosticsH,
           )
         : 0;
-    final bodyH = h -
+    final bodyH =
+        h -
         totalInputH -
         statusH -
         infoBarH -
@@ -123,9 +124,10 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
     final mode = _vimState.mode;
     final shape = mode == VimMode.replace
         ? CursorShape.underline
-        : (mode == VimMode.insert || state.config.editorMode == FrunEditorMode.normal
-            ? CursorShape.bar
-            : CursorShape.block);
+        : (mode == VimMode.insert ||
+                  state.config.editorMode == FrunEditorMode.normal
+              ? CursorShape.bar
+              : CursorShape.block);
     final prompt = _promptForMode();
     final cur = _input.cursor;
     final cursorRow = cur.row.clamp(0, inputH - 1);

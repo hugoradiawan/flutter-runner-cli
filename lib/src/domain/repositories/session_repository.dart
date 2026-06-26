@@ -1,13 +1,9 @@
-import '../../ca/result.dart';
-import '../entities/run_session.entity.dart';
+import '../../core/result.dart';
 import '../failures/session_failure.dart';
-import '../params/reload.params.dart';
-import '../params/run.params.dart';
+import '../params/reload_params.dart';
 
-abstract class ISessionRepository {
-  Future<Result<SessionFailure, RunSessionEntity>> launch(RunParams params);
+abstract class SessionRepository {
   Future<Result<SessionFailure, void>> hotReload(ReloadParams params);
   Future<Result<SessionFailure, void>> hotRestart(ReloadParams params);
   Future<Result<SessionFailure, void>> stop(ReloadParams params);
-  Stream<String> watchLogs(int tabId);
 }

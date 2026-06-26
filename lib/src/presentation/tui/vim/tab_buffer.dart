@@ -17,10 +17,10 @@ class CallbackTabSwitchSink implements TabSwitchSink {
     required int Function() activeIndex,
     required void Function(int index) setActiveIndex,
     required void Function({required bool forward}) cycle,
-  })  : _tabCount = tabCount,
-        _activeIndex = activeIndex,
-        _setActiveIndex = setActiveIndex,
-        _cycle = cycle;
+  }) : _tabCount = tabCount,
+       _activeIndex = activeIndex,
+       _setActiveIndex = setActiveIndex,
+       _cycle = cycle;
 
   final int Function() _tabCount;
   final int Function() _activeIndex;

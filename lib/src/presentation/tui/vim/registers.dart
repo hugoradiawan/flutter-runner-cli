@@ -25,8 +25,8 @@ typedef ClipboardReader = Future<String?> Function();
 
 class RegisterBank {
   RegisterBank({ClipboardWriter? writer, ClipboardReader? reader})
-      : _writer = writer ?? copyToClipboard,
-        _reader = reader ?? pasteFromClipboard;
+    : _writer = writer ?? copyToClipboard,
+      _reader = reader ?? pasteFromClipboard;
 
   final ClipboardWriter _writer;
   final ClipboardReader _reader;

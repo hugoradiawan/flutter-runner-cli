@@ -2,7 +2,11 @@ import 'vim/vim_buffer.dart';
 import 'vim/vim_mode.dart';
 
 class SearchMatch {
-  const SearchMatch({required this.row, required this.col, required this.length});
+  const SearchMatch({
+    required this.row,
+    required this.col,
+    required this.length,
+  });
   final int row;
   final int col;
   final int length;
@@ -81,8 +85,11 @@ class TranscriptCursor extends VimBuffer {
     if (v == null) {
       _selection = null;
     } else {
-      _selection = Range(Pos(v, _selection?.start.col ?? 0), _cursor,
-          _selection?.kind ?? RangeKind.charwise);
+      _selection = Range(
+        Pos(v, _selection?.start.col ?? 0),
+        _cursor,
+        _selection?.kind ?? RangeKind.charwise,
+      );
     }
   }
 
@@ -91,7 +98,10 @@ class TranscriptCursor extends VimBuffer {
       _selection = null;
     } else if (_selection != null) {
       _selection = Range(
-          Pos(_selection!.start.row, v), _cursor, _selection!.kind);
+        Pos(_selection!.start.row, v),
+        _cursor,
+        _selection!.kind,
+      );
     }
   }
 

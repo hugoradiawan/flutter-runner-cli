@@ -20,9 +20,12 @@ class HelpCommand extends Command {
   Future<CommandResult> run(List<String> args, AppState state) async {
     state.visibleTranscript.system('Available commands:');
     for (final cmd in registry.all) {
-      final aliasPart =
-          cmd.aliases.isEmpty ? '' : ' (aliases: ${cmd.aliases.join(', ')})';
-      state.visibleTranscript.info('  ${cmd.name.padRight(11)} ${cmd.summary}$aliasPart');
+      final aliasPart = cmd.aliases.isEmpty
+          ? ''
+          : ' (aliases: ${cmd.aliases.join(', ')})';
+      state.visibleTranscript.info(
+        '  ${cmd.name.padRight(11)} ${cmd.summary}$aliasPart',
+      );
     }
     return CommandResult.ok;
   }

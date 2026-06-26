@@ -1,6 +1,6 @@
-import 'package:frun/src/domain/value_objects/config_values.dart';
-import 'package:frun/src/data/datasources/ide_launcher.dart';
 import 'package:frun/src/data/models/source_location.dart';
+import 'package:frun/src/data/services/ide_launcher.dart';
+import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -59,17 +59,11 @@ void main() {
     });
 
     test('rejects unsupported schemes without project root', () {
-      expect(
-        SourceLocation.fromVmServiceUri('dart:io/file.dart'),
-        isNull,
-      );
+      expect(SourceLocation.fromVmServiceUri('dart:io/file.dart'), isNull);
     });
 
     test('rejects package: URIs when no project root', () {
-      expect(
-        SourceLocation.fromVmServiceUri('package:foo/bar.dart'),
-        isNull,
-      );
+      expect(SourceLocation.fromVmServiceUri('package:foo/bar.dart'), isNull);
     });
   });
 }

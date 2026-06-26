@@ -1,10 +1,10 @@
-import '../../ca/result.dart';
-import '../entities/device.entity.dart';
-import '../entities/emulator.entity.dart';
+import '../../core/result.dart';
+import '../entities/device.dart';
+import '../entities/emulator.dart';
 import '../failures/device_failure.dart';
-import '../params/emulator_launch.params.dart';
+import '../params/emulator_launch_params.dart';
 
-abstract class IEmulatorRepository {
+abstract class EmulatorRepository {
   Future<Result<DeviceFailure, List<EmulatorEntity>>> listEmulators();
   Future<Result<DeviceFailure, DeviceEntity>> launchEmulator(
     EmulatorLaunchParams params,

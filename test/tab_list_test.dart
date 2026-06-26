@@ -64,7 +64,10 @@ void main() {
       final a = _tab('a');
       final b = _tab('b');
       final c = _tab('c');
-      list..add(a)..add(b)..add(c); // active = c (index 2)
+      list
+        ..add(a)
+        ..add(b)
+        ..add(c); // active = c (index 2)
 
       list.remove(c);
       expect(list.length, 2);
@@ -72,26 +75,35 @@ void main() {
       expect(_name(list.active), 'b');
     });
 
-    test('removing the active (middle) tab keeps the index, advancing active', () {
-      final list = TabList();
-      final a = _tab('a');
-      final b = _tab('b');
-      final c = _tab('c');
-      list..add(a)..add(b)..add(c);
-      list.setActiveIndex(1); // active = b
+    test(
+      'removing the active (middle) tab keeps the index, advancing active',
+      () {
+        final list = TabList();
+        final a = _tab('a');
+        final b = _tab('b');
+        final c = _tab('c');
+        list
+          ..add(a)
+          ..add(b)
+          ..add(c);
+        list.setActiveIndex(1); // active = b
 
-      list.remove(b);
-      // [a, c]; index 1 still valid -> the tab that shifted in (c) is active.
-      expect(list.activeIndex, 1);
-      expect(_name(list.active), 'c');
-    });
+        list.remove(b);
+        // [a, c]; index 1 still valid -> the tab that shifted in (c) is active.
+        expect(list.activeIndex, 1);
+        expect(_name(list.active), 'c');
+      },
+    );
 
     test('removing a tab before the active one decrements the index', () {
       final list = TabList();
       final a = _tab('a');
       final b = _tab('b');
       final c = _tab('c');
-      list..add(a)..add(b)..add(c);
+      list
+        ..add(a)
+        ..add(b)
+        ..add(c);
       list.setActiveIndex(1); // active = b
 
       list.remove(a);
@@ -105,7 +117,10 @@ void main() {
       final a = _tab('a');
       final b = _tab('b');
       final c = _tab('c');
-      list..add(a)..add(b)..add(c);
+      list
+        ..add(a)
+        ..add(b)
+        ..add(c);
       list.setActiveIndex(0); // active = a
 
       list.remove(c);
@@ -125,7 +140,9 @@ void main() {
       final list = TabList();
       final a = _tab('a');
       final b = _tab('b');
-      list..add(a)..add(b); // active = b (index 1)
+      list
+        ..add(a)
+        ..add(b); // active = b (index 1)
 
       list.remove(_tab('stray'));
       expect(list.length, 2);
@@ -133,25 +150,33 @@ void main() {
       expect(_name(list.active), 'b');
     });
 
-    test('rollback: add then remove the just-added tab restores prior active', () {
-      // Mirrors startOrFocus's catch branch: a tab is added (and made active)
-      // then removed when the launch throws.
-      final list = TabList();
-      final a = _tab('a');
-      final b = _tab('b');
-      list..add(a)..add(b); // active = b (index 1)
+    test(
+      'rollback: add then remove the just-added tab restores prior active',
+      () {
+        // Mirrors startOrFocus's catch branch: a tab is added (and made active)
+        // then removed when the launch throws.
+        final list = TabList();
+        final a = _tab('a');
+        final b = _tab('b');
+        list
+          ..add(a)
+          ..add(b); // active = b (index 1)
 
-      final c = _tab('c');
-      list.add(c); // active = c (index 2)
-      list.remove(c); // launch failed
-      expect(list.length, 2);
-      expect(list.activeIndex, 1);
-      expect(_name(list.active), 'b');
-    });
+        final c = _tab('c');
+        list.add(c); // active = c (index 2)
+        list.remove(c); // launch failed
+        expect(list.length, 2);
+        expect(list.activeIndex, 1);
+        expect(_name(list.active), 'b');
+      },
+    );
 
     test('clear empties the list and resets the active index', () {
       final list = TabList();
-      list..add(_tab('a'))..add(_tab('b'))..add(_tab('c'));
+      list
+        ..add(_tab('a'))
+        ..add(_tab('b'))
+        ..add(_tab('c'));
 
       list.clear();
       expect(list.isEmpty, isTrue);
@@ -162,7 +187,10 @@ void main() {
 
     test('cycle forward wraps around', () {
       final list = TabList();
-      list..add(_tab('a'))..add(_tab('b'))..add(_tab('c')); // active = c (2)
+      list
+        ..add(_tab('a'))
+        ..add(_tab('b'))
+        ..add(_tab('c')); // active = c (2)
 
       list.cycle(); // 2 -> 0
       expect(_name(list.active), 'a');
@@ -174,7 +202,10 @@ void main() {
 
     test('cycle backward wraps around', () {
       final list = TabList();
-      list..add(_tab('a'))..add(_tab('b'))..add(_tab('c')); // active = c (2)
+      list
+        ..add(_tab('a'))
+        ..add(_tab('b'))
+        ..add(_tab('c')); // active = c (2)
 
       list.cycle(forward: false); // 2 -> 1
       expect(_name(list.active), 'b');
@@ -198,7 +229,9 @@ void main() {
 
     test('setActiveIndex ignores out-of-range indices', () {
       final list = TabList();
-      list..add(_tab('a'))..add(_tab('b')); // active = b (index 1)
+      list
+        ..add(_tab('a'))
+        ..add(_tab('b')); // active = b (index 1)
 
       list.setActiveIndex(-1);
       expect(list.activeIndex, 1);

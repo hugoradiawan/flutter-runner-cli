@@ -13,11 +13,11 @@ class LastSearch {
 /// What kind of change `.` should replay.
 enum LastActionKind {
   none,
-  operatorMotion,   // [count][op]{motion}
-  operatorDouble,   // dd / yy / cc
-  singleEdit,       // x X D C J p P s S Y ~ (no operand)
-  replaceChar,      // r{ch}
-  insertSession,    // i/I/a/A/o/O/s/S/cc/C + typed text
+  operatorMotion, // [count][op]{motion}
+  operatorDouble, // dd / yy / cc
+  singleEdit, // x X D C J p P s S Y ~ (no operand)
+  replaceChar, // r{ch}
+  insertSession, // i/I/a/A/o/O/s/S/cc/C + typed text
 }
 
 /// Captured payload of the last mutating action. Replayed by `.`.
@@ -49,8 +49,7 @@ class LastAction {
 
 /// Mutable per-engine state. One instance backs the entire TUI.
 class VimState {
-  VimState({RegisterBank? registers})
-      : registers = registers ?? RegisterBank();
+  VimState({RegisterBank? registers}) : registers = registers ?? RegisterBank();
 
   VimMode mode = VimMode.insert;
 

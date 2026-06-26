@@ -1,11 +1,12 @@
 import 'dart:io';
 
-import 'package:frun/src/data/models/diagnostic.dart';
+import 'package:frun/src/data/services/project_detector.dart';
+import 'package:frun/src/domain/entities/app_config.dart';
+import 'package:frun/src/domain/entities/diagnostic.dart';
 import 'package:frun/src/presentation/app/app_state.dart';
 import 'package:frun/src/presentation/app/commands/diagnostics_command.dart';
 import 'package:frun/src/presentation/app/transcript.dart';
-import 'package:frun/src/domain/entities/app_config.entity.dart';
-import 'package:frun/src/data/datasources/project_detector.dart';
+import 'package:frun/src/presentation/di/dependencies.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -24,6 +25,7 @@ void main() {
         hasZedFolder: false,
       ),
       config: AppConfigEntity.defaults(),
+      deps: Dependencies(),
     );
   });
 

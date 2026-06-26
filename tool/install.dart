@@ -39,7 +39,11 @@ void main() {
   );
 
   // 3. Kernel snapshot where frun.bat expects it, for the fallback path.
-  final snapshotPath = p.join(repoRoot, 'bin', 'frun.dart-$sdkVersion.snapshot');
+  final snapshotPath = p.join(
+    repoRoot,
+    'bin',
+    'frun.dart-$sdkVersion.snapshot',
+  );
   _run(
     dart,
     ['compile', 'kernel', p.join('bin', 'frun.dart'), '-o', snapshotPath],
@@ -67,7 +71,9 @@ void _run(String exe, List<String> args, String cwd, String label) {
   stdout.write(result.stdout);
   if ((result.stderr as String).isNotEmpty) stderr.write(result.stderr);
   if (result.exitCode != 0) {
-    stderr.writeln('frun-install failed during "$label" (exit ${result.exitCode}).');
+    stderr.writeln(
+      'frun-install failed during "$label" (exit ${result.exitCode}).',
+    );
     exit(result.exitCode);
   }
 }
