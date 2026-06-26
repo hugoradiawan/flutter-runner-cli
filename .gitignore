@@ -10,3 +10,7 @@ doc/api/
 # Build artifacts produced by tool/install.dart
 bin/*.snapshot
 bin/frun.exe
+
+# graphify-rs generated knowledge graph (self-feeds detection scan if tracked)
+graphify-out/
+graphify.toml
