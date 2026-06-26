@@ -24,6 +24,7 @@ import 'src/data/services/project_detector.dart';
 import 'src/data/services/windows_console.dart';
 import 'src/data/services/working_set.dart';
 import 'src/domain/entities/app_config.dart';
+import 'src/domain/params/diagnostics_filter_params.dart';
 import 'src/presentation/app/app_state.dart';
 import 'src/presentation/app/commands/clear_command.dart';
 import 'src/presentation/app/commands/command_registry.dart';
@@ -155,11 +156,12 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
 /// [state]. Seeds counters from the per-project cache first so they appear
 /// instantly, then live-updates and re-caches as the analyzer reports.
 Future<void> _bootAnalysis(AppState state) async {
-  final store = DiagnosticsStore(projectRoot: state.project.root);
-  state.deps.diagnosticsStore = store;
-  // Seed from cache before the first analysis pass completes.
-  final cached = store.load();
-  if (cached.isNotEmpty) state.diagnostics = cached;
+  final repo = DiagnosticsRepositoryImpl(
+    DiagnosticsStore(projectRoot: state.project.root),
+  );
+  state.deps.diagnosticsRepository = repo;
+  // Seed counters from the on-disk cache before the first analysis pass.
+  state.diagnostics = repo.cachedDiagnostics();
 
   // Discover every package in the project so monorepos (melos / pub
   // workspaces) get all packages analyzed, not just the runnable app's own
@@ -176,7 +178,7 @@ Future<void> _bootAnalysis(AppState state) async {
       workspaceFolders: packages,
     );
     state.deps.analysisServer = server;
-    state.deps.diagnosticsRepository = DiagnosticsRepositoryImpl(server);
+    repo.bindServer(server);
     server.stderrLines.listen((l) => state.transcript.warn('analysis: $l'));
     state.transcript.system(
       packages.length > 1
@@ -184,19 +186,11 @@ Future<void> _bootAnalysis(AppState state) async {
                 '(first pass can take ~20s on large monorepos)'
           : 'Analyzing project…',
     );
-    Timer? saveDebounce;
-    server.diagnostics.listen((items) {
-      state.diagnostics = items;
-      // Debounce disk writes — analysis can settle in bursts.
-      saveDebounce?.cancel();
-      saveDebounce = Timer(const Duration(seconds: 1), () {
-        try {
-          store.save(items);
-        } catch (_) {
-          /* best-effort cache */
-        }
-      });
-    });
+    // Live diagnostics into the UI; the repository writes them through to the
+    // on-disk cache itself.
+    repo
+        .watchDiagnostics(const DiagnosticsFilterParams())
+        .listen((items) => state.diagnostics = items);
 
     // Open the user's working set (git-dirty `.dart` files) as LSP priority
     // documents. The analyzer reports those within seconds; the whole-project

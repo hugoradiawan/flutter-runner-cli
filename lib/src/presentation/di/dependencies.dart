@@ -1,6 +1,5 @@
 import '../../data/datasources/analysis_server.dart';
 import '../../data/datasources/device_manager.dart';
-import '../../data/datasources/diagnostics_store.dart';
 import '../../data/datasources/flutter_daemon.dart';
 import '../../data/services/dart_file_watcher.dart';
 import '../../data/services/frun_notifier.dart';
@@ -49,7 +48,6 @@ class Dependencies {
 
   // ── Services populated as the analysis server comes up ────────────────────
   DartAnalysisServer? analysisServer;
-  DiagnosticsStore? diagnosticsStore;
   DartFileWatcher? analysisWatcher;
   String? analysisError;
 
