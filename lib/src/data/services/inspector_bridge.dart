@@ -10,7 +10,7 @@ import '../models/source_location.dart';
 /// action in the user's IDE.
 ///
 /// Two paths:
-///   • In-app tap during `/inspect` mode → Flutter posts `Flutter.Selection`
+///   • In-app tap during `inspect` mode → Flutter posts `Flutter.Selection`
 ///     with a full `creationLocation` payload. Handled synchronously via
 ///     [_handleSelectionEvent].
 ///   • DevTools widget-tree click → no useful extension event is broadcast
