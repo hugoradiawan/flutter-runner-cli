@@ -13,8 +13,8 @@ import 'test_support.dart';
 VimEngine _engine(VimState s) => VimEngine(
   state: s,
   viewport: (_) => (top: 0, height: 10),
-  runExCmd: (_, __) {},
-  runSearch: (_, __, ___) {},
+  runExCmd: (_, _) {},
+  runSearch: (_, _, _) {},
 );
 
 void main() {
@@ -134,7 +134,7 @@ void main() {
         state: s,
         viewport: (_) => (top: 0, height: 10),
         runExCmd: (c, _) => captured = c,
-        runSearch: (_, __, ___) {},
+        runSearch: (_, _, _) {},
       );
       e.handle(rune(':'), b);
       for (final ch in 'q'.split('')) {

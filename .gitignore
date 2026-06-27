@@ -14,3 +14,4 @@ bin/frun.exe
 # graphify-rs generated knowledge graph (self-feeds detection scan if tracked)
 graphify-out/
 graphify.toml
+bin/frun.dart-3.9.2.snapshot

@@ -352,7 +352,7 @@ class DartAnalysisServer {
     _send(<String, Object?>{
       'jsonrpc': '2.0',
       'method': method,
-      if (params != null) 'params': params,
+      'params': ?params,
     });
   }
 
@@ -362,7 +362,7 @@ class DartAnalysisServer {
       'jsonrpc': '2.0',
       'id': id,
       'method': method,
-      if (params != null) 'params': params,
+      'params': ?params,
     });
     return id;
   }

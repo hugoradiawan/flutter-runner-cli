@@ -181,7 +181,7 @@ class FlutterDaemon {
 
   Future<void> createEmulator({String? name}) async {
     await request('emulator.create', <String, Object?>{
-      if (name != null) 'name': name,
+      'name': ?name,
     });
   }
 

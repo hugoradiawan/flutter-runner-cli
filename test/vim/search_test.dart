@@ -19,7 +19,7 @@ void main() {
       final e = VimEngine(
         state: s,
         viewport: (_) => (top: 0, height: 10),
-        runExCmd: (_, __) {},
+        runExCmd: (_, _) {},
         runSearch: (p, f, _) {
           pat = p;
           fwd = f;
@@ -44,8 +44,8 @@ void main() {
       final e = VimEngine(
         state: s,
         viewport: (_) => (top: 0, height: 10),
-        runExCmd: (_, __) {},
-        runSearch: (_, f, __) {
+        runExCmd: (_, _) {},
+        runSearch: (_, f, _) {
           fwd = f;
         },
       );
@@ -65,8 +65,8 @@ void main() {
       final e = VimEngine(
         state: s,
         viewport: (_) => (top: 0, height: 10),
-        runExCmd: (_, __) {},
-        runSearch: (_, __, ___) {
+        runExCmd: (_, _) {},
+        runSearch: (_, _, _) {
           fired = true;
         },
       );

@@ -33,7 +33,7 @@ Map<String, Object?> _diag(
     'end': <String, Object?>{'line': line, 'character': char + 1},
   },
   'message': message,
-  if (code != null) 'code': code,
+  'code': ?code,
 };
 
 void main() {
