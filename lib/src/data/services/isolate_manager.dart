@@ -116,9 +116,9 @@ class IsolateManager {
         );
         _emit();
       case vm.EventKind.kIsolateExit:
-        final info = _isolates[id];
-        if (info != null) {
-          info.status = IsolateStatus.exited;
+        // Drop the dead isolate so the map can't accumulate exited entries
+        // across repeated hot restarts; the live list is what the UI shows.
+        if (_isolates.remove(id) != null) {
           _emit();
         }
       case vm.EventKind.kIsolateUpdate:

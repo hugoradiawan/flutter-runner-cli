@@ -6,13 +6,11 @@ class TranscriptLine {
   TranscriptLine({
     required this.text,
     required this.level,
-    required this.timestamp,
     this.onClick,
   });
 
   final String text;
   final TranscriptLevel level;
-  final DateTime timestamp;
 
   /// Optional click action. When set, the TUI registers a hit region for this
   /// line so the user can click it to fire [onClick]. Used by command output
@@ -56,12 +54,7 @@ class Transcript {
   void _add(String text, TranscriptLevel level, {void Function()? onClick}) {
     for (final raw in text.split('\n')) {
       _lines.add(
-        TranscriptLine(
-          text: raw,
-          level: level,
-          timestamp: DateTime.now(),
-          onClick: onClick,
-        ),
+        TranscriptLine(text: raw, level: level, onClick: onClick),
       );
     }
     while (_lines.length > _maxLines) {

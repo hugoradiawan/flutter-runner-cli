@@ -179,6 +179,15 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
         continue;
       }
 
+      // Fast path: a plain (no ANSI) line that fits the wrap width needs no
+      // per-char scan and no soft-wrap — emit one row reusing the original
+      // String for both `text` and `rendered` so the layout cache points back
+      // at the transcript's existing chars instead of cloning them twice.
+      if (text.length <= width && !text.contains('\x1b')) {
+        out.add(_DisplayRow(i, 0, text, rendered: text));
+        continue;
+      }
+
       var rawPos = 0;
       var visCol = 0; // visible columns emitted in the current chunk
       var totalVis = 0; // visible columns emitted in the whole line so far
