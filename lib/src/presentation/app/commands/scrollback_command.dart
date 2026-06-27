@@ -1,11 +1,12 @@
+import '../../../domain/params/config_params.dart';
 import '../app_state.dart';
-import '../transcript.dart';
 import 'command.dart';
 
 /// View or set the transcript scrollback cap — the max lines each transcript
 /// (the system log and every run tab) retains before evicting the oldest.
-/// Lower caps trade history for memory; the change applies live to all open
-/// transcripts and to any tab opened afterwards.
+/// Lower caps trade history for memory. The value is **persisted to config**
+/// and applied live to every open transcript, so it also survives restarts.
+/// (Thin sugar over `config set scrollback_lines <n>`.)
 class ScrollbackCommand extends Command {
   @override
   String get name => 'scrollback';
@@ -23,7 +24,7 @@ class ScrollbackCommand extends Command {
   Future<CommandResult> run(List<String> args, AppState state) async {
     if (args.isEmpty) {
       state.transcript.system(
-        'scrollback: ${Transcript.defaultMaxLines} lines per transcript.',
+        'scrollback: ${state.config.scrollbackLines} lines per transcript.',
       );
       return CommandResult.ok;
     }
@@ -34,15 +35,30 @@ class ScrollbackCommand extends Command {
       return CommandResult.ok;
     }
 
-    // New transcripts (future tabs) pick this up via the constructor default…
-    Transcript.defaultMaxLines = n;
-    // …and the live ones are retuned (and trimmed) right now.
-    state.transcript.maxLines = n;
-    for (final tab in state.runController.tabs) {
-      tab.transcript.maxLines = n;
+    final setUseCase = state.deps.setConfigUseCase;
+    if (setUseCase == null) {
+      state.transcript.warn('Config not ready.');
+      return CommandResult.ok;
     }
 
-    state.transcript.system('scrollback set to $n lines per transcript.');
+    final setResult = await setUseCase.call(
+      ConfigSetParams(key: 'scrollback_lines', value: '$n'),
+    );
+    await setResult.fold(
+      (failure) async => state.transcript.warn(failure.message),
+      (_) async {
+        // Re-read the saved config and apply it; AppState.setConfig retunes
+        // every live transcript to the new cap (trimming immediately).
+        final getResult = await state.deps.getConfigUseCase?.call();
+        getResult?.fold(
+          (f) => state.transcript.warn(f.message),
+          state.setConfig,
+        );
+        state.transcript.system(
+          'scrollback set to $n lines per transcript (saved).',
+        );
+      },
+    );
     return CommandResult.ok;
   }
 }

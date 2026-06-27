@@ -10,6 +10,7 @@ class AppConfigEntity extends Entity<AppConfigEntity> {
     required this.openDevtoolsOnLaunch,
     required this.emulatorBoot,
     required this.verboseErrors,
+    this.scrollbackLines = 3000,
     this.nvimServer,
   });
 
@@ -30,6 +31,12 @@ class AppConfigEntity extends Entity<AppConfigEntity> {
   final FrunDevToolsAutoOpen openDevtoolsOnLaunch;
   final FrunEmulatorBoot emulatorBoot;
   final bool verboseErrors;
+
+  /// Max lines each transcript (system log + every run tab) retains before
+  /// evicting the oldest. Trades scrollback history for memory; persisted so it
+  /// survives restarts. See `Transcript.defaultMaxLines`.
+  final int scrollbackLines;
+
   final String? nvimServer;
 
   AppConfigEntity copyWith({
@@ -40,6 +47,7 @@ class AppConfigEntity extends Entity<AppConfigEntity> {
     FrunDevToolsAutoOpen? openDevtoolsOnLaunch,
     FrunEmulatorBoot? emulatorBoot,
     bool? verboseErrors,
+    int? scrollbackLines,
     String? nvimServer,
     bool clearNvimServer = false,
   }) {
@@ -51,6 +59,7 @@ class AppConfigEntity extends Entity<AppConfigEntity> {
       openDevtoolsOnLaunch: openDevtoolsOnLaunch ?? this.openDevtoolsOnLaunch,
       emulatorBoot: emulatorBoot ?? this.emulatorBoot,
       verboseErrors: verboseErrors ?? this.verboseErrors,
+      scrollbackLines: scrollbackLines ?? this.scrollbackLines,
       nvimServer: clearNvimServer ? null : (nvimServer ?? this.nvimServer),
     );
   }
@@ -64,6 +73,7 @@ class AppConfigEntity extends Entity<AppConfigEntity> {
     openDevtoolsOnLaunch,
     emulatorBoot,
     verboseErrors,
+    scrollbackLines,
     nvimServer,
   ];
 }

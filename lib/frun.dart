@@ -47,6 +47,7 @@ import 'src/presentation/app/commands/run_command.dart';
 import 'src/presentation/app/commands/scrollback_command.dart';
 import 'src/presentation/app/commands/status_command.dart';
 import 'src/presentation/app/commands/stop_command.dart';
+import 'src/presentation/app/transcript.dart';
 import 'src/presentation/di/dependencies.dart';
 import 'src/presentation/tui/clipboard.dart';
 import 'src/presentation/tui/frun_app.dart';
@@ -85,6 +86,9 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     (_) => AppConfigEntity.defaults(),
     (e) => e,
   );
+  // Seed the persisted scrollback cap before AppState builds the system
+  // transcript (and any tab transcripts later) so they start at the saved depth.
+  Transcript.defaultMaxLines = configEntity.scrollbackLines;
 
   final deps = Dependencies()..configRepository = configRepository;
   final state = AppState(project: project, config: configEntity, deps: deps);

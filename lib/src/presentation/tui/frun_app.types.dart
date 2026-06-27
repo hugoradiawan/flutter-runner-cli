@@ -148,7 +148,18 @@ const _configEditorEntries = <_ConfigEditorEntry>[
     'false',
     'true',
   ], label: 'Verbose error logs'),
+  _ConfigEditorEntry('scrollback_lines', [
+    '1000',
+    '2000',
+    '3000',
+    '5000',
+    '10000',
+  ], label: 'Scrollback (lines)'),
 ];
+
+/// Preset rungs the config editor cycles through for `scrollback_lines`. The
+/// `scrollback` command can set any positive value; the editor snaps to these.
+const _scrollbackPresets = <int>[1000, 2000, 3000, 5000, 10000];
 
 /// Number of *visible* columns in [raw] before raw string index [rawEnd]
 /// (defaults to the whole string), skipping CSI escape sequences (which occupy

@@ -318,6 +318,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         return c.emulatorBoot.id;
       case 'verbose_errors':
         return c.verboseErrors.toString();
+      case 'scrollback_lines':
+        return c.scrollbackLines.toString();
       default:
         return '';
     }
@@ -353,6 +355,18 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         return c.copyWith(emulatorBoot: vals[idx]);
       case 'verbose_errors':
         return c.copyWith(verboseErrors: !c.verboseErrors);
+      case 'scrollback_lines':
+        var idx = _scrollbackPresets.indexOf(c.scrollbackLines);
+        if (idx < 0) {
+          // Off-preset (set via the `scrollback` command) — snap into the list
+          // before stepping so ←/→ behaves predictably.
+          idx = _scrollbackPresets.indexWhere((p) => p >= c.scrollbackLines);
+          if (idx < 0) idx = _scrollbackPresets.length - 1;
+        }
+        final next =
+            (idx + delta + _scrollbackPresets.length) %
+            _scrollbackPresets.length;
+        return c.copyWith(scrollbackLines: _scrollbackPresets[next]);
       default:
         return c;
     }

@@ -16,6 +16,19 @@ void main() {
       expect(round.theme, defaults.theme);
       expect(round.hotReloadOnSave, defaults.hotReloadOnSave);
       expect(round.openDevtoolsOnLaunch, defaults.openDevtoolsOnLaunch);
+      expect(round.scrollbackLines, defaults.scrollbackLines);
+      expect(defaults.scrollbackLines, 3000);
+    });
+
+    test('persists a non-default scrollback cap', () {
+      const c = FrunConfig(scrollbackLines: 1500);
+      final round = FrunConfig.fromMap(c.toJson());
+      expect(round.scrollbackLines, 1500);
+    });
+
+    test('defaults scrollback when the key is absent', () {
+      final c = FrunConfig.fromMap(<String, Object?>{'ide': 'zed'});
+      expect(c.scrollbackLines, 3000);
     });
 
     test('fromMap tolerates unknown / null values', () {
@@ -61,6 +74,7 @@ void main() {
           theme: FrunThemeMode.light,
           hotReloadOnSave: false,
           openDevtoolsOnLaunch: FrunDevToolsAutoOpen.never,
+          scrollbackLines: 1234,
         ),
       );
       final loaded = store.load();
@@ -69,6 +83,7 @@ void main() {
       expect(loaded.theme, FrunThemeMode.light);
       expect(loaded.hotReloadOnSave, isFalse);
       expect(loaded.openDevtoolsOnLaunch, FrunDevToolsAutoOpen.never);
+      expect(loaded.scrollbackLines, 1234);
     });
   });
 }

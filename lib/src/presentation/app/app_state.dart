@@ -43,9 +43,16 @@ class AppState {
   AppConfigEntity get config => _config;
 
   /// Replace the in-memory config — call after editing via `/config set ...`
-  /// or the config editor overlay.
+  /// or the config editor overlay. Applies any config-driven runtime state
+  /// (currently the scrollback cap) to all live transcripts so the change takes
+  /// effect immediately, not just on the next launch.
   void setConfig(AppConfigEntity next) {
     _config = next;
+    Transcript.defaultMaxLines = next.scrollbackLines;
+    transcript.maxLines = next.scrollbackLines;
+    for (final tab in runController.tabs) {
+      tab.transcript.maxLines = next.scrollbackLines;
+    }
   }
 
   /// The file-system path where config is persisted.

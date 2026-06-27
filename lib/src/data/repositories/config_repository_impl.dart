@@ -20,6 +20,7 @@ class ConfigRepositoryImpl implements ConfigRepository {
     openDevtoolsOnLaunch: e.openDevtoolsOnLaunch,
     emulatorBoot: e.emulatorBoot,
     verboseErrors: e.verboseErrors,
+    scrollbackLines: e.scrollbackLines,
     nvimServer: e.nvimServer,
   );
 
@@ -75,6 +76,7 @@ class ConfigRepositoryImpl implements ConfigRepository {
       emulatorBoot: FrunEmulatorBoot.fromString(value),
     ),
     'verbose_errors' => c.copyWith(verboseErrors: _parseBool(value)),
+    'scrollback_lines' => c.copyWith(scrollbackLines: _parseScrollback(value)),
     'nvim_server' =>
       value.isEmpty
           ? c.copyWith(clearNvimServer: true)
@@ -85,5 +87,13 @@ class ConfigRepositoryImpl implements ConfigRepository {
   static bool _parseBool(String v) {
     final s = v.toLowerCase();
     return s == 'true' || s == 'yes' || s == 'on' || s == '1';
+  }
+
+  static int _parseScrollback(String v) {
+    final n = int.tryParse(v.trim());
+    if (n == null || n < 1) {
+      throw ArgumentError('scrollback_lines must be a positive integer');
+    }
+    return n;
   }
 }

@@ -11,6 +11,7 @@ class FrunConfig extends AppConfigEntity implements Model<FrunConfig> {
     super.openDevtoolsOnLaunch = FrunDevToolsAutoOpen.ask,
     super.emulatorBoot = FrunEmulatorBoot.quick,
     super.verboseErrors = false,
+    super.scrollbackLines = 3000,
     super.nvimServer,
   });
 
@@ -24,6 +25,7 @@ class FrunConfig extends AppConfigEntity implements Model<FrunConfig> {
     ),
     emulatorBoot: FrunEmulatorBoot.fromString(map['emulator_boot'] as String?),
     verboseErrors: (map['verbose_errors'] as bool?) ?? false,
+    scrollbackLines: (map['scrollback_lines'] as num?)?.toInt() ?? 3000,
     nvimServer: map['nvim_server'] as String?,
   );
 
@@ -36,6 +38,7 @@ class FrunConfig extends AppConfigEntity implements Model<FrunConfig> {
     'open_devtools_on_launch': openDevtoolsOnLaunch.id,
     'emulator_boot': emulatorBoot.id,
     'verbose_errors': verboseErrors,
+    'scrollback_lines': scrollbackLines,
     'nvim_server': nvimServer,
   };
 
@@ -54,6 +57,7 @@ class FrunConfig extends AppConfigEntity implements Model<FrunConfig> {
     FrunDevToolsAutoOpen? openDevtoolsOnLaunch,
     FrunEmulatorBoot? emulatorBoot,
     bool? verboseErrors,
+    int? scrollbackLines,
     String? nvimServer,
     bool clearNvimServer = false,
   }) => FrunConfig(
@@ -64,6 +68,7 @@ class FrunConfig extends AppConfigEntity implements Model<FrunConfig> {
     openDevtoolsOnLaunch: openDevtoolsOnLaunch ?? this.openDevtoolsOnLaunch,
     emulatorBoot: emulatorBoot ?? this.emulatorBoot,
     verboseErrors: verboseErrors ?? this.verboseErrors,
+    scrollbackLines: scrollbackLines ?? this.scrollbackLines,
     nvimServer: clearNvimServer ? null : (nvimServer ?? this.nvimServer),
   );
 }
