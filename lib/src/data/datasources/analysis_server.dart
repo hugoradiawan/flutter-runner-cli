@@ -162,7 +162,16 @@ class DartAnalysisServer {
   /// current sync version. Opening a file makes it a *priority* document the
   /// analyzer reports on within seconds — without this, a freshly-edited file
   /// in a large monorepo can wait minutes for the background pass to reach it.
+  ///
+  /// Insertion order is LRU order: [_openOrChange] re-inserts on every change,
+  /// so [keys.first] is the least-recently-touched document.
   final Map<String, int> _openVersions = <String, int>{};
+
+  /// Soft cap on [_openVersions]. Each distinct edited file gets opened once and
+  /// never closed, so over a long session the map would grow without bound.
+  /// Evicting the least-recently-used entry is safe: the next edit to that path
+  /// re-sends a `didOpen` at version 1.
+  static const int _maxOpenVersions = 1000;
 
   /// Files requested via [openFile] before the `initialize` handshake finished.
   /// Flushed once the server is ready.
@@ -381,6 +390,9 @@ class DartAnalysisServer {
     final uri = Uri.file(path, windows: Platform.isWindows).toString();
     final existing = _openVersions[path];
     if (existing == null) {
+      if (_openVersions.length >= _maxOpenVersions) {
+        _openVersions.remove(_openVersions.keys.first); // evict LRU
+      }
       _openVersions[path] = 1;
       _notify('textDocument/didOpen', <String, Object?>{
         'textDocument': <String, Object?>{
@@ -392,7 +404,11 @@ class DartAnalysisServer {
       });
     } else {
       final version = existing + 1;
-      _openVersions[path] = version;
+      // Remove-then-add moves the entry to the end of insertion order, marking
+      // it most-recently-used for the LRU eviction above.
+      _openVersions
+        ..remove(path)
+        ..[path] = version;
       // Full-document sync (the analyzer's default) — replace the whole text.
       _notify('textDocument/didChange', <String, Object?>{
         'textDocument': <String, Object?>{'uri': uri, 'version': version},

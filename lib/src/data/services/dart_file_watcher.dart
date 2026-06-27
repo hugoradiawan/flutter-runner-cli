@@ -1,119 +1,93 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:watcher/watcher.dart';
 
-/// Polls a directory tree for `.dart` file mtime changes and emits a debounced
+/// Watches a directory tree for `.dart` file changes and emits a debounced
 /// [onChange] event suitable for triggering a hot reload.
 ///
-/// Uses fully-async [dart:io] so the Dart event loop is never blocked.
-/// Within each directory, all dart file stats are fetched in parallel via
-/// [Future.wait] for speed. Excluded directories (.dart_tool, build, .fvm)
-/// are skipped at the directory level so they are never traversed.
+/// Event-driven via `package:watcher` — native filesystem events
+/// (inotify / ReadDirectoryChangesW / FSEvents) rather than polling, so idle
+/// CPU stays at ~zero regardless of project size. Non-dart files and excluded
+/// directories (.dart_tool, build, .fvm, .git) are filtered out so they never
+/// trigger work.
 class DartFileWatcher {
   DartFileWatcher({
     required this.root,
-    this.pollInterval = const Duration(milliseconds: 500),
     this.debounce = const Duration(milliseconds: 250),
     this.onFileChanged,
     this.onWatcherError,
   });
 
   final String root;
-  final Duration pollInterval;
+
+  /// How long to coalesce a burst of file events before firing [onChange].
   final Duration debounce;
 
-  /// Called with the path of a dart file whose mtime changed.
+  /// Called with the path of a dart file that was added or modified.
   final void Function(String path)? onFileChanged;
 
-  /// Called when the poll itself throws an unexpected error.
+  /// Called when the watcher backend reports an error.
   final void Function(Object error)? onWatcherError;
 
-  final Map<String, int> _mtimes = {}; // path → mtime ms
-  Timer? _pollTimer;
+  static const Set<String> _excludedDirs = {
+    '.dart_tool',
+    'build',
+    '.fvm',
+    '.git',
+  };
+
+  StreamSubscription<WatchEvent>? _sub;
   Timer? _debounceTimer;
-  bool _initialized = false;
-  bool _polling = false;
 
   final StreamController<void> _onChange = StreamController<void>.broadcast();
   Stream<void> get onChange => _onChange.stream;
 
   void start() {
-    _pollTimer = Timer.periodic(pollInterval, (_) => _poll());
-  }
-
-  Future<void> _poll() async {
-    if (_polling || _onChange.isClosed) return;
-    _polling = true;
     try {
-      bool changed = false;
-      final queue = <Directory>[Directory(root)];
-
-      while (queue.isNotEmpty) {
-        final dir = queue.removeLast();
-
-        // Collect sub-dirs and dart files via async stream — never blocks.
-        final subDirs = <Directory>[];
-        final dartFiles = <File>[];
-        try {
-          await for (final entity in dir.list(followLinks: false)) {
-            final name = p.basename(entity.path);
-            if (entity is Directory) {
-              if (name != '.dart_tool' &&
-                  name != 'build' &&
-                  name != '.fvm' &&
-                  name != '.git') {
-                subDirs.add(entity);
-              }
-            } else if (entity is File && name.endsWith('.dart')) {
-              dartFiles.add(entity);
-            }
-          }
-        } catch (_) {}
-
-        queue.addAll(subDirs);
-
-        // Stat all dart files in this directory in parallel.
-        if (dartFiles.isNotEmpty) {
-          final results = await Future.wait(
-            dartFiles.map((f) async {
-              try {
-                final stat = await f.stat();
-                return (f.path, stat.modified.millisecondsSinceEpoch);
-              } catch (_) {
-                return (f.path, -1);
-              }
-            }),
-          );
-          for (final (path, mtime) in results) {
-            if (mtime < 0) continue;
-            final prev = _mtimes[path];
-            _mtimes[path] = mtime;
-            if (_initialized && prev != null && mtime != prev) {
-              changed = true;
-              onFileChanged?.call(path);
-            }
-          }
-        }
-      }
-
-      _initialized = true;
-      if (changed && !_onChange.isClosed) {
-        _debounceTimer?.cancel();
-        _debounceTimer = Timer(debounce, () {
-          if (!_onChange.isClosed) _onChange.add(null);
-        });
-      }
+      _sub = DirectoryWatcher(root).events.listen(
+        _onEvent,
+        onError: (Object e) => onWatcherError?.call(e),
+      );
     } catch (e) {
       onWatcherError?.call(e);
-    } finally {
-      _polling = false;
     }
   }
 
-  Future<void> dispose() async {
-    _pollTimer?.cancel();
+  void _onEvent(WatchEvent event) {
+    final path = event.path;
+    if (!path.endsWith('.dart')) return;
+    if (_isExcluded(path)) return;
+
+    // A delete leaves the analyzer's last view in place and `openFile` would
+    // just no-op on the missing path, so only push adds/modifies. Every change
+    // (including removes) still nudges the debounced reload signal.
+    if (event.type == ChangeType.ADD || event.type == ChangeType.MODIFY) {
+      onFileChanged?.call(path);
+    }
+    _scheduleChange();
+  }
+
+  bool _isExcluded(String path) {
+    final rel = p.isWithin(root, path) ? p.relative(path, from: root) : path;
+    for (final segment in p.split(rel)) {
+      if (_excludedDirs.contains(segment)) return true;
+    }
+    return false;
+  }
+
+  void _scheduleChange() {
+    if (_onChange.isClosed) return;
     _debounceTimer?.cancel();
+    _debounceTimer = Timer(debounce, () {
+      if (!_onChange.isClosed) _onChange.add(null);
+    });
+  }
+
+  Future<void> dispose() async {
+    _debounceTimer?.cancel();
+    await _sub?.cancel();
+    _sub = null;
     await _onChange.close();
   }
 }

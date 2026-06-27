@@ -106,6 +106,19 @@ abstract class _FrunModelBase extends TeaModel {
   List<_VisibleLink> _visibleLinks = const <_VisibleLink>[];
   List<_DisplayRow> _lastDisplayRows = const <_DisplayRow>[];
   List<String> _displayRowsText = const <String>[];
+  // Snapshot of the transcript lines the cached layout was built from. The
+  // `lines` getter copies the whole queue (List.unmodifiable), so reusing this
+  // on a cache hit avoids an O(n) copy per paint as well.
+  List<TranscriptLine> _lastLines = const <TranscriptLine>[];
+  // Keys for reusing the display-row layout across paints. _layoutDisplayRows
+  // walks the whole transcript (ANSI parse + soft-wrap), so re-running it on
+  // every tick/mouse-move frame is pure waste. The wrapped output only changes
+  // when the transcript content (revision) or the wrap width changes; the
+  // Transcript instance is part of the key so switching tabs invalidates even
+  // if the new tab's revision happens to match.
+  Transcript? _layoutCacheTranscript;
+  int _layoutCacheRevision = -1;
+  int _layoutCacheWidth = -1;
   // Previous transcript display-row count and wrap width, so a bottom append
   // can be detected and the scroll offset anchored when scrolled up.
   int _lastTotalRows = 0;
@@ -116,6 +129,17 @@ abstract class _FrunModelBase extends TeaModel {
   int _lastBodyY = 0;
   int _width = 80;
   int _height = 24;
+
+  // Frame-skip gate. The UI has no animated elements, so when no
+  // render-affecting state changed since the last frame we re-emit the previous
+  // frame instead of repainting (the 250ms tick would otherwise repaint 4x/sec
+  // while idle). A full repaint is forced at least every _maxSkippedFrames ticks
+  // to self-heal any state the signature doesn't capture.
+  static const int _maxSkippedFrames = 4; // ~1s at the 250ms tick interval
+  String? _lastViewSig;
+  String? _lastViewContent;
+  Cursor? _lastViewCursor;
+  int _framesSinceFullPaint = 0;
 
   // ── Shared state-only helpers ────────────────────────────────────────────
   // These live on the base (not a mixin) because they touch nothing but the

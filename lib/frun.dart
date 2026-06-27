@@ -211,7 +211,6 @@ Future<void> _bootAnalysis(AppState state) async {
     // live, and files first edited after launch start being analyzed too.
     final watcher = DartFileWatcher(
       root: state.project.watchRoot,
-      pollInterval: const Duration(seconds: 1),
       onFileChanged: server.openFile,
     );
     watcher.start();

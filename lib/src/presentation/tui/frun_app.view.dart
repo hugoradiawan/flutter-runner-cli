@@ -6,12 +6,11 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
 
   @override
   View view() {
-    _hits.clear();
-    final theme = FrunTheme.fromConfig(state.config);
     final w = _width;
     final h = _height;
 
     if (w < 40 || h < 10) {
+      _hits.clear();
       final canvas = Canvas(math.max(w, 40), math.max(h, 10));
       canvas.paint(0, 0, 'frun: terminal too small (${w}x$h)');
       return View(
@@ -20,6 +19,27 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
         mouseMode: MouseMode.cellMotion,
       );
     }
+
+    // Repaint gate: re-emit the last frame when nothing render-affecting
+    // changed. Always repaint while drag-selecting (the selection extent moves
+    // with the mouse and isn't in the signature) and at least once per
+    // _maxSkippedFrames ticks as a self-heal.
+    final sig = _viewSignature(w, h);
+    if (!_mouseSelecting &&
+        _lastViewContent != null &&
+        sig == _lastViewSig &&
+        _framesSinceFullPaint < _FrunModelBase._maxSkippedFrames) {
+      _framesSinceFullPaint++;
+      return View(
+        content: _lastViewContent!,
+        altScreen: true,
+        mouseMode: MouseMode.cellMotion,
+        cursor: _lastViewCursor,
+      );
+    }
+
+    _hits.clear();
+    final theme = FrunTheme.fromConfig(state.config);
 
     final inputH = _computeInputHeight();
     final inputBorderH = inputH > 0 ? 2 : 0;
@@ -88,12 +108,104 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
         ? _inputCursorPosition(w, h - totalInputH + 1, inputH)
         : null;
 
+    final content = canvas.render();
+    _lastViewSig = sig;
+    _lastViewContent = content;
+    _lastViewCursor = inputCursor;
+    _framesSinceFullPaint = 0;
+
     return View(
-      content: canvas.render(),
+      content: content,
       altScreen: true,
       mouseMode: MouseMode.cellMotion,
       cursor: inputCursor,
     );
+  }
+
+  /// Compact fingerprint of every piece of state that affects the rendered
+  /// frame. When it is unchanged between ticks the paint is skipped. Identity
+  /// hashes are used for collections/objects that are replaced wholesale on
+  /// change (config, diagnostics, picker lists, sessions); content hashes for
+  /// the free-text fields. Anything missed here self-heals within
+  /// _maxSkippedFrames ticks via the forced repaint.
+  String _viewSignature(int w, int h) {
+    final rc = state.runController;
+    final b = StringBuffer()
+      ..write(w)
+      ..write('x')
+      ..write(h)
+      ..write('|cfg:')
+      ..write(identityHashCode(state.config))
+      ..write('|tx:')
+      ..write(identityHashCode(state.visibleTranscript))
+      ..write('.')
+      ..write(state.visibleTranscript.revision)
+      ..write('|scr:')
+      ..write(_transcriptScroll)
+      ..write('|lnk:')
+      ..write(_focusedLinkIndex)
+      ..write('|in:')
+      ..write(_input.text.hashCode)
+      ..write('.')
+      ..write(_input.cursor.row)
+      ..write(',')
+      ..write(_input.cursor.col)
+      ..write('|vm:')
+      ..write(_vimState.mode.index)
+      ..write('|tc:')
+      ..write(_tc.active ? 1 : 0)
+      ..write('.')
+      ..write(_tc.searchQuery.hashCode)
+      ..write('.')
+      ..write(_tc.row)
+      ..write(',')
+      ..write(_tc.col)
+      ..write('|ov:')
+      ..write(state.showStatusPanel ? 1 : 0)
+      ..write(_configEditorActive ? 1 : 0)
+      ..write('.')
+      ..write(_configEditorRow)
+      ..write('.')
+      ..write(identityHashCode(_configDraft))
+      ..write('|dg:')
+      ..write(state.showDiagnosticsPanel ? 1 : 0)
+      ..write('.')
+      ..write(_diagSelectedIndex)
+      ..write(',')
+      ..write(_diagScrollOffset)
+      ..write('.')
+      ..write(state.diagnosticsFilter?.index ?? -1)
+      ..write('.')
+      ..write(state.diagnosticsSearch.hashCode)
+      ..write('.')
+      ..write(_diagSearching ? 1 : 0)
+      ..write('|dx:')
+      ..write(identityHashCode(state.diagnostics))
+      ..write('.')
+      ..write(state.diagnostics.length)
+      ..write('.')
+      ..write(state.deps.analysisServer != null ? 1 : 0)
+      ..write(state.deps.analysisError != null ? 1 : 0)
+      ..write('|pk:')
+      ..write(identityHashCode(_activePicker()))
+      ..write('.')
+      ..write(_pickerSelectedIndex)
+      ..write(',')
+      ..write(_pickerScrollOffset)
+      ..write(_pickerWasActive ? 1 : 0)
+      ..write('|rc:')
+      ..write(identityHashCode(rc.session))
+      ..write('.')
+      ..write(identityHashCode(rc.lastEntry))
+      ..write('.')
+      ..write(identityHashCode(rc.activeTab))
+      ..write('|tabs:');
+    for (final t in rc.tabs) {
+      b
+        ..write(t.id)
+        ..write(t.isRunning ? '+' : '-');
+    }
+    return b.toString();
   }
 
   bool _shouldShowHardwareCursor() {

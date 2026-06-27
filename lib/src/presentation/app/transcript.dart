@@ -24,6 +24,11 @@ class TranscriptLine {
 class Transcript {
   Transcript();
 
+  /// Ring-buffer cap. Long-running sessions (hours of hot reload + daemon
+  /// events) would otherwise grow [_lines] without bound. Once full, the oldest
+  /// lines are evicted so retained memory stays flat regardless of uptime.
+  static const int _maxLines = 10000;
+
   final Queue<TranscriptLine> _lines = Queue<TranscriptLine>();
   int _revision = 0;
 
@@ -58,6 +63,9 @@ class Transcript {
           onClick: onClick,
         ),
       );
+    }
+    while (_lines.length > _maxLines) {
+      _lines.removeFirst();
     }
     _revision++;
   }

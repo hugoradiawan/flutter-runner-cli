@@ -14,10 +14,29 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
   ) {
     if (height <= 0 || width <= 0) return;
     _hits.add(x: 0, y: y, w: width, h: height, msg: const TickWakeMsg());
-    final lines = state.visibleTranscript.lines;
-    final displayRows = _layoutDisplayRows(lines, width);
-    _lastDisplayRows = displayRows;
-    _displayRowsText = displayRows.map((r) => r.text).toList(growable: false);
+    // Reuse the wrapped layout when neither the transcript content (revision)
+    // nor the wrap width has changed since the last paint — the common case on
+    // tick/mouse-move frames. A miss re-walks the whole transcript; a hit costs
+    // nothing. The Transcript instance is part of the key so a tab switch
+    // invalidates even when the new tab's revision coincides.
+    final transcript = state.visibleTranscript;
+    final List<TranscriptLine> lines;
+    final List<_DisplayRow> displayRows;
+    if (identical(transcript, _layoutCacheTranscript) &&
+        transcript.revision == _layoutCacheRevision &&
+        width == _layoutCacheWidth) {
+      lines = _lastLines;
+      displayRows = _lastDisplayRows;
+    } else {
+      lines = transcript.lines;
+      displayRows = _layoutDisplayRows(lines, width);
+      _lastLines = lines;
+      _lastDisplayRows = displayRows;
+      _displayRowsText = displayRows.map((r) => r.text).toList(growable: false);
+      _layoutCacheTranscript = transcript;
+      _layoutCacheRevision = transcript.revision;
+      _layoutCacheWidth = width;
+    }
 
     // Keep the viewport anchored to the same content when the user has scrolled
     // up and new lines are appended at the bottom. _transcriptScroll is a tail
