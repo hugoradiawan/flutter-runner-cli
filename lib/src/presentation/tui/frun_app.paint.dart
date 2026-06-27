@@ -19,6 +19,22 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     _lastDisplayRows = displayRows;
     _displayRowsText = displayRows.map((r) => r.text).toList(growable: false);
 
+    // Keep the viewport anchored to the same content when the user has scrolled
+    // up and new lines are appended at the bottom. _transcriptScroll is a tail
+    // offset (rows hidden below the viewport); a bottom append grows the total
+    // row count, which would otherwise slide the window forward and scroll the
+    // content being read off the top. Compensate by growing the tail offset by
+    // the same delta. At the bottom (offset == 0) do nothing, so the view keeps
+    // following new output. Skip on width changes, where the row count shifts
+    // from re-wrapping rather than new content.
+    final total = displayRows.length;
+    if (width == _lastLayoutWidth && _transcriptScroll > 0) {
+      final delta = total - _lastTotalRows;
+      if (delta > 0) _transcriptScroll += delta;
+    }
+    _lastTotalRows = total;
+    _lastLayoutWidth = width;
+
     final visibleCount = height;
     final maxScroll = (displayRows.length - visibleCount).clamp(0, 1 << 30);
     if (_transcriptScroll > maxScroll) _transcriptScroll = maxScroll;

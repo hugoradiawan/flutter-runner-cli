@@ -106,6 +106,10 @@ abstract class _FrunModelBase extends TeaModel {
   List<_VisibleLink> _visibleLinks = const <_VisibleLink>[];
   List<_DisplayRow> _lastDisplayRows = const <_DisplayRow>[];
   List<String> _displayRowsText = const <String>[];
+  // Previous transcript display-row count and wrap width, so a bottom append
+  // can be detected and the scroll offset anchored when scrolled up.
+  int _lastTotalRows = 0;
+  int _lastLayoutWidth = 0;
   int _lastVisibleStart = 0;
   int _lastVisibleEnd = 0;
   int _lastBodyHeight = 10;
