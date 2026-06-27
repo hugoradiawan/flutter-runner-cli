@@ -451,11 +451,9 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     return ' ${parts.join('  ')} ';
   }
 
-  /// Paint the `(i) N [!] N (e) N` diagnostic counters just left of [rightX] on
-  /// the prompt row, color-coded by severity, and register a click region that
-  /// toggles the diagnostics overlay. Returns the leftmost x consumed (so the
-  /// caller shrinks the input width); equals [rightX] when nothing was painted
-  /// (no diagnostics, or the row is too narrow).
+  /// Paint stored one-shot diagnostic counters just left of [rightX].
+  /// No background analyzer is started here; the counters only reflect the last
+  /// `/diagnostics` run.
   int _paintDiagnosticsCounters(
     Canvas canvas,
     FrunTheme theme,
@@ -464,22 +462,8 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     int promptLen,
   ) {
     final diags = state.diagnostics;
-    if (diags.isEmpty) {
-      // Server is up but the first pass hasn't reported yet — show a hint so the
-      // slot doesn't look empty/stuck (large monorepos take ~20s to settle).
-      if (state.deps.analysisServer != null &&
-          state.deps.analysisError == null) {
-        const label = ' analyzing… ';
-        final x = rightX - label.length;
-        if (x > 1 + promptLen + 4) {
-          canvas.paint(x, yRow, theme.dimStyle.render(label), zIndex: 1);
-          return x;
-        }
-      }
-      return rightX;
-    }
+    if (diags.isEmpty) return rightX;
     final (e, w, i, t) = DiagnosticEntity.counts(diags);
-    // Only show categories with a non-zero count.
     final segs = <(String, Style)>[
       if (e > 0)
         ('${_categoryIcon(DiagnosticCategory.error)} $e', theme.errorStyle),
@@ -491,13 +475,12 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
         ('${_categoryIcon(DiagnosticCategory.todo)} $t', theme.successStyle),
     ];
     if (segs.isEmpty) return rightX;
-    var totalW = 2; // one pad cell on each side
+    var totalW = 2;
     for (var s = 0; s < segs.length; s++) {
       totalW += segs[s].$1.length;
-      if (s > 0) totalW += 1; // separator cell
+      if (s > 0) totalW += 1;
     }
     final countersX = rightX - totalW;
-    // Need room for the prompt plus a little input before the counters.
     if (countersX <= 1 + promptLen + 4) return rightX;
     var cx = countersX + 1;
     for (var s = 0; s < segs.length; s++) {

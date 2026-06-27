@@ -16,6 +16,8 @@ void main() {
       expect(round.theme, defaults.theme);
       expect(round.hotReloadOnSave, defaults.hotReloadOnSave);
       expect(round.openDevtoolsOnLaunch, defaults.openDevtoolsOnLaunch);
+      expect(round.diagnosticsOnBoot, defaults.diagnosticsOnBoot);
+      expect(defaults.diagnosticsOnBoot, isFalse);
       expect(round.scrollbackLines, defaults.scrollbackLines);
       expect(defaults.scrollbackLines, 3000);
     });
@@ -26,9 +28,16 @@ void main() {
       expect(round.scrollbackLines, 1500);
     });
 
+    test('persists diagnostics-on-boot flag', () {
+      const c = FrunConfig(diagnosticsOnBoot: true);
+      final round = FrunConfig.fromMap(c.toJson());
+      expect(round.diagnosticsOnBoot, isTrue);
+    });
+
     test('defaults scrollback when the key is absent', () {
       final c = FrunConfig.fromMap(<String, Object?>{'ide': 'zed'});
       expect(c.scrollbackLines, 3000);
+      expect(c.diagnosticsOnBoot, isFalse);
     });
 
     test('fromMap tolerates unknown / null values', () {
@@ -73,6 +82,7 @@ void main() {
           editorMode: FrunEditorMode.vim,
           theme: FrunThemeMode.light,
           hotReloadOnSave: false,
+          diagnosticsOnBoot: true,
           openDevtoolsOnLaunch: FrunDevToolsAutoOpen.never,
           scrollbackLines: 1234,
         ),
@@ -82,6 +92,7 @@ void main() {
       expect(loaded.editorMode, FrunEditorMode.vim);
       expect(loaded.theme, FrunThemeMode.light);
       expect(loaded.hotReloadOnSave, isFalse);
+      expect(loaded.diagnosticsOnBoot, isTrue);
       expect(loaded.openDevtoolsOnLaunch, FrunDevToolsAutoOpen.never);
       expect(loaded.scrollbackLines, 1234);
     });

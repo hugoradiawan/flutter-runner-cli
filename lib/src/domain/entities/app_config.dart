@@ -10,6 +10,7 @@ class AppConfigEntity extends Entity<AppConfigEntity> {
     required this.openDevtoolsOnLaunch,
     required this.emulatorBoot,
     required this.verboseErrors,
+    required this.diagnosticsOnBoot,
     this.scrollbackLines = 3000,
     this.nvimServer,
   });
@@ -22,6 +23,7 @@ class AppConfigEntity extends Entity<AppConfigEntity> {
     openDevtoolsOnLaunch: FrunDevToolsAutoOpen.ask,
     emulatorBoot: FrunEmulatorBoot.quick,
     verboseErrors: false,
+    diagnosticsOnBoot: false,
   );
 
   final FrunIde ide;
@@ -31,6 +33,7 @@ class AppConfigEntity extends Entity<AppConfigEntity> {
   final FrunDevToolsAutoOpen openDevtoolsOnLaunch;
   final FrunEmulatorBoot emulatorBoot;
   final bool verboseErrors;
+  final bool diagnosticsOnBoot;
 
   /// Max lines each transcript (system log + every run tab) retains before
   /// evicting the oldest. Trades scrollback history for memory; persisted so it
@@ -47,6 +50,7 @@ class AppConfigEntity extends Entity<AppConfigEntity> {
     FrunDevToolsAutoOpen? openDevtoolsOnLaunch,
     FrunEmulatorBoot? emulatorBoot,
     bool? verboseErrors,
+    bool? diagnosticsOnBoot,
     int? scrollbackLines,
     String? nvimServer,
     bool clearNvimServer = false,
@@ -59,6 +63,7 @@ class AppConfigEntity extends Entity<AppConfigEntity> {
       openDevtoolsOnLaunch: openDevtoolsOnLaunch ?? this.openDevtoolsOnLaunch,
       emulatorBoot: emulatorBoot ?? this.emulatorBoot,
       verboseErrors: verboseErrors ?? this.verboseErrors,
+      diagnosticsOnBoot: diagnosticsOnBoot ?? this.diagnosticsOnBoot,
       scrollbackLines: scrollbackLines ?? this.scrollbackLines,
       nvimServer: clearNvimServer ? null : (nvimServer ?? this.nvimServer),
     );
@@ -73,6 +78,7 @@ class AppConfigEntity extends Entity<AppConfigEntity> {
     openDevtoolsOnLaunch,
     emulatorBoot,
     verboseErrors,
+    diagnosticsOnBoot,
     scrollbackLines,
     nvimServer,
   ];

@@ -4,8 +4,8 @@ import 'package:test/test.dart';
 void main() {
   group('Transcript ring buffer', () {
     test('caps retained lines and evicts the oldest', () {
-      final t = Transcript();
-      const cap = 3000;
+      const cap = 200;
+      final t = Transcript(maxLines: cap);
       const overflow = 5;
       for (var i = 0; i < cap + overflow; i++) {
         t.info('line $i');
@@ -63,12 +63,13 @@ void main() {
     });
 
     test('stays bounded under sustained appends well past the cap', () {
-      final t = Transcript();
-      for (var i = 0; i < 30000; i++) {
+      const cap = 500;
+      final t = Transcript(maxLines: cap);
+      for (var i = 0; i < cap * 10; i++) {
         t.info('msg $i');
       }
-      expect(t.lines.length, 3000);
-      expect(t.lines.last.text, 'msg 29999');
+      expect(t.lines.length, cap);
+      expect(t.lines.last.text, 'msg ${cap * 10 - 1}');
     });
   });
 }

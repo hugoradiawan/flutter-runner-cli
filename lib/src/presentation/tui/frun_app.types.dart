@@ -148,6 +148,10 @@ const _configEditorEntries = <_ConfigEditorEntry>[
     'false',
     'true',
   ], label: 'Verbose error logs'),
+  _ConfigEditorEntry('diagnostics_on_boot', [
+    'false',
+    'true',
+  ], label: 'Diagnostics on boot'),
   _ConfigEditorEntry('scrollback_lines', [
     '1000',
     '2000',

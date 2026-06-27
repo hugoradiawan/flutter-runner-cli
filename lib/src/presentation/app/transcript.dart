@@ -28,7 +28,7 @@ class Transcript {
   /// sessions (hours of hot reload + daemon events) would otherwise grow
   /// [_lines] without bound; once full the oldest lines are evicted so retained
   /// memory stays flat regardless of uptime.
-  static int defaultMaxLines = 3000;
+  static int defaultMaxLines = 1000;
 
   final Queue<TranscriptLine> _lines = Queue<TranscriptLine>();
   int _revision = 0;

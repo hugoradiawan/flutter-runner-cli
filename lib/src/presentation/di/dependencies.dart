@@ -1,18 +1,14 @@
-import '../../data/datasources/analysis_server.dart';
 import '../../data/datasources/device_manager.dart';
 import '../../data/datasources/flutter_daemon.dart';
-import '../../data/services/dart_file_watcher.dart';
 import '../../data/services/frun_notifier.dart';
 import '../../data/services/ide_launcher.dart';
 import '../../data/services/inspector_bridge.dart';
 import '../../data/services/isolate_manager.dart';
 import '../../domain/repositories/config_repository.dart';
 import '../../domain/repositories/device_repository.dart';
-import '../../domain/repositories/diagnostics_repository.dart';
 import '../../domain/repositories/emulator_repository.dart';
 import '../../domain/repositories/session_repository.dart';
 import '../../domain/usecases/get_config.dart';
-import '../../domain/usecases/get_diagnostics.dart';
 import '../../domain/usecases/hot_reload.dart';
 import '../../domain/usecases/hot_restart.dart';
 import '../../domain/usecases/launch_emulator.dart';
@@ -21,15 +17,14 @@ import '../../domain/usecases/list_emulators.dart';
 import '../../domain/usecases/save_config.dart';
 import '../../domain/usecases/set_config.dart';
 import '../../domain/usecases/stop_session.dart';
-import '../../domain/usecases/watch_diagnostics.dart';
 
 /// Dependency container assembled at the composition root ([runFrun]).
 ///
 /// Owns the long-lived infrastructure services and the Clean-Architecture
 /// repositories, and hands out use cases built **once** from those
-/// repositories. The daemon and the analysis server boot in the background, so
-/// each backing repository is nullable until its service is ready and every
-/// use-case accessor returns null until its repository exists.
+/// repositories. The daemon boots in the background, so daemon-backed
+/// repositories are nullable until the service is ready and every use-case
+/// accessor returns null until its repository exists.
 ///
 /// This is the only seam where the presentation layer reaches concrete data
 /// types; everything else depends on domain abstractions handed out here.
@@ -46,15 +41,9 @@ class Dependencies {
   bool daemonReady = false;
   String? daemonError;
 
-  // ── Services populated as the analysis server comes up ────────────────────
-  DartAnalysisServer? analysisServer;
-  DartFileWatcher? analysisWatcher;
-  String? analysisError;
-
   // ── CA repositories (set when their backing service starts) ───────────────
   DeviceRepository? deviceRepository;
   EmulatorRepository? emulatorRepository;
-  DiagnosticsRepository? diagnosticsRepository;
   ConfigRepository? configRepository;
   SessionRepository? sessionRepository;
 
@@ -73,18 +62,6 @@ class Dependencies {
   LaunchEmulatorUseCase? get launchEmulatorUseCase => emulatorRepository == null
       ? null
       : (_launchEmulator ??= LaunchEmulatorUseCase(emulatorRepository!));
-
-  GetDiagnosticsUseCase? _getDiagnostics;
-  GetDiagnosticsUseCase? get getDiagnosticsUseCase =>
-      diagnosticsRepository == null
-      ? null
-      : (_getDiagnostics ??= GetDiagnosticsUseCase(diagnosticsRepository!));
-
-  WatchDiagnosticsUseCase? _watchDiagnostics;
-  WatchDiagnosticsUseCase? get watchDiagnosticsUseCase =>
-      diagnosticsRepository == null
-      ? null
-      : (_watchDiagnostics ??= WatchDiagnosticsUseCase(diagnosticsRepository!));
 
   GetConfigUseCase? _getConfig;
   GetConfigUseCase? get getConfigUseCase => configRepository == null

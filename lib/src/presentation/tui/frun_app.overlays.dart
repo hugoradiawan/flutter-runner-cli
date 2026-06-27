@@ -318,6 +318,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         return c.emulatorBoot.id;
       case 'verbose_errors':
         return c.verboseErrors.toString();
+      case 'diagnostics_on_boot':
+        return c.diagnosticsOnBoot.toString();
       case 'scrollback_lines':
         return c.scrollbackLines.toString();
       default:
@@ -355,6 +357,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         return c.copyWith(emulatorBoot: vals[idx]);
       case 'verbose_errors':
         return c.copyWith(verboseErrors: !c.verboseErrors);
+      case 'diagnostics_on_boot':
+        return c.copyWith(diagnosticsOnBoot: !c.diagnosticsOnBoot);
       case 'scrollback_lines':
         var idx = _scrollbackPresets.indexOf(c.scrollbackLines);
         if (idx < 0) {

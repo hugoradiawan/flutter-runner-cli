@@ -104,6 +104,12 @@ void main() {
     expect(store.load().ide, FrunIde.zed);
   });
 
+  test('/config set diagnostics_on_boot persists changes', () async {
+    await ConfigCommand().run(['set', 'diagnostics_on_boot', 'on'], state);
+    expect(state.config.diagnosticsOnBoot, isTrue);
+    expect(store.load().diagnosticsOnBoot, isTrue);
+  });
+
   test('/config set with unknown key warns', () async {
     await ConfigCommand().run(['set', 'nope', 'val'], state);
     final warns = state.transcript.lines

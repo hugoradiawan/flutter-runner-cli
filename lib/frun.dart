@@ -6,25 +6,18 @@ import 'dart:io';
 
 import 'package:dart_tui/dart_tui.dart';
 
-import 'src/data/datasources/analysis_server.dart';
 import 'src/data/datasources/config_datasource.dart';
 import 'src/data/datasources/config_store.dart';
 import 'src/data/datasources/device_manager.dart';
-import 'src/data/datasources/diagnostics_store.dart';
 import 'src/data/datasources/emulator_manager.dart';
 import 'src/data/datasources/flutter_daemon.dart';
 import 'src/data/repositories/config_repository_impl.dart';
 import 'src/data/repositories/device_repository_impl.dart';
-import 'src/data/repositories/diagnostics_repository_impl.dart';
 import 'src/data/repositories/emulator_repository_impl.dart';
 import 'src/data/repositories/session_repository_impl.dart';
-import 'src/data/services/dart_file_watcher.dart';
-import 'src/data/services/package_locator.dart';
 import 'src/data/services/project_detector.dart';
 import 'src/data/services/windows_console.dart';
-import 'src/data/services/working_set.dart';
 import 'src/domain/entities/app_config.dart';
-import 'src/domain/params/diagnostics_filter_params.dart';
 import 'src/presentation/app/app_state.dart';
 import 'src/presentation/app/commands/clear_command.dart';
 import 'src/presentation/app/commands/command_registry.dart';
@@ -102,6 +95,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     },
   );
 
+  final diagnosticsCommand = DiagnosticsCommand();
   final registry = CommandRegistry()
     ..register(QuitCommand())
     ..register(ClearCommand())
@@ -123,7 +117,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     ..register(StatusCommand())
     ..register(MemCommand())
     ..register(ScrollbackCommand())
-    ..register(DiagnosticsCommand());
+    ..register(diagnosticsCommand);
   registry.register(HelpCommand(registry));
 
   final program = Program(
@@ -144,9 +138,9 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   // Kick the daemon off in the background so the TUI is interactive
   // immediately. Any failure is surfaced in the transcript.
   unawaited(_bootDaemon(state));
-  // Start the analyzer in the background too — independent of the daemon.
-  unawaited(_bootAnalysis(state));
-
+  if (state.config.diagnosticsOnBoot) {
+    unawaited(_runBootDiagnostics(diagnosticsCommand, state));
+  }
   try {
     await program.run(tuiApp);
   } finally {
@@ -154,81 +148,18 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   }
   await state.runController.stopAll();
   await state.deps.isolateManager.disconnect();
-  await state.deps.analysisWatcher?.dispose();
-  await state.deps.analysisServer?.shutdown();
   await state.deps.daemon?.shutdown();
   return 0;
 }
 
-/// Boot the Dart analysis server (LSP) and stream realtime diagnostics into
-/// [state]. Seeds counters from the per-project cache first so they appear
-/// instantly, then live-updates and re-caches as the analyzer reports.
-Future<void> _bootAnalysis(AppState state) async {
-  final repo = DiagnosticsRepositoryImpl(
-    DiagnosticsStore(projectRoot: state.project.root),
-  );
-  state.deps.diagnosticsRepository = repo;
-  // Seed counters from the on-disk cache before the first analysis pass.
-  state.diagnostics = repo.cachedDiagnostics();
-
-  // Discover every package in the project so monorepos (melos / pub
-  // workspaces) get all packages analyzed, not just the runnable app's own
-  // package. The runnable [root] (e.g. `app/`) is usually a *sibling* of the
-  // other packages (`features/*`, `cores/*`) under the monorepo boundary, so
-  // scan from [watchRoot] (the `.git`/`melos.yaml` ancestor). Scanning from
-  // [root] alone walks only inside `app/` and misses every sibling package —
-  // errors in those (e.g. `features/youchat`) then go silently unreported.
-  final packages = locatePackageRoots(state.project.watchRoot);
-
+Future<void> _runBootDiagnostics(
+  DiagnosticsCommand diagnosticsCommand,
+  AppState state,
+) async {
   try {
-    final server = await DartAnalysisServer.start(
-      projectRoot: state.project.root,
-      workspaceFolders: packages,
-    );
-    state.deps.analysisServer = server;
-    repo.bindServer(server);
-    server.stderrLines.listen((l) => state.transcript.warn('analysis: $l'));
-    state.transcript.system(
-      packages.length > 1
-          ? 'Analyzing ${packages.length} packages… '
-                '(first pass can take ~20s on large monorepos)'
-          : 'Analyzing project…',
-    );
-    // Live diagnostics into the UI; the repository writes them through to the
-    // on-disk cache itself.
-    repo
-        .watchDiagnostics(const DiagnosticsFilterParams())
-        .listen((items) => state.diagnostics = items);
-
-    // Open the user's working set (git-dirty `.dart` files) as LSP priority
-    // documents. The analyzer reports those within seconds; the whole-project
-    // background pass over a large monorepo is far too slow to surface a
-    // just-edited file — which is exactly the file the user is looking at.
-    final dirty = gitDirtyDartFiles(state.project.watchRoot);
-    for (final file in dirty) {
-      server.openFile(file);
-    }
-    if (dirty.isNotEmpty) {
-      state.transcript.system(
-        'Prioritizing ${dirty.length} changed file(s) for analysis.',
-      );
-    }
-
-    // Keep the analyzer in sync with edits made by an external editor: every
-    // changed `.dart` file is (re)opened/pushed so its diagnostics refresh
-    // live, and files first edited after launch start being analyzed too.
-    final watcher = DartFileWatcher(
-      root: state.project.watchRoot,
-      onFileChanged: server.openFile,
-    );
-    watcher.start();
-    state.deps.analysisWatcher = watcher;
+    await diagnosticsCommand.run(const <String>[], state);
   } catch (e) {
-    state.deps.analysisError = e.toString();
-    state.transcript.warn(
-      'Diagnostics unavailable — could not start "dart language-server". '
-      'Is the Dart SDK on your PATH? ($e)',
-    );
+    state.transcript.warn('Boot diagnostics failed: $e');
   }
 }
 

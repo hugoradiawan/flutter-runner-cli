@@ -20,6 +20,7 @@ class ConfigRepositoryImpl implements ConfigRepository {
     openDevtoolsOnLaunch: e.openDevtoolsOnLaunch,
     emulatorBoot: e.emulatorBoot,
     verboseErrors: e.verboseErrors,
+    diagnosticsOnBoot: e.diagnosticsOnBoot,
     scrollbackLines: e.scrollbackLines,
     nvimServer: e.nvimServer,
   );
@@ -76,6 +77,7 @@ class ConfigRepositoryImpl implements ConfigRepository {
       emulatorBoot: FrunEmulatorBoot.fromString(value),
     ),
     'verbose_errors' => c.copyWith(verboseErrors: _parseBool(value)),
+    'diagnostics_on_boot' => c.copyWith(diagnosticsOnBoot: _parseBool(value)),
     'scrollback_lines' => c.copyWith(scrollbackLines: _parseScrollback(value)),
     'nvim_server' =>
       value.isEmpty

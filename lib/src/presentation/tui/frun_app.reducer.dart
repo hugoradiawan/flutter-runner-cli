@@ -178,12 +178,17 @@ mixin _ReducerMixin on _FrunModelBase, _KeyMixin, _MouseMixin, _EngineMixin {
         _resetViewForNewTab();
       }
     } else if (msg is ToggleDiagnosticsOverlayMsg) {
-      state.showDiagnosticsPanel = !state.showDiagnosticsPanel;
       _diagPendingG = false;
       _diagSearching = false;
-      if (state.showDiagnosticsPanel) {
-        _diagSelectedIndex = 0;
-        _diagScrollOffset = 0;
+      if (state.diagnostics.isEmpty) {
+        state.showDiagnosticsPanel = false;
+        state.transcript.warn('Run /diagnostics to analyze the project.');
+      } else {
+        state.showDiagnosticsPanel = !state.showDiagnosticsPanel;
+        if (state.showDiagnosticsPanel) {
+          _diagSelectedIndex = 0;
+          _diagScrollOffset = 0;
+        }
       }
     } else if (msg is CloseDiagnosticsOverlayMsg) {
       state.showDiagnosticsPanel = false;

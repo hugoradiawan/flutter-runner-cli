@@ -70,6 +70,7 @@ AppConfigEntity _config() => const AppConfigEntity(
   openDevtoolsOnLaunch: FrunDevToolsAutoOpen.ask,
   emulatorBoot: FrunEmulatorBoot.quick,
   verboseErrors: false,
+  diagnosticsOnBoot: false,
 );
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

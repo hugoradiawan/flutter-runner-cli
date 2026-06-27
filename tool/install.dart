@@ -55,7 +55,7 @@ void main() {
     ..writeln('')
     ..writeln('Installed frun (native): $exePath')
     ..writeln('Fallback snapshot:       $snapshotPath')
-    ..writeln('Startup is now native — no pub re-resolve per launch.');
+    ..writeln('Startup is now native. no pub re-resolve per launch.');
 
   if (!_onPath(destDir)) {
     stdout

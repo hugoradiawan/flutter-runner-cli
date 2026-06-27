@@ -197,6 +197,10 @@ class RunController {
   Future<void> _disposeWatcherIfIdle() =>
       _watcher.disposeIfIdle(idle: tabs.isEmpty);
 
+  Future<void> _disposeIsolatesIfIdle() async {
+    if (tabs.isEmpty) await _isolates.disconnect();
+  }
+
   Future<void> hotReloadAll() async {
     for (final tab in tabs) {
       if (tab.session != null) await _reload(tab);
@@ -264,6 +268,7 @@ class RunController {
       _activeIndex--;
     }
     await _disposeWatcherIfIdle();
+    await _disposeIsolatesIfIdle();
   }
 
   /// Re-launch a specific tab on the same device.
@@ -301,6 +306,7 @@ class RunController {
       _activeIndex = tabs.length - 1;
     }
     await _disposeWatcherIfIdle();
+    await _disposeIsolatesIfIdle();
   }
 
   Future<void> detachActive() async {
@@ -341,6 +347,7 @@ class RunController {
     tabs.clear();
     _activeIndex = -1;
     await _disposeWatcherIfIdle();
+    await _isolates.disconnect();
   }
 
   Future<void> _stopTab(RunTab tab) async {

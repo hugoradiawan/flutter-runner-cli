@@ -36,10 +36,14 @@ class HistoryStore {
     return Platform.environment['HOME'] ?? '.';
   }
 
+  static const int _maxHistory = 500;
+
   List<String> load() {
     final file = File(path);
     if (!file.existsSync()) return <String>[];
-    return file.readAsLinesSync().where((l) => l.isNotEmpty).toList();
+    final all = file.readAsLinesSync().where((l) => l.isNotEmpty).toList();
+    if (all.length > _maxHistory) return all.sublist(all.length - _maxHistory);
+    return all;
   }
 
   void save(List<String> history) {

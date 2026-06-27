@@ -171,7 +171,11 @@ class DartAnalysisServer {
   /// never closed, so over a long session the map would grow without bound.
   /// Evicting the least-recently-used entry is safe: the next edit to that path
   /// re-sends a `didOpen` at version 1.
-  static const int _maxOpenVersions = 1000;
+  static const int _maxOpenVersions = 300;
+
+  /// Soft cap on [_byUri]. Large monorepos can accumulate diagnostic maps for
+  /// thousands of files; once the cap is reached the oldest URI is evicted.
+  static const int _maxByUri = 500;
 
   /// Files requested via [openFile] before the `initialize` handshake finished.
   /// Flushed once the server is ready.
@@ -272,6 +276,9 @@ class DartAnalysisServer {
       final params = (msg['params'] as Map?)?.cast<String, Object?>();
       if (params != null) {
         applyPublishDiagnostics(_byUri, params);
+        if (_byUri.length > _maxByUri) {
+          _byUri.remove(_byUri.keys.first);
+        }
         _scheduleEmit();
       }
       return;
