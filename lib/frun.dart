@@ -38,11 +38,13 @@ import 'src/presentation/app/commands/emulators_command.dart';
 import 'src/presentation/app/commands/help_command.dart';
 import 'src/presentation/app/commands/inspect_command.dart';
 import 'src/presentation/app/commands/isolates_command.dart';
+import 'src/presentation/app/commands/mem_command.dart';
 import 'src/presentation/app/commands/performance_overlay_command.dart';
 import 'src/presentation/app/commands/quit_command.dart';
 import 'src/presentation/app/commands/reload_command.dart';
 import 'src/presentation/app/commands/restart_command.dart';
 import 'src/presentation/app/commands/run_command.dart';
+import 'src/presentation/app/commands/scrollback_command.dart';
 import 'src/presentation/app/commands/status_command.dart';
 import 'src/presentation/app/commands/stop_command.dart';
 import 'src/presentation/di/dependencies.dart';
@@ -115,6 +117,8 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     )
     ..register(InspectCommand())
     ..register(StatusCommand())
+    ..register(MemCommand())
+    ..register(ScrollbackCommand())
     ..register(DiagnosticsCommand());
   registry.register(HelpCommand(registry));
 

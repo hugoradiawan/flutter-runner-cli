@@ -20,15 +20,30 @@ class TranscriptLine {
 
 /// Append-only log of lines rendered in the transcript panel.
 class Transcript {
-  Transcript();
+  Transcript({int? maxLines}) : _maxLines = maxLines ?? defaultMaxLines;
 
-  /// Ring-buffer cap. Long-running sessions (hours of hot reload + daemon
-  /// events) would otherwise grow [_lines] without bound. Once full, the oldest
-  /// lines are evicted so retained memory stays flat regardless of uptime.
-  static const int _maxLines = 10000;
+  /// Default ring-buffer cap for newly created transcripts. Mutable so the
+  /// scrollback depth can be tuned at runtime (the `scrollback` command sets it
+  /// for the system transcript, every open tab, and any future tab). Long
+  /// sessions (hours of hot reload + daemon events) would otherwise grow
+  /// [_lines] without bound; once full the oldest lines are evicted so retained
+  /// memory stays flat regardless of uptime.
+  static int defaultMaxLines = 3000;
 
   final Queue<TranscriptLine> _lines = Queue<TranscriptLine>();
   int _revision = 0;
+
+  int _maxLines;
+
+  /// This transcript's current retained-line cap.
+  int get maxLines => _maxLines;
+
+  /// Raise or lower the cap at runtime. Lowering trims the oldest lines
+  /// immediately and advances [revision] so the renderer refreshes.
+  set maxLines(int value) {
+    _maxLines = value < 1 ? 1 : value;
+    if (_trim()) _revision++;
+  }
 
   /// Monotonic version, useful for telling the renderer something changed.
   int get revision => _revision;
@@ -57,10 +72,19 @@ class Transcript {
         TranscriptLine(text: raw, level: level, onClick: onClick),
       );
     }
+    _trim();
+    _revision++;
+  }
+
+  /// Evict the oldest lines until within [_maxLines]. Returns whether any line
+  /// was removed.
+  bool _trim() {
+    var removed = false;
     while (_lines.length > _maxLines) {
       _lines.removeFirst();
+      removed = true;
     }
-    _revision++;
+    return removed;
   }
 
   void clear() {

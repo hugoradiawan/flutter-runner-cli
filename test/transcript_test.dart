@@ -5,7 +5,7 @@ void main() {
   group('Transcript ring buffer', () {
     test('caps retained lines and evicts the oldest', () {
       final t = Transcript();
-      const cap = 10000;
+      const cap = 3000;
       const overflow = 5;
       for (var i = 0; i < cap + overflow; i++) {
         t.info('line $i');
@@ -36,12 +36,38 @@ void main() {
       expect(t.lines, isEmpty);
     });
 
+    test('honors a per-instance cap and trims when lowered at runtime', () {
+      final t = Transcript(maxLines: 5);
+      for (var i = 0; i < 10; i++) {
+        t.info('n $i');
+      }
+      expect(t.lines.length, 5);
+      expect(t.lines.first.text, 'n 5');
+
+      final rev = t.revision;
+      t.maxLines = 2; // lower the cap live
+      expect(t.lines.length, 2);
+      expect(t.lines.first.text, 'n 8');
+      expect(t.lines.last.text, 'n 9');
+      expect(
+        t.revision,
+        greaterThan(rev),
+        reason: 'trimming on shrink advances revision so the view refreshes',
+      );
+
+      // Raising the cap keeps existing lines and doesn't bump revision.
+      final rev2 = t.revision;
+      t.maxLines = 100;
+      expect(t.lines.length, 2);
+      expect(t.revision, rev2);
+    });
+
     test('stays bounded under sustained appends well past the cap', () {
       final t = Transcript();
       for (var i = 0; i < 30000; i++) {
         t.info('msg $i');
       }
-      expect(t.lines.length, 10000);
+      expect(t.lines.length, 3000);
       expect(t.lines.last.text, 'msg 29999');
     });
   });

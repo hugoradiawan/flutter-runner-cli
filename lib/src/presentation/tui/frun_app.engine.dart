@@ -210,7 +210,11 @@ mixin _EngineMixin on _FrunModelBase {
     }
 
     final parts = line.split(RegExp(r'\s+'));
-    final rawName = parts.first;
+    // Accept an optional leading slash: help/usage display commands as `/name`
+    // (Command.usage), so `/mem` and `mem` should both dispatch.
+    final rawName = parts.first.startsWith('/')
+        ? parts.first.substring(1)
+        : parts.first;
     final args = parts.length > 1 ? parts.sublist(1) : const <String>[];
     final command =
         registry.lookup(rawName) ?? registry.lookup(rawName.toLowerCase());
