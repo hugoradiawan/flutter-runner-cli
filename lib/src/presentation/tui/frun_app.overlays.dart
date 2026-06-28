@@ -470,6 +470,15 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
 
   /// Flatten the filtered diagnostics into file-header + issue rows.
   List<_DiagRow> _diagnosticRows() {
+    final revision = state.diagnosticsRevision;
+    final filter = state.diagnosticsFilter;
+    final search = state.diagnosticsSearch;
+    if (revision == _diagnosticRowsCacheRevision &&
+        filter == _diagnosticRowsCacheFilter &&
+        search == _diagnosticRowsCacheSearch) {
+      return _diagnosticRowsCache;
+    }
+
     final grouped = DiagnosticEntity.groupByFile(_filteredDiagnostics());
     final rows = <_DiagRow>[];
     grouped.forEach((file, items) {
@@ -478,6 +487,10 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         rows.add(_DiagRow.issue(d));
       }
     });
+    _diagnosticRowsCacheRevision = revision;
+    _diagnosticRowsCacheFilter = filter;
+    _diagnosticRowsCacheSearch = search;
+    _diagnosticRowsCache = rows;
     return rows;
   }
 

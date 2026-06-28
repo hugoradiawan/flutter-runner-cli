@@ -75,20 +75,25 @@ class AppState {
   static const int _maxDiagnostics = 2000;
 
   List<DiagnosticEntity> _diagnostics = const <DiagnosticEntity>[];
+  int _diagnosticsRevision = 0;
 
   /// Latest project-wide analyzer diagnostics. Updated in realtime by the
   /// analysis server; seeded from the cache on launch so counters show
   /// last-known totals immediately. Capped at [_maxDiagnostics] entries;
   /// errors are retained first so high-severity items are never dropped.
   List<DiagnosticEntity> get diagnostics => _diagnostics;
+  int get diagnosticsRevision => _diagnosticsRevision;
+
   set diagnostics(List<DiagnosticEntity> value) {
     if (value.length <= _maxDiagnostics) {
       _diagnostics = value;
+      _diagnosticsRevision++;
       return;
     }
     final capped = List<DiagnosticEntity>.from(value)
       ..sort((a, b) => a.severity.index.compareTo(b.severity.index));
     _diagnostics = capped.sublist(0, _maxDiagnostics);
+    _diagnosticsRevision++;
   }
 
   /// Whether the diagnostics ("problems") overlay is open. Toggled by

@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+import '../../../data/services/dart_source_walker.dart';
 import '../../../domain/entities/diagnostic.dart';
 import '../app_state.dart';
 import 'command.dart';
@@ -17,12 +19,17 @@ typedef DartAnalyzeRunner =
 
 /// Runs one-shot `dart analyze` and opens the diagnostics overlay.
 class DiagnosticsCommand extends Command {
-  DiagnosticsCommand({DartAnalyzeRunner? runAnalyze, String? dartExecutable})
-    : _runAnalyze = runAnalyze ?? _runProcess,
-      _dartExecutable = dartExecutable;
+  DiagnosticsCommand({
+    DartAnalyzeRunner? runAnalyze,
+    String? dartExecutable,
+    Duration analyzeTimeout = const Duration(seconds: 20),
+  }) : _runAnalyze = runAnalyze,
+       _dartExecutable = dartExecutable,
+       _analyzeTimeout = analyzeTimeout;
 
-  final DartAnalyzeRunner _runAnalyze;
+  final DartAnalyzeRunner? _runAnalyze;
   final String? _dartExecutable;
+  final Duration _analyzeTimeout;
 
   @override
   String get name => 'diagnostics';
@@ -43,20 +50,43 @@ class DiagnosticsCommand extends Command {
 
     state.diagnosticsFilter = parsedFilter.filter;
     state.diagnosticsSearch = '';
-    state.transcript.system('Running dart analyze...');
+    final todos = scanDartTodoDiagnostics(root: state.project.watchRoot);
+    final currentAnalyzerDiagnostics = state.diagnostics
+        .where((d) => d.category != DiagnosticCategory.todo)
+        .toList(growable: false);
+    state.diagnostics = mergeDiagnostics(currentAnalyzerDiagnostics, todos);
+    state.showDiagnosticsPanel = true;
+    state.transcript.system(
+      'Showing current diagnostics; running dart analyze...',
+    );
 
     final dartExecutable = _dartExecutable ?? _defaultDartExecutable();
     final ProcessResult result;
     try {
-      result = await _runAnalyze(
-        dartExecutable,
-        const <String>['analyze', '--format=json', '--no-fatal-warnings'],
-        state.project.root,
-        _shouldRunInShell(dartExecutable),
-      );
+      final runner = _runAnalyze;
+      if (runner == null) {
+        result = await _runProcess(
+          dartExecutable,
+          const <String>['analyze', '--format=json', '--no-fatal-warnings'],
+          state.project.root,
+          _shouldRunInShell(dartExecutable),
+          timeout: _analyzeTimeout,
+        );
+      } else {
+        result = await runner(
+          dartExecutable,
+          const <String>['analyze', '--format=json', '--no-fatal-warnings'],
+          state.project.root,
+          _shouldRunInShell(dartExecutable),
+        ).timeout(_analyzeTimeout);
+      }
     } on ProcessException catch (e) {
-      state.showDiagnosticsPanel = false;
       state.transcript.warn('dart analyze failed: ${e.message}');
+      return CommandResult.ok;
+    } on TimeoutException {
+      state.transcript.warn(
+        'dart analyze timed out after ${_analyzeTimeout.inSeconds}s; showing current diagnostics.',
+      );
       return CommandResult.ok;
     }
 
@@ -71,11 +101,9 @@ class DiagnosticsCommand extends Command {
             ? 'dart analyze failed: could not parse analyzer output.'
             : 'dart analyze failed: $detail',
       );
-      state.showDiagnosticsPanel = false;
       return CommandResult.ok;
     }
 
-    final todos = scanDartTodoDiagnostics(root: state.project.watchRoot);
     state.diagnostics = mergeDiagnostics(parsed, todos);
     state.showDiagnosticsPanel = true;
     final (e, w, i, t) = DiagnosticEntity.counts(state.diagnostics);
@@ -91,13 +119,29 @@ class DiagnosticsCommand extends Command {
     String executable,
     List<String> arguments,
     String workingDirectory,
-    bool runInShell,
-  ) {
-    return Process.run(
+    bool runInShell, {
+    required Duration timeout,
+  }) async {
+    final process = await Process.start(
       executable,
       arguments,
       workingDirectory: workingDirectory,
       runInShell: runInShell,
+    );
+    final stdoutFuture = process.stdout.transform(utf8.decoder).join();
+    final stderrFuture = process.stderr.transform(utf8.decoder).join();
+    final exitCode = await process.exitCode.timeout(
+      timeout,
+      onTimeout: () {
+        process.kill();
+        throw TimeoutException('dart analyze timed out', timeout);
+      },
+    );
+    return ProcessResult(
+      process.pid,
+      exitCode,
+      await stdoutFuture,
+      await stderrFuture,
     );
   }
 
@@ -261,31 +305,7 @@ List<DiagnosticEntity> scanDartTodoDiagnostics({required String root}) {
 }
 
 Iterable<File> _dartFiles(Directory root) sync* {
-  final List<FileSystemEntity> entries;
-  try {
-    entries = root.listSync(recursive: true, followLinks: false);
-  } catch (_) {
-    return;
-  }
-  for (final entity in entries) {
-    if (entity is! File) continue;
-    if (!entity.path.endsWith('.dart')) continue;
-    if (_isExcludedPath(root.path, entity.path)) continue;
-    yield entity;
-  }
-}
-
-bool _isExcludedPath(String root, String path) {
-  final rel = p.isWithin(root, path) ? p.relative(path, from: root) : path;
-  for (final segment in p.split(rel)) {
-    if (segment == '.dart_tool' ||
-        segment == 'build' ||
-        segment == '.fvm' ||
-        segment == '.git') {
-      return true;
-    }
-  }
-  return false;
+  yield* walkDartSourceFiles(root);
 }
 
 void _scanTodoFile(File file, List<DiagnosticEntity> out) {

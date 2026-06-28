@@ -33,13 +33,19 @@ void main() {
       expect(names, isNot(contains('widgets.dart')));
     });
 
-    test('skips .dart_tool and build', () {
+    test('skips excluded directories', () {
       final libDir = Directory(p.join(temp.path, 'lib'))..createSync();
       final buried = Directory(p.join(libDir.path, '.dart_tool', 'sub'))
         ..createSync(recursive: true);
       File(
         p.join(buried.path, 'main.dart'),
       ).writeAsStringSync('void main() {}');
+      final build = Directory(p.join(libDir.path, 'src', 'build'))
+        ..createSync(recursive: true);
+      File(p.join(build.path, 'main.dart')).writeAsStringSync('void main() {}');
+      final fvm = Directory(p.join(libDir.path, '.fvm'))
+        ..createSync(recursive: true);
+      File(p.join(fvm.path, 'main.dart')).writeAsStringSync('void main() {}');
       File(
         p.join(libDir.path, 'main.dart'),
       ).writeAsStringSync('void main() {}');

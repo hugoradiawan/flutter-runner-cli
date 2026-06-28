@@ -180,6 +180,8 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
       ..write('.')
       ..write(_diagSearching ? 1 : 0)
       ..write('|dx:')
+      ..write(state.diagnosticsRevision)
+      ..write('.')
       ..write(identityHashCode(state.diagnostics))
       ..write('.')
       ..write(state.diagnostics.length)

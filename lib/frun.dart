@@ -6,18 +6,25 @@ import 'dart:io';
 
 import 'package:dart_tui/dart_tui.dart';
 
+import 'src/data/datasources/analysis_server.dart';
 import 'src/data/datasources/config_datasource.dart';
 import 'src/data/datasources/config_store.dart';
 import 'src/data/datasources/device_manager.dart';
+import 'src/data/datasources/diagnostics_store.dart';
 import 'src/data/datasources/emulator_manager.dart';
 import 'src/data/datasources/flutter_daemon.dart';
 import 'src/data/repositories/config_repository_impl.dart';
 import 'src/data/repositories/device_repository_impl.dart';
+import 'src/data/repositories/diagnostics_repository_impl.dart';
 import 'src/data/repositories/emulator_repository_impl.dart';
 import 'src/data/repositories/session_repository_impl.dart';
+import 'src/data/services/dart_file_watcher.dart';
+import 'src/data/services/package_locator.dart';
 import 'src/data/services/project_detector.dart';
 import 'src/data/services/windows_console.dart';
 import 'src/domain/entities/app_config.dart';
+import 'src/domain/entities/diagnostic.dart';
+import 'src/domain/params/diagnostics_filter_params.dart';
 import 'src/presentation/app/app_state.dart';
 import 'src/presentation/app/commands/clear_command.dart';
 import 'src/presentation/app/commands/command_registry.dart';
@@ -83,8 +90,14 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   // transcript (and any tab transcripts later) so they start at the saved depth.
   Transcript.defaultMaxLines = configEntity.scrollbackLines;
 
-  final deps = Dependencies()..configRepository = configRepository;
+  final diagnosticsRepository = DiagnosticsRepositoryImpl(
+    DiagnosticsStore(projectRoot: project.root),
+  );
+  final deps = Dependencies()
+    ..configRepository = configRepository
+    ..diagnosticsRepository = diagnosticsRepository;
   final state = AppState(project: project, config: configEntity, deps: deps);
+  _seedCachedDiagnostics(state, diagnosticsRepository);
 
   deps.sessionRepository = SessionRepositoryImpl(
     sessionLookup: (tabId) {
@@ -138,6 +151,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   // Kick the daemon off in the background so the TUI is interactive
   // immediately. Any failure is surfaced in the transcript.
   unawaited(_bootDaemon(state));
+  unawaited(_bootLiveDiagnostics(state, diagnosticsRepository));
   if (state.config.diagnosticsOnBoot) {
     unawaited(_runBootDiagnostics(diagnosticsCommand, state));
   }
@@ -148,8 +162,67 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   }
   await state.runController.stopAll();
   await state.deps.isolateManager.disconnect();
+  await state.deps.diagnosticsSubscription?.cancel();
+  await state.deps.diagnosticsWatcher?.dispose();
+  await state.deps.analysisServer?.shutdown();
   await state.deps.daemon?.shutdown();
   return 0;
+}
+
+void _seedCachedDiagnostics(
+  AppState state,
+  DiagnosticsRepositoryImpl diagnosticsRepository,
+) {
+  final cached = diagnosticsRepository.cachedDiagnostics();
+  final todos = scanDartTodoDiagnostics(root: state.project.watchRoot);
+  if (cached.isEmpty && todos.isEmpty) return;
+  state.diagnostics = mergeDiagnostics(cached, todos);
+}
+
+Future<void> _bootLiveDiagnostics(
+  AppState state,
+  DiagnosticsRepositoryImpl diagnosticsRepository,
+) async {
+  var todos = scanDartTodoDiagnostics(root: state.project.watchRoot);
+
+  void publish(List<DiagnosticEntity> analyzerDiagnostics) {
+    state.diagnostics = mergeDiagnostics(analyzerDiagnostics, todos);
+  }
+
+  try {
+    final workspaceFolders = locatePackageRoots(state.project.watchRoot);
+    final server = await DartAnalysisServer.start(
+      projectRoot: state.project.root,
+      workspaceFolders: workspaceFolders,
+    );
+    state.deps.analysisServer = server;
+    diagnosticsRepository.bindServer(server);
+    state.deps.diagnosticsSubscription = diagnosticsRepository
+        .watchDiagnostics(const DiagnosticsFilterParams())
+        .listen(
+          publish,
+          onError: (Object e) {
+            state.transcript.warn('Live diagnostics error: $e');
+          },
+        );
+
+    final watcher = DartFileWatcher(
+      root: state.project.watchRoot,
+      onFileChanged: server.openFile,
+      onWatcherError: (Object e) {
+        state.transcript.warn('Diagnostics watcher error: $e');
+      },
+    );
+    watcher.start();
+    watcher.onChange.listen((_) {
+      todos = scanDartTodoDiagnostics(root: state.project.watchRoot);
+      publish(server.snapshot);
+    });
+    state.deps.diagnosticsWatcher = watcher;
+    state.transcript.system('Live diagnostics started.');
+  } catch (e) {
+    state.transcript.warn('Live diagnostics unavailable: $e');
+  }
 }
 
 Future<void> _runBootDiagnostics(

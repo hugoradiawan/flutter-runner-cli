@@ -130,9 +130,31 @@ mixin _EngineMixin on _FrunModelBase {
     if (_tc.searchQuery.isEmpty) {
       _tc.matches = const [];
       _tc.activeMatchIndex = -1;
+      _searchCacheTranscript = null;
+      _searchCacheRevision = -1;
+      _searchCacheWidth = -1;
+      _searchCacheQuery = '';
+      _searchCacheMatches = const <SearchMatch>[];
       return;
     }
-    final needle = _tc.searchQuery.toLowerCase();
+
+    final transcript = state.visibleTranscript;
+    final query = _tc.searchQuery;
+    final width = _layoutCacheWidth;
+    if (identical(transcript, _searchCacheTranscript) &&
+        transcript.revision == _searchCacheRevision &&
+        width == _searchCacheWidth &&
+        query == _searchCacheQuery) {
+      _tc.matches = _searchCacheMatches;
+      if (_tc.activeMatchIndex < 0 ||
+          _tc.activeMatchIndex >= _tc.matches.length) {
+        _tc.activeMatchIndex = _tc.matches.isEmpty ? -1 : 0;
+      }
+      return;
+    }
+
+    final previousActive = _tc.activeMatchIndex;
+    final needle = query.toLowerCase();
     final out = <SearchMatch>[];
     for (var i = 0; i < _lastDisplayRows.length; i++) {
       final hay = _lastDisplayRows[i].text.toLowerCase();
@@ -144,8 +166,17 @@ mixin _EngineMixin on _FrunModelBase {
         from = idx + needle.length;
       }
     }
+    _searchCacheTranscript = transcript;
+    _searchCacheRevision = transcript.revision;
+    _searchCacheWidth = width;
+    _searchCacheQuery = query;
+    _searchCacheMatches = out;
     _tc.matches = out;
-    _tc.activeMatchIndex = out.isEmpty ? -1 : 0;
+    _tc.activeMatchIndex = out.isEmpty
+        ? -1
+        : previousActive >= 0 && previousActive < out.length
+        ? previousActive
+        : 0;
   }
 
   void _jumpToActiveMatch() {

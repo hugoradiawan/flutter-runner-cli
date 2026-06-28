@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -69,6 +70,7 @@ void main() {
     await cmd.run(const [], state);
     expect(calls, 1);
     expect(state.showDiagnosticsPanel, isTrue);
+    expect(state.diagnosticsRevision, 2);
     expect(state.diagnosticsFilter, isNull);
     expect(state.diagnosticsSearch, isEmpty);
     expect(state.diagnostics, hasLength(1));
@@ -103,6 +105,11 @@ void main() {
     File(
       p.join(temp.path, 'build', 'generated.dart'),
     ).writeAsStringSync('// TODO: ignored generated file');
+    final hidden = Directory(p.join(temp.path, '.dart_tool', 'generated'))
+      ..createSync(recursive: true);
+    File(
+      p.join(hidden.path, 'generated.dart'),
+    ).writeAsStringSync('// TODO: ignored generated file');
 
     final cmd = DiagnosticsCommand(
       dartExecutable: 'dart',
@@ -126,6 +133,12 @@ void main() {
       state.diagnostics.any((d) => d.filePath.contains('${p.separator}build')),
       isFalse,
     );
+    expect(
+      state.diagnostics.any(
+        (d) => d.filePath.contains('${p.separator}.dart_tool'),
+      ),
+      isFalse,
+    );
   });
 
   test('unknown arg warns and does not run analyzer', () async {
@@ -145,17 +158,34 @@ void main() {
     );
   });
 
-  test('parse failure warns and leaves the panel closed', () async {
+  test('parse failure warns and leaves the panel open', () async {
     final cmd = DiagnosticsCommand(
       dartExecutable: 'dart',
       runAnalyze: (_, _, _, _) async =>
           ProcessResult(123, 64, 'not json', 'bad args'),
     );
     await cmd.run(const [], state);
-    expect(state.showDiagnosticsPanel, isFalse);
+    expect(state.showDiagnosticsPanel, isTrue);
     expect(state.diagnostics, isEmpty);
     expect(
       state.transcript.lines.where((l) => l.level == TranscriptLevel.warn),
+      isNotEmpty,
+    );
+  });
+
+  test('analyze timeout leaves current diagnostics visible', () async {
+    final cmd = DiagnosticsCommand(
+      dartExecutable: 'dart',
+      analyzeTimeout: const Duration(milliseconds: 1),
+      runAnalyze: (_, _, _, _) => Completer<ProcessResult>().future,
+    );
+
+    await cmd.run(const [], state);
+    expect(state.showDiagnosticsPanel, isTrue);
+    expect(
+      state.transcript.lines.where(
+        (l) => l.level == TranscriptLevel.warn && l.text.contains('timed out'),
+      ),
       isNotEmpty,
     );
   });

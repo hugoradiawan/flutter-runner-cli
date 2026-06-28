@@ -1,11 +1,17 @@
+import 'dart:async';
+
+import '../../data/datasources/analysis_server.dart';
 import '../../data/datasources/device_manager.dart';
 import '../../data/datasources/flutter_daemon.dart';
+import '../../data/services/dart_file_watcher.dart';
 import '../../data/services/frun_notifier.dart';
 import '../../data/services/ide_launcher.dart';
 import '../../data/services/inspector_bridge.dart';
 import '../../data/services/isolate_manager.dart';
+import '../../domain/entities/diagnostic.dart';
 import '../../domain/repositories/config_repository.dart';
 import '../../domain/repositories/device_repository.dart';
+import '../../domain/repositories/diagnostics_repository.dart';
 import '../../domain/repositories/emulator_repository.dart';
 import '../../domain/repositories/session_repository.dart';
 import '../../domain/usecases/get_config.dart';
@@ -45,7 +51,13 @@ class Dependencies {
   DeviceRepository? deviceRepository;
   EmulatorRepository? emulatorRepository;
   ConfigRepository? configRepository;
+  DiagnosticsRepository? diagnosticsRepository;
   SessionRepository? sessionRepository;
+
+  // ── Live diagnostics services ────────────────────────────────────────────
+  DartAnalysisServer? analysisServer;
+  DartFileWatcher? diagnosticsWatcher;
+  StreamSubscription<List<DiagnosticEntity>>? diagnosticsSubscription;
 
   // ── Use cases (built once, lazily, from their repository) ─────────────────
   ListDevicesUseCase? _listDevices;

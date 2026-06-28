@@ -119,6 +119,15 @@ abstract class _FrunModelBase extends TeaModel {
   Transcript? _layoutCacheTranscript;
   int _layoutCacheRevision = -1;
   int _layoutCacheWidth = -1;
+  Transcript? _searchCacheTranscript;
+  int _searchCacheRevision = -1;
+  int _searchCacheWidth = -1;
+  String _searchCacheQuery = '';
+  List<SearchMatch> _searchCacheMatches = const <SearchMatch>[];
+  int _diagnosticRowsCacheRevision = -1;
+  DiagnosticCategory? _diagnosticRowsCacheFilter;
+  String _diagnosticRowsCacheSearch = '';
+  List<_DiagRow> _diagnosticRowsCache = const <_DiagRow>[];
   // Previous transcript display-row count and wrap width, so a bottom append
   // can be detected and the scroll offset anchored when scrolled up.
   int _lastTotalRows = 0;
