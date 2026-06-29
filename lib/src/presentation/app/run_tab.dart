@@ -32,6 +32,11 @@ class RunTab {
 
   bool get isRunning => session != null;
 
+  /// True after Flutter has emitted `app.start` for this session. Auto-reload
+  /// must wait for this because startup/build file events can arrive before the
+  /// daemon has an app id to reload.
+  bool get canHotReload => session?.appId != null;
+
   /// Short label rendered in the tab strip. Falls back to the dart entry's
   /// basename when the launch entry has a generic name.
   String get label {

@@ -34,7 +34,7 @@ class RunController {
     _events = DaemonEventRouter(state, _isolates, () => activeTab);
     _watcher = ReloadWatcher(
       state,
-      anyRunning: () => tabs.any((t) => t.isRunning),
+      anyRunning: () => tabs.any((t) => t.canHotReload),
       onReload: hotReloadAll,
     );
   }
@@ -203,7 +203,7 @@ class RunController {
 
   Future<void> hotReloadAll() async {
     for (final tab in tabs) {
-      if (tab.session != null) await _reload(tab);
+      if (tab.canHotReload) await _reload(tab);
     }
   }
 
