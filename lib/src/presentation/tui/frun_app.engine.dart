@@ -21,6 +21,13 @@ mixin _EngineMixin on _FrunModelBase {
       _tc.searchQuery = '';
       _tc.matches = const [];
       _tc.activeMatchIndex = -1;
+      _searchMatchIndexesByRow = const <int, List<int>>{};
+      _searchCacheTranscript = null;
+      _searchCacheRevision = -1;
+      _searchCacheWidth = -1;
+      _searchCacheQuery = '';
+      _searchCacheMatches = const <SearchMatch>[];
+      _searchCacheMatchIndexesByRow = const <int, List<int>>{};
       return;
     }
     if (cmd.name == 'reg') {
@@ -172,6 +179,7 @@ mixin _EngineMixin on _FrunModelBase {
     final needle = query.toLowerCase();
     final out = <SearchMatch>[];
     final byRow = <int, List<int>>{};
+    _debugSearchBuilds++;
     for (var i = 0; i < _lastDisplayRows.length; i++) {
       final hay = _lastDisplayRows[i].text.toLowerCase();
       var from = 0;

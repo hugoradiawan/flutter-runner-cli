@@ -149,7 +149,8 @@ mixin _MouseMixin on _FrunModelBase {
   }
 
   void _scrollBy(int lines) {
-    _transcriptScroll = (_transcriptScroll + lines).clamp(0, 1 << 30);
+    final next = _transcriptScroll + lines;
+    _transcriptScroll = next.clamp(0, _cachedMaxScroll());
     _focusedLinkIndex = -1;
   }
 

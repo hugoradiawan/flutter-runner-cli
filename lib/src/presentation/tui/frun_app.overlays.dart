@@ -857,7 +857,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
   int _tabSegmentWidth(int tabIndex, RunTab t, bool isActive) {
     final maxLabelChars = isActive ? 32 : 18;
     final shortLabel = t.label.length > maxLabelChars
-        ? '${t.label.substring(0, maxLabelChars - 1)}…'
+        ? '${t.label.substring(0, maxLabelChars - 3)}...'
         : t.label;
     final marker = t.isRunning ? '' : ' x';
     final labelText = ' ${tabIndex + 1}: $shortLabel$marker ';
@@ -905,7 +905,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       }
 
       if (isLastRow && hidden > 0) {
-        final chip = '+$hidden›';
+        final chip = '+$hidden>';
         if (x + 1 + chip.length <= width) {
           x += 1;
           canvas.paint(x, rowY, theme.dimStyle.render(chip));
@@ -933,7 +933,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
   ) {
     final maxLabelChars = isActive ? 32 : 18;
     final shortLabel = t.label.length > maxLabelChars
-        ? '${t.label.substring(0, maxLabelChars - 1)}…'
+        ? '${t.label.substring(0, maxLabelChars - 3)}...'
         : t.label;
     final marker = t.isRunning ? '' : ' x';
     final label = ' ${tabIndex + 1}: $shortLabel$marker ';
@@ -956,7 +956,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         if (maxLabel < 2) return x;
         final cutTo = math.min(label.length, maxLabel) - 1;
         if (cutTo < 1) return x;
-        displayLabel = '${label.substring(0, cutTo)}…';
+        displayLabel = '${label.substring(0, cutTo)}.';
         labelWidth = displayLabel.length;
       }
     }

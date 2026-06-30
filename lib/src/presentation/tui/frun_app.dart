@@ -104,6 +104,12 @@ abstract class _FrunModelBase extends TeaModel {
 
   // Cached layout state, refreshed each view() call.
   List<_VisibleLink> _visibleLinks = const <_VisibleLink>[];
+  Transcript? _visibleLinksCacheTranscript;
+  int _visibleLinksCacheRevision = -1;
+  int _visibleLinksCacheWidth = -1;
+  int _visibleLinksCacheStart = -1;
+  int _visibleLinksCacheEnd = -1;
+  List<_VisibleLink> _visibleLinksCache = const <_VisibleLink>[];
   List<_DisplayRow> _lastDisplayRows = const <_DisplayRow>[];
   List<String> _displayRowsText = const <String>[];
   // Snapshot of the transcript lines the cached layout was built from. The
@@ -121,6 +127,7 @@ abstract class _FrunModelBase extends TeaModel {
   int _layoutCacheWidth = -1;
   int _layoutCacheBaseIndex = 0;
   int _layoutCacheLineCount = 0;
+  int _layoutAppendedRowCount = 0;
   Transcript? _searchCacheTranscript;
   int _searchCacheRevision = -1;
   int _searchCacheWidth = -1;
@@ -128,6 +135,9 @@ abstract class _FrunModelBase extends TeaModel {
   List<SearchMatch> _searchCacheMatches = const <SearchMatch>[];
   Map<int, List<int>> _searchCacheMatchIndexesByRow = const <int, List<int>>{};
   Map<int, List<int>> _searchMatchIndexesByRow = const <int, List<int>>{};
+  int _debugLayoutBuilds = 0;
+  int _debugSearchBuilds = 0;
+  int _debugVisibleLinkBuilds = 0;
   int _diagnosticRowsCacheRevision = -1;
   DiagnosticCategory? _diagnosticRowsCacheFilter;
   String _diagnosticRowsCacheSearch = '';
@@ -149,7 +159,7 @@ abstract class _FrunModelBase extends TeaModel {
   // while idle). A full repaint is forced at least every _maxSkippedFrames ticks
   // to self-heal any state the signature doesn't capture.
   static const int _maxSkippedFrames = 4; // ~1s at the 250ms tick interval
-  String? _lastViewSig;
+  _ViewSignature? _lastViewSig;
   String? _lastViewContent;
   Cursor? _lastViewCursor;
   int _framesSinceFullPaint = 0;
@@ -160,6 +170,12 @@ abstract class _FrunModelBase extends TeaModel {
   // here keeps the mixin `on` graph acyclic.
 
   VimBuffer get _activeBuffer => _tc.active ? _tc : _input;
+
+  int _cachedMaxScroll() {
+    final visibleRowCount = _lastBodyHeight;
+    if (visibleRowCount <= 0) return 0;
+    return (_lastDisplayRows.length - visibleRowCount).clamp(0, 1 << 30);
+  }
 
   void _resetViewForNewTab() {
     _transcriptScroll = 0;
@@ -209,4 +225,9 @@ final class FrunModel extends _FrunModelBase
       onTabSwitch: _switchTabFromVim,
     );
   }
+
+  int get debugLayoutBuilds => _debugLayoutBuilds;
+  int get debugSearchBuilds => _debugSearchBuilds;
+  int get debugVisibleLinkBuilds => _debugVisibleLinkBuilds;
+  int get debugTranscriptScroll => _transcriptScroll;
 }

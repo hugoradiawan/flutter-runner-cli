@@ -128,83 +128,53 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
   /// change (config, diagnostics, picker lists, sessions); content hashes for
   /// the free-text fields. Anything missed here self-heals within
   /// _maxSkippedFrames ticks via the forced repaint.
-  String _viewSignature(int w, int h) {
+  _ViewSignature _viewSignature(int w, int h) {
     final rc = state.runController;
-    final b = StringBuffer()
-      ..write(w)
-      ..write('x')
-      ..write(h)
-      ..write('|cfg:')
-      ..write(identityHashCode(state.config))
-      ..write('|tx:')
-      ..write(identityHashCode(state.visibleTranscript))
-      ..write('.')
-      ..write(state.visibleTranscript.revision)
-      ..write('|scr:')
-      ..write(_transcriptScroll)
-      ..write('|lnk:')
-      ..write(_focusedLinkIndex)
-      ..write('|in:')
-      ..write(_input.text.hashCode)
-      ..write('.')
-      ..write(_input.cursor.row)
-      ..write(',')
-      ..write(_input.cursor.col)
-      ..write('|vm:')
-      ..write(_vimState.mode.index)
-      ..write('|tc:')
-      ..write(_tc.active ? 1 : 0)
-      ..write('.')
-      ..write(_tc.searchQuery.hashCode)
-      ..write('.')
-      ..write(_tc.row)
-      ..write(',')
-      ..write(_tc.col)
-      ..write('|ov:')
-      ..write(state.showStatusPanel ? 1 : 0)
-      ..write(_configEditorActive ? 1 : 0)
-      ..write('.')
-      ..write(_configEditorRow)
-      ..write('.')
-      ..write(identityHashCode(_configDraft))
-      ..write('|dg:')
-      ..write(state.showDiagnosticsPanel ? 1 : 0)
-      ..write('.')
-      ..write(_diagSelectedIndex)
-      ..write(',')
-      ..write(_diagScrollOffset)
-      ..write('.')
-      ..write(state.diagnosticsFilter?.index ?? -1)
-      ..write('.')
-      ..write(state.diagnosticsSearch.hashCode)
-      ..write('.')
-      ..write(_diagSearching ? 1 : 0)
-      ..write('|dx:')
-      ..write(state.diagnosticsRevision)
-      ..write('.')
-      ..write(identityHashCode(state.diagnostics))
-      ..write('.')
-      ..write(state.diagnostics.length)
-      ..write('|pk:')
-      ..write(identityHashCode(_activePicker()))
-      ..write('.')
-      ..write(_pickerSelectedIndex)
-      ..write(',')
-      ..write(_pickerScrollOffset)
-      ..write(_pickerWasActive ? 1 : 0)
-      ..write('|rc:')
-      ..write(identityHashCode(rc.session))
-      ..write('.')
-      ..write(identityHashCode(rc.lastEntry))
-      ..write('.')
-      ..write(identityHashCode(rc.activeTab))
-      ..write('|tabs:');
+    final transcript = state.visibleTranscript;
+    var tabsHash = 0x345678;
     for (final t in rc.tabs) {
-      b
-        ..write(t.id)
-        ..write(t.isRunning ? '+' : '-');
+      tabsHash = 0x3fffffff & (tabsHash * 31 + t.id.hashCode);
+      tabsHash = 0x3fffffff & (tabsHash * 31 + (t.isRunning ? 1 : 0));
     }
-    return b.toString();
+    return _ViewSignature(<int>[
+      w,
+      h,
+      identityHashCode(state.config),
+      identityHashCode(transcript),
+      transcript.revision,
+      _transcriptScroll,
+      _focusedLinkIndex,
+      _input.text.hashCode,
+      _input.cursor.row,
+      _input.cursor.col,
+      _vimState.mode.index,
+      _tc.active ? 1 : 0,
+      _tc.searchQuery.hashCode,
+      _tc.row,
+      _tc.col,
+      state.showStatusPanel ? 1 : 0,
+      _configEditorActive ? 1 : 0,
+      _configEditorRow,
+      identityHashCode(_configDraft),
+      state.showDiagnosticsPanel ? 1 : 0,
+      _diagSelectedIndex,
+      _diagScrollOffset,
+      state.diagnosticsFilter?.index ?? -1,
+      state.diagnosticsSearch.hashCode,
+      _diagSearching ? 1 : 0,
+      state.diagnosticsRevision,
+      identityHashCode(state.diagnostics),
+      state.diagnostics.length,
+      identityHashCode(_activePicker()),
+      _pickerSelectedIndex,
+      _pickerScrollOffset,
+      _pickerWasActive ? 1 : 0,
+      identityHashCode(rc.session),
+      identityHashCode(rc.lastEntry),
+      identityHashCode(rc.activeTab),
+      rc.tabs.length,
+      tabsHash,
+    ]);
   }
 
   bool _shouldShowHardwareCursor() {

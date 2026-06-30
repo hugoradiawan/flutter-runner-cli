@@ -2,6 +2,28 @@ part of 'frun_app.dart';
 
 // ─── Shared layout/render value types ──────────────────────────────────────
 
+class _ViewSignature {
+  _ViewSignature(this.values);
+
+  final List<int> values;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! _ViewSignature) return false;
+    final a = values;
+    final b = other.values;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hashAll(values);
+}
+
 class _VisibleLink {
   _VisibleLink(this.transcriptLineIndex, this.link, this.visStart, this.visEnd);
   final int transcriptLineIndex;
@@ -43,7 +65,7 @@ const int _maxInfoBarRows = 6;
 const int _maxPickerRows = 12;
 const int _maxDiagnosticsRows = 16;
 const int _pickerIndent = 2;
-const String _runButtonLabel = ' ► ';
+const String _runButtonLabel = ' > ';
 const String _pickerCloseLabel = ' x ';
 
 // ─── Diagnostics overlay rows ──────────────────────────────────────────────

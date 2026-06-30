@@ -24,13 +24,22 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     // offset (rows hidden below the viewport); a bottom append grows the total
     // row count, which would otherwise slide the window forward and scroll the
     // content being read off the top. Compensate by growing the tail offset by
-    // the same delta. At the bottom (offset == 0) do nothing, so the view keeps
-    // following new output. Skip on width changes, where the row count shifts
-    // from re-wrapping rather than new content.
+    // the appended row count. Using appended rows instead of total-row delta
+    // matters when scrollback trimming removes old rows at the top while new
+    // rows arrive at the bottom; total rows may stay flat, but the tail offset
+    // still needs to grow to keep the same visible content. At the bottom
+    // (offset == 0) do nothing, so the view keeps following new output. Skip on
+    // width changes, where the row count shifts from re-wrapping rather than
+    // new content.
     final total = displayRows.length;
     if (width == _lastLayoutWidth && _transcriptScroll > 0) {
-      final delta = total - _lastTotalRows;
-      if (delta > 0) _transcriptScroll += delta;
+      final appendedRows = _layoutAppendedRowCount;
+      if (appendedRows > 0) {
+        _transcriptScroll += appendedRows;
+      } else {
+        final delta = total - _lastTotalRows;
+        if (delta > 0) _transcriptScroll += delta;
+      }
     }
     _lastTotalRows = total;
     _lastLayoutWidth = width;
@@ -44,13 +53,27 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     _lastVisibleStart = start;
     _lastVisibleEnd = endExclusive;
 
-    if (_tc.searchQuery.isNotEmpty) _recomputeMatches();
+    if (_tc.searchQuery.isNotEmpty) {
+      final searchFresh =
+          identical(transcript, _searchCacheTranscript) &&
+          transcript.revision == _searchCacheRevision &&
+          width == _searchCacheWidth &&
+          _tc.searchQuery == _searchCacheQuery;
+      if (searchFresh) {
+        _tc.matches = _searchCacheMatches;
+        _searchMatchIndexesByRow = _searchCacheMatchIndexesByRow;
+      } else {
+        _recomputeMatches();
+      }
+    }
 
-    _visibleLinks = _collectVisibleLinks(
+    _visibleLinks = _syncVisibleLinks(
+      transcript,
       lines,
       displayRows,
       start,
       endExclusive,
+      width,
     );
     if (_focusedLinkIndex >= _visibleLinks.length) {
       _focusedLinkIndex = _visibleLinks.isEmpty ? -1 : _visibleLinks.length - 1;
@@ -160,6 +183,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     if (identical(transcript, _layoutCacheTranscript) &&
         transcript.revision == _layoutCacheRevision &&
         width == _layoutCacheWidth) {
+      _layoutAppendedRowCount = 0;
       return (lines: _lastLines, rows: _lastDisplayRows);
     }
 
@@ -201,8 +225,11 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
             width,
             startLineIndex: survivorCount,
           );
+          _layoutAppendedRowCount = appended.length;
           rows.addAll(appended);
           rowTexts.addAll(appended.map((r) => r.text));
+        } else {
+          _layoutAppendedRowCount = 0;
         }
 
         _lastLines = lines;
@@ -218,6 +245,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     }
 
     final rows = _layoutDisplayRows(lines, width);
+    _layoutAppendedRowCount = 0;
     _lastLines = lines;
     _lastDisplayRows = rows;
     _displayRowsText = rows.map((r) => r.text).toList(growable: false);
@@ -234,6 +262,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     int width, {
     int startLineIndex = 0,
   }) {
+    _debugLayoutBuilds++;
     final out = <_DisplayRow>[];
     for (var i = 0; i < lines.length; i++) {
       final lineIndex = startLineIndex + i;
@@ -311,6 +340,33 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       flush(text.length);
     }
     return out;
+  }
+
+  List<_VisibleLink> _syncVisibleLinks(
+    Transcript transcript,
+    List<TranscriptLine> lines,
+    List<_DisplayRow> displayRows,
+    int start,
+    int endExclusive,
+    int width,
+  ) {
+    if (identical(transcript, _visibleLinksCacheTranscript) &&
+        transcript.revision == _visibleLinksCacheRevision &&
+        width == _visibleLinksCacheWidth &&
+        start == _visibleLinksCacheStart &&
+        endExclusive == _visibleLinksCacheEnd) {
+      return _visibleLinksCache;
+    }
+
+    final links = _collectVisibleLinks(lines, displayRows, start, endExclusive);
+    _debugVisibleLinkBuilds++;
+    _visibleLinksCacheTranscript = transcript;
+    _visibleLinksCacheRevision = transcript.revision;
+    _visibleLinksCacheWidth = width;
+    _visibleLinksCacheStart = start;
+    _visibleLinksCacheEnd = endExclusive;
+    _visibleLinksCache = links;
+    return links;
   }
 
   void _paintStatus(
