@@ -51,7 +51,7 @@ class DiagnosticsCommand extends Command {
 
     state.diagnosticsFilter = parsedFilter.filter;
     state.diagnosticsSearch = '';
-    final todos = scanDartTodoDiagnostics(root: state.project.watchRoot);
+    final todos = scanDartTodoDiagnostics(root: state.project.root);
     final currentAnalyzerDiagnostics = state.diagnostics
         .where((d) => d.category != DiagnosticCategory.todo)
         .toList(growable: false);

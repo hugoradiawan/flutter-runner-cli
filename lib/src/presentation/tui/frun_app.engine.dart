@@ -71,13 +71,25 @@ mixin _EngineMixin on _FrunModelBase {
 
   void _runSearch(String pattern, bool forward, VimBuffer buffer) {
     if (identical(buffer, _tc)) {
+      final isRepeat = pattern == _tc.searchQuery && _tc.matches.isNotEmpty;
       _tc.searchQuery = pattern;
       _recomputeMatches();
       if (_tc.matches.isEmpty) {
         state.transcript.system('No matches for "$pattern".');
         return;
       }
-      _tc.activeMatchIndex = 0;
+      if (isRepeat) {
+        final current = _tc.activeMatchIndex;
+        if (current < 0 || current >= _tc.matches.length) {
+          _tc.activeMatchIndex = forward ? 0 : _tc.matches.length - 1;
+        } else {
+          _tc.activeMatchIndex = forward
+              ? (current + 1) % _tc.matches.length
+              : (current - 1 + _tc.matches.length) % _tc.matches.length;
+        }
+      } else {
+        _tc.activeMatchIndex = forward ? 0 : _tc.matches.length - 1;
+      }
       _jumpToActiveMatch();
       return;
     }
@@ -135,6 +147,8 @@ mixin _EngineMixin on _FrunModelBase {
       _searchCacheWidth = -1;
       _searchCacheQuery = '';
       _searchCacheMatches = const <SearchMatch>[];
+      _searchCacheMatchIndexesByRow = const <int, List<int>>{};
+      _searchMatchIndexesByRow = const <int, List<int>>{};
       return;
     }
 
@@ -146,6 +160,7 @@ mixin _EngineMixin on _FrunModelBase {
         width == _searchCacheWidth &&
         query == _searchCacheQuery) {
       _tc.matches = _searchCacheMatches;
+      _searchMatchIndexesByRow = _searchCacheMatchIndexesByRow;
       if (_tc.activeMatchIndex < 0 ||
           _tc.activeMatchIndex >= _tc.matches.length) {
         _tc.activeMatchIndex = _tc.matches.isEmpty ? -1 : 0;
@@ -156,13 +171,16 @@ mixin _EngineMixin on _FrunModelBase {
     final previousActive = _tc.activeMatchIndex;
     final needle = query.toLowerCase();
     final out = <SearchMatch>[];
+    final byRow = <int, List<int>>{};
     for (var i = 0; i < _lastDisplayRows.length; i++) {
       final hay = _lastDisplayRows[i].text.toLowerCase();
       var from = 0;
       while (from <= hay.length - needle.length) {
         final idx = hay.indexOf(needle, from);
         if (idx < 0) break;
+        final matchIndex = out.length;
         out.add(SearchMatch(row: i, col: idx, length: needle.length));
+        (byRow[i] ??= <int>[]).add(matchIndex);
         from = idx + needle.length;
       }
     }
@@ -171,7 +189,9 @@ mixin _EngineMixin on _FrunModelBase {
     _searchCacheWidth = width;
     _searchCacheQuery = query;
     _searchCacheMatches = out;
+    _searchCacheMatchIndexesByRow = byRow;
     _tc.matches = out;
+    _searchMatchIndexesByRow = byRow;
     _tc.activeMatchIndex = out.isEmpty
         ? -1
         : previousActive >= 0 && previousActive < out.length

@@ -141,6 +141,43 @@ void main() {
     );
   });
 
+  test('todo filter scans active project root instead of watch root', () async {
+    final appRoot = p.join(temp.path, 'apps', 'demo');
+    final appLib = Directory(p.join(appRoot, 'lib'))
+      ..createSync(recursive: true);
+    File(p.join(appLib.path, 'main.dart')).writeAsStringSync('// TODO: app');
+
+    final siblingLib = Directory(p.join(temp.path, 'packages', 'shared', 'lib'))
+      ..createSync(recursive: true);
+    File(
+      p.join(siblingLib.path, 'shared.dart'),
+    ).writeAsStringSync('// TODO: sibling');
+
+    state = AppState(
+      project: FlutterProject(
+        root: appRoot,
+        name: 'demo',
+        workspaceRoot: temp.path,
+        watchRoot: temp.path,
+        hasVsCodeFolder: false,
+        hasZedFolder: false,
+      ),
+      config: AppConfigEntity.defaults(),
+      deps: Dependencies(),
+    );
+    final cmd = DiagnosticsCommand(
+      dartExecutable: 'dart',
+      runAnalyze: (_, _, _, _) async =>
+          ProcessResult(123, 0, '{"version":1,"diagnostics":[]}', ''),
+    );
+
+    await cmd.run(['todo'], state);
+
+    expect(state.diagnostics, hasLength(1));
+    expect(state.diagnostics.single.code, 'todo');
+    expect(state.diagnostics.single.filePath, p.join(appLib.path, 'main.dart'));
+  });
+
   test('todo index updates and removes a single changed file', () {
     final lib = Directory(p.join(temp.path, 'lib'))..createSync();
     final main = File(p.join(lib.path, 'main.dart'));

@@ -90,15 +90,17 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       }
 
       // Search match highlights.
-      for (var mi = 0; mi < _tc.matches.length; mi++) {
-        final m = _tc.matches[mi];
-        if (m.row != r) continue;
-        final isActive = mi == _tc.activeMatchIndex;
-        final style = isActive
-            ? theme.searchActiveStyle
-            : theme.searchMatchStyle;
-        final text = row.text.substring(m.col, m.col + m.length);
-        canvas.paint(m.col, yRow, style.render(text), zIndex: 2);
+      final matchIndexes = _searchMatchIndexesByRow[r];
+      if (matchIndexes != null) {
+        for (final mi in matchIndexes) {
+          final m = _tc.matches[mi];
+          final isActive = mi == _tc.activeMatchIndex;
+          final style = isActive
+              ? theme.searchActiveStyle
+              : theme.searchMatchStyle;
+          final text = row.text.substring(m.col, m.col + m.length);
+          canvas.paint(m.col, yRow, style.render(text), zIndex: 2);
+        }
       }
 
       // Selection overlay (charwise / linewise / blockwise).

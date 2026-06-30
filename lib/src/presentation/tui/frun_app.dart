@@ -126,6 +126,8 @@ abstract class _FrunModelBase extends TeaModel {
   int _searchCacheWidth = -1;
   String _searchCacheQuery = '';
   List<SearchMatch> _searchCacheMatches = const <SearchMatch>[];
+  Map<int, List<int>> _searchCacheMatchIndexesByRow = const <int, List<int>>{};
+  Map<int, List<int>> _searchMatchIndexesByRow = const <int, List<int>>{};
   int _diagnosticRowsCacheRevision = -1;
   DiagnosticCategory? _diagnosticRowsCacheFilter;
   String _diagnosticRowsCacheSearch = '';

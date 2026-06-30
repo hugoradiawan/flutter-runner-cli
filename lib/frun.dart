@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dart_tui/dart_tui.dart';
+import 'package:path/path.dart' as p;
 
 import 'src/data/datasources/analysis_server.dart';
 import 'src/data/datasources/config_datasource.dart';
@@ -19,7 +20,6 @@ import 'src/data/repositories/diagnostics_repository_impl.dart';
 import 'src/data/repositories/emulator_repository_impl.dart';
 import 'src/data/repositories/session_repository_impl.dart';
 import 'src/data/services/dart_file_watcher.dart';
-import 'src/data/services/package_locator.dart';
 import 'src/data/services/project_detector.dart';
 import 'src/data/services/windows_console.dart';
 import 'src/domain/entities/app_config.dart';
@@ -182,7 +182,8 @@ Future<void> _bootLiveDiagnostics(
   AppState state,
   DiagnosticsRepositoryImpl diagnosticsRepository,
 ) async {
-  final todoIndex = TodoDiagnosticsIndex(root: state.project.watchRoot);
+  final todoRoot = state.project.root;
+  final todoIndex = TodoDiagnosticsIndex(root: todoRoot);
   var todos = const <DiagnosticEntity>[];
   var todoIndexReady = false;
   final pendingTodoChanges = <(String, DartFileChangeType)>[];
@@ -192,6 +193,7 @@ Future<void> _bootLiveDiagnostics(
   }
 
   void applyTodoChange(String path, DartFileChangeType type) {
+    if (!_isWithinRoot(todoRoot, path)) return;
     switch (type) {
       case DartFileChangeType.add:
       case DartFileChangeType.modify:
@@ -204,10 +206,9 @@ Future<void> _bootLiveDiagnostics(
   }
 
   try {
-    final workspaceFolders = locatePackageRoots(state.project.watchRoot);
     final server = await DartAnalysisServer.start(
       projectRoot: state.project.root,
-      workspaceFolders: workspaceFolders,
+      workspaceFolders: <String>[state.project.root],
     );
     state.deps.analysisServer = server;
     diagnosticsRepository.bindServer(server);
@@ -224,6 +225,7 @@ Future<void> _bootLiveDiagnostics(
       root: state.project.watchRoot,
       onFileChanged: server.openFile,
       onDartFileChanged: (String path, DartFileChangeType type) {
+        if (!_isWithinRoot(todoRoot, path)) return;
         if (!todoIndexReady) {
           pendingTodoChanges.add((path, type));
         } else {
@@ -241,7 +243,7 @@ Future<void> _bootLiveDiagnostics(
     state.deps.diagnosticsWatcher = watcher;
     state.transcript.system('Live diagnostics started.');
     unawaited(
-      scanDartTodoDiagnosticsInIsolate(root: state.project.watchRoot)
+      scanDartTodoDiagnosticsInIsolate(root: todoRoot)
           .then((initialTodos) {
             todoIndex.replaceAll(initialTodos);
             todoIndexReady = true;
@@ -259,6 +261,13 @@ Future<void> _bootLiveDiagnostics(
   } catch (e) {
     state.transcript.warn('Live diagnostics unavailable: $e');
   }
+}
+
+bool _isWithinRoot(String root, String path) {
+  final normalizedRoot = p.normalize(p.absolute(root));
+  final normalizedPath = p.normalize(p.absolute(path));
+  return normalizedPath == normalizedRoot ||
+      p.isWithin(normalizedRoot, normalizedPath);
 }
 
 Future<void> _runBootDiagnostics(

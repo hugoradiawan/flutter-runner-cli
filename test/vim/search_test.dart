@@ -57,6 +57,35 @@ void main() {
       expect(fwd, isFalse);
     });
 
+    test('n and N repeat the last search direction', () {
+      final b = InputController(editorMode: FrunEditorMode.vim);
+      b.setText('alpha beta beta');
+      final s = VimState()..mode = VimMode.normal;
+      final calls = <({String pattern, bool forward})>[];
+      final e = VimEngine(
+        state: s,
+        viewport: (_) => (top: 0, height: 10),
+        runExCmd: (_, _) {},
+        runSearch: (pattern, forward, _) {
+          calls.add((pattern: pattern, forward: forward));
+        },
+      );
+
+      e.handle(rune('/'), b);
+      for (final ch in 'bet'.split('')) {
+        e.handle(rune(ch), b);
+      }
+      e.handle(key(KeyCode.enter), b);
+      e.handle(rune('n'), b);
+      e.handle(rune('N'), b);
+
+      expect(calls, [
+        (pattern: 'bet', forward: true),
+        (pattern: 'bet', forward: true),
+        (pattern: 'bet', forward: false),
+      ]);
+    });
+
     test('Esc cancels search without firing', () {
       final b = InputController(editorMode: FrunEditorMode.vim);
       b.setText('a');
