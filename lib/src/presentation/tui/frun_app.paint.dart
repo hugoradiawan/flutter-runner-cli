@@ -14,29 +14,10 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
   ) {
     if (height <= 0 || width <= 0) return;
     _hits.add(x: 0, y: y, w: width, h: height, msg: const TickWakeMsg());
-    // Reuse the wrapped layout when neither the transcript content (revision)
-    // nor the wrap width has changed since the last paint — the common case on
-    // tick/mouse-move frames. A miss re-walks the whole transcript; a hit costs
-    // nothing. The Transcript instance is part of the key so a tab switch
-    // invalidates even when the new tab's revision coincides.
     final transcript = state.visibleTranscript;
-    final List<TranscriptLine> lines;
-    final List<_DisplayRow> displayRows;
-    if (identical(transcript, _layoutCacheTranscript) &&
-        transcript.revision == _layoutCacheRevision &&
-        width == _layoutCacheWidth) {
-      lines = _lastLines;
-      displayRows = _lastDisplayRows;
-    } else {
-      lines = transcript.lines;
-      displayRows = _layoutDisplayRows(lines, width);
-      _lastLines = lines;
-      _lastDisplayRows = displayRows;
-      _displayRowsText = displayRows.map((r) => r.text).toList(growable: false);
-      _layoutCacheTranscript = transcript;
-      _layoutCacheRevision = transcript.revision;
-      _layoutCacheWidth = width;
-    }
+    final layout = _syncTranscriptLayout(transcript, width);
+    final lines = layout.lines;
+    final displayRows = layout.rows;
 
     // Keep the viewport anchored to the same content when the user has scrolled
     // up and new lines are appended at the bottom. _transcriptScroll is a tail
@@ -170,12 +151,93 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     }
   }
 
-  List<_DisplayRow> _layoutDisplayRows(List<TranscriptLine> lines, int width) {
+  ({List<TranscriptLine> lines, List<_DisplayRow> rows}) _syncTranscriptLayout(
+    Transcript transcript,
+    int width,
+  ) {
+    if (identical(transcript, _layoutCacheTranscript) &&
+        transcript.revision == _layoutCacheRevision &&
+        width == _layoutCacheWidth) {
+      return (lines: _lastLines, rows: _lastDisplayRows);
+    }
+
+    final lines = transcript.snapshot;
+    final baseIndex = transcript.baseIndex;
+    final sameTranscript = identical(transcript, _layoutCacheTranscript);
+    final sameWidth = width == _layoutCacheWidth;
+    final removed = baseIndex - _layoutCacheBaseIndex;
+    final canIncrement =
+        sameTranscript &&
+        sameWidth &&
+        removed >= 0 &&
+        removed <= _layoutCacheLineCount &&
+        _layoutCacheRevision >= 0;
+
+    if (canIncrement) {
+      final survivorCount = _layoutCacheLineCount - removed;
+      if (survivorCount <= lines.length) {
+        var rows = _lastDisplayRows;
+        var rowTexts = _displayRowsText;
+        if (removed > 0) {
+          var dropRows = 0;
+          while (dropRows < rows.length && rows[dropRows].lineIndex < removed) {
+            dropRows++;
+          }
+          rows = <_DisplayRow>[
+            for (var i = dropRows; i < rows.length; i++)
+              rows[i].reindex(rows[i].lineIndex - removed),
+          ];
+          rowTexts = rowTexts.sublist(dropRows);
+        } else {
+          rows = List<_DisplayRow>.of(rows);
+          rowTexts = List<String>.of(rowTexts);
+        }
+
+        if (survivorCount < lines.length) {
+          final appended = _layoutDisplayRows(
+            lines.sublist(survivorCount),
+            width,
+            startLineIndex: survivorCount,
+          );
+          rows.addAll(appended);
+          rowTexts.addAll(appended.map((r) => r.text));
+        }
+
+        _lastLines = lines;
+        _lastDisplayRows = rows;
+        _displayRowsText = rowTexts;
+        _layoutCacheTranscript = transcript;
+        _layoutCacheRevision = transcript.revision;
+        _layoutCacheWidth = width;
+        _layoutCacheBaseIndex = baseIndex;
+        _layoutCacheLineCount = lines.length;
+        return (lines: lines, rows: rows);
+      }
+    }
+
+    final rows = _layoutDisplayRows(lines, width);
+    _lastLines = lines;
+    _lastDisplayRows = rows;
+    _displayRowsText = rows.map((r) => r.text).toList(growable: false);
+    _layoutCacheTranscript = transcript;
+    _layoutCacheRevision = transcript.revision;
+    _layoutCacheWidth = width;
+    _layoutCacheBaseIndex = baseIndex;
+    _layoutCacheLineCount = lines.length;
+    return (lines: lines, rows: rows);
+  }
+
+  List<_DisplayRow> _layoutDisplayRows(
+    List<TranscriptLine> lines,
+    int width, {
+    int startLineIndex = 0,
+  }) {
     final out = <_DisplayRow>[];
     for (var i = 0; i < lines.length; i++) {
+      final lineIndex = startLineIndex + i;
       final text = lines[i].text;
       if (text.isEmpty) {
-        out.add(_DisplayRow(i, 0, ''));
+        out.add(_DisplayRow(lineIndex, 0, ''));
         continue;
       }
 
@@ -184,7 +246,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       // String for both `text` and `rendered` so the layout cache points back
       // at the transcript's existing chars instead of cloning them twice.
       if (text.length <= width && !text.contains('\x1b')) {
-        out.add(_DisplayRow(i, 0, text, rendered: text));
+        out.add(_DisplayRow(lineIndex, 0, text, rendered: text));
         continue;
       }
 
@@ -200,7 +262,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       void flush(int rawEnd) {
         out.add(
           _DisplayRow(
-            i,
+            lineIndex,
             chunkVisStart,
             visBuf.toString(),
             rendered: chunkAnsiPrefix + text.substring(chunkRawStart, rawEnd),

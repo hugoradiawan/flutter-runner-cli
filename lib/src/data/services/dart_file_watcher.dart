@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
+enum DartFileChangeType { add, modify, remove, other }
+
 /// Watches a directory tree for `.dart` file changes and emits a debounced
 /// [onChange] event suitable for triggering a hot reload.
 ///
@@ -16,6 +18,7 @@ class DartFileWatcher {
     required this.root,
     this.debounce = const Duration(milliseconds: 250),
     this.onFileChanged,
+    this.onDartFileChanged,
     this.onWatcherError,
   });
 
@@ -26,6 +29,9 @@ class DartFileWatcher {
 
   /// Called with the path of a dart file that was added or modified.
   final void Function(String path)? onFileChanged;
+
+  /// Called for every non-excluded dart event, including deletes.
+  final void Function(String path, DartFileChangeType type)? onDartFileChanged;
 
   /// Called when the watcher backend reports an error.
   final void Function(Object error)? onWatcherError;
@@ -45,10 +51,9 @@ class DartFileWatcher {
 
   void start() {
     try {
-      _sub = DirectoryWatcher(root).events.listen(
-        _onEvent,
-        onError: (Object e) => onWatcherError?.call(e),
-      );
+      _sub = DirectoryWatcher(
+        root,
+      ).events.listen(_onEvent, onError: (Object e) => onWatcherError?.call(e));
     } catch (e) {
       onWatcherError?.call(e);
     }
@@ -58,6 +63,13 @@ class DartFileWatcher {
     final path = event.path;
     if (!path.endsWith('.dart')) return;
     if (_isExcluded(path)) return;
+    final type = switch (event.type) {
+      ChangeType.ADD => DartFileChangeType.add,
+      ChangeType.MODIFY => DartFileChangeType.modify,
+      ChangeType.REMOVE => DartFileChangeType.remove,
+      _ => DartFileChangeType.other,
+    };
+    onDartFileChanged?.call(path, type);
 
     // A delete leaves the analyzer's last view in place and `openFile` would
     // just no-op on the missing path, so only push adds/modifies. Every change

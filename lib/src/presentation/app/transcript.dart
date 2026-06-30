@@ -3,11 +3,7 @@ import 'dart:collection';
 enum TranscriptLevel { info, success, warn, error, debug, system }
 
 class TranscriptLine {
-  TranscriptLine({
-    required this.text,
-    required this.level,
-    this.onClick,
-  });
+  TranscriptLine({required this.text, required this.level, this.onClick});
 
   final String text;
   final TranscriptLevel level;
@@ -32,6 +28,8 @@ class Transcript {
 
   final Queue<TranscriptLine> _lines = Queue<TranscriptLine>();
   int _revision = 0;
+  int _baseIndex = 0;
+  List<TranscriptLine>? _snapshot;
 
   int _maxLines;
 
@@ -48,7 +46,14 @@ class Transcript {
   /// Monotonic version, useful for telling the renderer something changed.
   int get revision => _revision;
 
-  List<TranscriptLine> get lines => List.unmodifiable(_lines);
+  /// Absolute index of the first retained line. Increments as the ring buffer
+  /// trims, letting render caches drop only evicted rows.
+  int get baseIndex => _baseIndex;
+
+  /// Cached immutable view of retained lines. Rebuilt only when content changes.
+  List<TranscriptLine> get snapshot => _snapshot ??= List.unmodifiable(_lines);
+
+  List<TranscriptLine> get lines => snapshot;
 
   void info(String text) => _add(text, TranscriptLevel.info);
   void success(String text) => _add(text, TranscriptLevel.success);
@@ -68,11 +73,10 @@ class Transcript {
 
   void _add(String text, TranscriptLevel level, {void Function()? onClick}) {
     for (final raw in text.split('\n')) {
-      _lines.add(
-        TranscriptLine(text: raw, level: level, onClick: onClick),
-      );
+      _lines.add(TranscriptLine(text: raw, level: level, onClick: onClick));
     }
     _trim();
+    _snapshot = null;
     _revision++;
   }
 
@@ -82,13 +86,17 @@ class Transcript {
     var removed = false;
     while (_lines.length > _maxLines) {
       _lines.removeFirst();
+      _baseIndex++;
       removed = true;
     }
+    if (removed) _snapshot = null;
     return removed;
   }
 
   void clear() {
     _lines.clear();
+    _baseIndex = 0;
+    _snapshot = null;
     _revision++;
   }
 }

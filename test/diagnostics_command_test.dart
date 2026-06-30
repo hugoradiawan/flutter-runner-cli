@@ -141,6 +141,32 @@ void main() {
     );
   });
 
+  test('todo index updates and removes a single changed file', () {
+    final lib = Directory(p.join(temp.path, 'lib'))..createSync();
+    final main = File(p.join(lib.path, 'main.dart'));
+    final other = File(p.join(lib.path, 'other.dart'));
+    main.writeAsStringSync('// TODO: first');
+    other.writeAsStringSync('// FIXME: second');
+
+    final index = TodoDiagnosticsIndex(root: temp.path)..refreshAll();
+    expect(
+      index.diagnostics.map((d) => d.code),
+      containsAll(['todo', 'fixme']),
+    );
+
+    main.writeAsStringSync('// no marker');
+    index.updateFile(main.path);
+    expect(
+      index.diagnostics.map((d) => d.filePath),
+      isNot(contains(main.path)),
+    );
+    expect(index.diagnostics.map((d) => d.code), ['fixme']);
+
+    other.deleteSync();
+    index.removeFile(other.path);
+    expect(index.diagnostics, isEmpty);
+  });
+
   test('unknown arg warns and does not run analyzer', () async {
     var calls = 0;
     final cmd = DiagnosticsCommand(

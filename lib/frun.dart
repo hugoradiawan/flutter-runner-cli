@@ -174,19 +174,33 @@ void _seedCachedDiagnostics(
   DiagnosticsRepositoryImpl diagnosticsRepository,
 ) {
   final cached = diagnosticsRepository.cachedDiagnostics();
-  final todos = scanDartTodoDiagnostics(root: state.project.watchRoot);
-  if (cached.isEmpty && todos.isEmpty) return;
-  state.diagnostics = mergeDiagnostics(cached, todos);
+  if (cached.isEmpty) return;
+  state.diagnostics = cached;
 }
 
 Future<void> _bootLiveDiagnostics(
   AppState state,
   DiagnosticsRepositoryImpl diagnosticsRepository,
 ) async {
-  var todos = scanDartTodoDiagnostics(root: state.project.watchRoot);
+  final todoIndex = TodoDiagnosticsIndex(root: state.project.watchRoot);
+  var todos = const <DiagnosticEntity>[];
+  var todoIndexReady = false;
+  final pendingTodoChanges = <(String, DartFileChangeType)>[];
 
   void publish(List<DiagnosticEntity> analyzerDiagnostics) {
     state.diagnostics = mergeDiagnostics(analyzerDiagnostics, todos);
+  }
+
+  void applyTodoChange(String path, DartFileChangeType type) {
+    switch (type) {
+      case DartFileChangeType.add:
+      case DartFileChangeType.modify:
+      case DartFileChangeType.other:
+        todoIndex.updateFile(path);
+      case DartFileChangeType.remove:
+        todoIndex.removeFile(path);
+    }
+    todos = todoIndex.diagnostics;
   }
 
   try {
@@ -209,17 +223,39 @@ Future<void> _bootLiveDiagnostics(
     final watcher = DartFileWatcher(
       root: state.project.watchRoot,
       onFileChanged: server.openFile,
+      onDartFileChanged: (String path, DartFileChangeType type) {
+        if (!todoIndexReady) {
+          pendingTodoChanges.add((path, type));
+        } else {
+          applyTodoChange(path, type);
+        }
+      },
       onWatcherError: (Object e) {
         state.transcript.warn('Diagnostics watcher error: $e');
       },
     );
     watcher.start();
     watcher.onChange.listen((_) {
-      todos = scanDartTodoDiagnostics(root: state.project.watchRoot);
       publish(server.snapshot);
     });
     state.deps.diagnosticsWatcher = watcher;
     state.transcript.system('Live diagnostics started.');
+    unawaited(
+      scanDartTodoDiagnosticsInIsolate(root: state.project.watchRoot)
+          .then((initialTodos) {
+            todoIndex.replaceAll(initialTodos);
+            todoIndexReady = true;
+            for (final (path, type) in pendingTodoChanges) {
+              applyTodoChange(path, type);
+            }
+            pendingTodoChanges.clear();
+            todos = todoIndex.diagnostics;
+            publish(server.snapshot);
+          })
+          .catchError((Object e) {
+            state.transcript.warn('TODO diagnostics scan failed: $e');
+          }),
+    );
   } catch (e) {
     state.transcript.warn('Live diagnostics unavailable: $e');
   }

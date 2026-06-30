@@ -71,5 +71,21 @@ void main() {
       expect(t.lines.length, cap);
       expect(t.lines.last.text, 'msg ${cap * 10 - 1}');
     });
+
+    test('reuses snapshots until content changes and tracks trim base', () {
+      final t = Transcript(maxLines: 3);
+      t.info('a');
+      final first = t.snapshot;
+      expect(identical(first, t.snapshot), isTrue);
+
+      t.info('b');
+      expect(identical(first, t.snapshot), isFalse);
+      expect(t.baseIndex, 0);
+
+      t.info('c');
+      t.info('d');
+      expect(t.baseIndex, 1);
+      expect(t.snapshot.map((l) => l.text), ['b', 'c', 'd']);
+    });
   });
 }

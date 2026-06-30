@@ -31,6 +31,9 @@ class _DisplayRow {
   final int startCol;
   final String text;
   final String rendered;
+
+  _DisplayRow reindex(int nextLineIndex) =>
+      _DisplayRow(nextLineIndex, startCol, text, rendered: rendered);
 }
 
 // ─── Tuning constants (library-private; shared across the behaviour mixins) ─

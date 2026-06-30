@@ -119,6 +119,8 @@ abstract class _FrunModelBase extends TeaModel {
   Transcript? _layoutCacheTranscript;
   int _layoutCacheRevision = -1;
   int _layoutCacheWidth = -1;
+  int _layoutCacheBaseIndex = 0;
+  int _layoutCacheLineCount = 0;
   Transcript? _searchCacheTranscript;
   int _searchCacheRevision = -1;
   int _searchCacheWidth = -1;

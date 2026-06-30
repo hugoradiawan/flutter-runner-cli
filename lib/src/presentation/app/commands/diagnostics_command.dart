@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:path/path.dart' as p;
 
@@ -302,6 +303,73 @@ List<DiagnosticEntity> scanDartTodoDiagnostics({required String root}) {
     if (out.length >= _maxTodoDiagnostics) break;
   }
   return out;
+}
+
+Future<List<DiagnosticEntity>> scanDartTodoDiagnosticsInIsolate({
+  required String root,
+}) => Isolate.run(() => scanDartTodoDiagnostics(root: root));
+
+class TodoDiagnosticsIndex {
+  TodoDiagnosticsIndex({required String root}) : root = p.normalize(root);
+
+  final String root;
+  final Map<String, List<DiagnosticEntity>> _byPath =
+      <String, List<DiagnosticEntity>>{};
+
+  void refreshAll() {
+    _byPath.clear();
+    final dir = Directory(root);
+    if (!dir.existsSync()) return;
+    var count = 0;
+    for (final file in _dartFiles(dir)) {
+      count += updateFile(file.path);
+      if (count >= _maxTodoDiagnostics) break;
+    }
+  }
+
+  void replaceAll(Iterable<DiagnosticEntity> diagnostics) {
+    _byPath.clear();
+    var count = 0;
+    for (final diagnostic in diagnostics) {
+      if (count >= _maxTodoDiagnostics) break;
+      final normalized = p.normalize(diagnostic.filePath);
+      (_byPath[normalized] ??= <DiagnosticEntity>[]).add(diagnostic);
+      count++;
+    }
+  }
+
+  int updateFile(String path) {
+    final normalized = p.normalize(path);
+    final file = File(normalized);
+    if (!file.existsSync()) {
+      _byPath.remove(normalized);
+      return 0;
+    }
+    final scanned = <DiagnosticEntity>[];
+    _scanTodoFile(file, scanned);
+    if (scanned.isEmpty) {
+      _byPath.remove(normalized);
+    } else {
+      _byPath[normalized] = scanned;
+    }
+    return scanned.length;
+  }
+
+  void removeFile(String path) {
+    _byPath.remove(p.normalize(path));
+  }
+
+  List<DiagnosticEntity> get diagnostics {
+    if (_byPath.isEmpty) return const <DiagnosticEntity>[];
+    final out = <DiagnosticEntity>[];
+    for (final entry in _byPath.entries) {
+      for (final diagnostic in entry.value) {
+        if (out.length >= _maxTodoDiagnostics) return out;
+        out.add(diagnostic);
+      }
+    }
+    return out;
+  }
 }
 
 Iterable<File> _dartFiles(Directory root) sync* {
