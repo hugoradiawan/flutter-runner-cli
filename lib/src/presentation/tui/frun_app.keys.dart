@@ -22,6 +22,10 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
         _closeDiagnosticsPanel();
         return;
       }
+      if (state.showIsolatesPanel) {
+        _closeIsolatesPanel();
+        return;
+      }
       if (_configEditorActive) {
         _configEditorActive = false;
         _configDraft = null;
@@ -86,6 +90,12 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
     // Diagnostics overlay is modal while open: handle its keys, swallow rest.
     if (state.showDiagnosticsPanel) {
       _handleDiagnosticsKey(event);
+      return;
+    }
+
+    // Isolate panel is modal while open: handle its keys, swallow rest.
+    if (state.showIsolatesPanel) {
+      _handleIsolatesKey(event);
       return;
     }
 
@@ -421,6 +431,80 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
     state.showDiagnosticsPanel = false;
     _diagPendingG = false;
     _diagSearching = false;
+  }
+
+  void _handleIsolatesKey(KeyMsg event) {
+    final ke = event.keyEvent;
+    final plain =
+        ke.code == KeyCode.rune &&
+        !ke.modifiers.contains(KeyMod.ctrl) &&
+        !ke.modifiers.contains(KeyMod.alt) &&
+        ke.text.isNotEmpty;
+
+    if (ke.code == KeyCode.escape) {
+      _closeIsolatesPanel();
+      return;
+    }
+    if (ke.code == KeyCode.up) {
+      _moveIsolateSelection(-1);
+      return;
+    }
+    if (ke.code == KeyCode.down) {
+      _moveIsolateSelection(1);
+      return;
+    }
+    if (ke.code == KeyCode.enter || ke.code == KeyCode.space) {
+      final iso = _selectedIsolate();
+      if (iso != null) {
+        unawaited(_runIsolateAction(_defaultIsolateAction(iso), id: iso.id));
+      }
+      return;
+    }
+    if (!plain) return;
+
+    switch (ke.text) {
+      case 'j':
+        _moveIsolateSelection(1);
+        return;
+      case 'k':
+        _moveIsolateSelection(-1);
+        return;
+      case 'g':
+        if (_isolatePendingG) {
+          _isolateSelectEdge(first: true);
+        } else {
+          _isolatePendingG = true;
+        }
+        return;
+      case 'G':
+        _isolateSelectEdge(first: false);
+        return;
+      case 'q':
+        _closeIsolatesPanel();
+        return;
+      case 'R':
+        unawaited(_runIsolateAction(IsolatePanelAction.start));
+        return;
+      case 'p':
+        unawaited(_runIsolateAction(IsolatePanelAction.pause));
+        return;
+      case 'r':
+        unawaited(_runIsolateAction(IsolatePanelAction.resume));
+        return;
+      case 's':
+        unawaited(_runIsolateAction(IsolatePanelAction.step));
+        return;
+      case 't':
+        unawaited(_runIsolateAction(IsolatePanelAction.stack));
+        return;
+      case 'K':
+      case 'x':
+        unawaited(_runIsolateAction(IsolatePanelAction.kill));
+        return;
+      default:
+        _isolatePendingG = false;
+        return;
+    }
   }
 
   /// Move the active filter chip by [dir] (+1 next, -1 previous), wrapping over

@@ -1,4 +1,5 @@
 import 'package:dart_tui/dart_tui.dart';
+import 'package:frun/src/data/services/isolate_manager.dart';
 import 'package:frun/src/data/services/project_detector.dart';
 import 'package:frun/src/domain/entities/app_config.dart';
 import 'package:frun/src/presentation/app/app_state.dart';
@@ -101,10 +102,65 @@ void main() {
 
       expect(h.model.debugTranscriptScroll, 0);
     });
+
+    test('isolate panel renders lifecycle controls', () {
+      final h = _harness(
+        width: 120,
+        height: 24,
+        isolates: <IsolateInfo>[
+          IsolateInfo(
+            id: 'isolates/12345678901234567890',
+            name: 'main',
+            status: IsolateStatus.running,
+          ),
+          IsolateInfo(
+            id: 'isolates/22222222222222222222',
+            name: 'worker',
+            status: IsolateStatus.paused,
+            pauseReason: 'PauseBreakpoint',
+          ),
+        ],
+      );
+      h.state.showIsolatesPanel = true;
+
+      final content = _plain(h.model.view().content);
+
+      expect(content, contains('Isolates'));
+      expect(content, contains('main'));
+      expect(content, contains('worker'));
+      expect(content, contains('pause'));
+      expect(content, contains('resume'));
+      expect(content, contains('step'));
+      expect(content, contains('kill'));
+    });
+
+    test('isolate panel keyboard navigation and close', () {
+      final h = _harness(
+        isolates: <IsolateInfo>[
+          IsolateInfo(id: 'a', name: 'main', status: IsolateStatus.running),
+          IsolateInfo(id: 'b', name: 'worker', status: IsolateStatus.paused),
+        ],
+      );
+      h.state.showIsolatesPanel = true;
+
+      h.keyRune('j');
+      expect(h.model.debugIsolateSelectedIndex, 1);
+
+      h.keyRune('k');
+      expect(h.model.debugIsolateSelectedIndex, 0);
+
+      h.key(KeyCode.escape);
+      expect(h.state.showIsolatesPanel, isFalse);
+    });
   });
 }
 
-_Harness _harness({int width = 80, int height = 20, int? scrollbackLines}) {
+_Harness _harness({
+  int width = 80,
+  int height = 20,
+  int? scrollbackLines,
+  List<IsolateInfo> isolates = const <IsolateInfo>[],
+}) {
   final state = AppState(
     project: FlutterProject(
       root: '.',
@@ -115,7 +171,7 @@ _Harness _harness({int width = 80, int height = 20, int? scrollbackLines}) {
       hasZedFolder: false,
     ),
     config: AppConfigEntity.defaults(),
-    deps: Dependencies(),
+    deps: Dependencies(isolateManager: IsolateManager(isolates: isolates)),
   );
   if (scrollbackLines != null) {
     state.transcript.maxLines = scrollbackLines;
@@ -140,4 +196,14 @@ final class _Harness {
       MouseWheelMsg(const Mouse(x: 0, y: 0, button: MouseButton.wheelUp)),
     );
   }
+
+  void keyRune(String text) {
+    model.update(KeyPressMsg(TeaKey(code: KeyCode.rune, text: text)));
+  }
+
+  void key(KeyCode code) {
+    model.update(KeyPressMsg(TeaKey(code: code)));
+  }
 }
+
+String _plain(String text) => text.replaceAll(RegExp(r'\x1B\[[0-9;]*m'), '');

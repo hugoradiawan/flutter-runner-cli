@@ -35,8 +35,11 @@ import '../../domain/usecases/stop_session.dart';
 /// This is the only seam where the presentation layer reaches concrete data
 /// types; everything else depends on domain abstractions handed out here.
 class Dependencies {
+  Dependencies({IsolateManager? isolateManager})
+    : isolateManager = isolateManager ?? IsolateManager();
+
   // ── Eager infrastructure services ─────────────────────────────────────────
-  final IsolateManager isolateManager = IsolateManager();
+  final IsolateManager isolateManager;
   final IdeLauncher ideLauncher = IdeLauncher();
   final InspectorBridge inspectorBridge = InspectorBridge();
   final FrunNotifier notifier = const FrunNotifier();

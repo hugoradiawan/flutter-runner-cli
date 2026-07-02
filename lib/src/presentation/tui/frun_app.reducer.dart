@@ -1,7 +1,8 @@
 part of 'frun_app.dart';
 
 /// Lifecycle (`init`) + the central reducer (`update`).
-mixin _ReducerMixin on _FrunModelBase, _KeyMixin, _MouseMixin, _EngineMixin {
+mixin _ReducerMixin
+    on _FrunModelBase, _KeyMixin, _MouseMixin, _EngineMixin, _OverlayMixin {
   // ── Lifecycle ──────────────────────────────────────────────────────────
 
   @override
@@ -83,6 +84,9 @@ mixin _ReducerMixin on _FrunModelBase, _KeyMixin, _MouseMixin, _EngineMixin {
       if (state.showDiagnosticsPanel &&
           (b == MouseButton.wheelUp || b == MouseButton.wheelDown)) {
         _scrollDiagnosticsByWheel(up: b == MouseButton.wheelUp);
+      } else if (state.showIsolatesPanel &&
+          (b == MouseButton.wheelUp || b == MouseButton.wheelDown)) {
+        _scrollIsolatesByWheel(up: b == MouseButton.wheelUp);
       } else {
         _onMouseClick(msg.mouse);
       }
@@ -104,6 +108,9 @@ mixin _ReducerMixin on _FrunModelBase, _KeyMixin, _MouseMixin, _EngineMixin {
       if (state.showDiagnosticsPanel &&
           (b == MouseButton.wheelUp || b == MouseButton.wheelDown)) {
         _scrollDiagnosticsByWheel(up: b == MouseButton.wheelUp);
+      } else if (state.showIsolatesPanel &&
+          (b == MouseButton.wheelUp || b == MouseButton.wheelDown)) {
+        _scrollIsolatesByWheel(up: b == MouseButton.wheelUp);
       } else {
         _onMouseWheel(msg.mouse);
       }
@@ -135,6 +142,16 @@ mixin _ReducerMixin on _FrunModelBase, _KeyMixin, _MouseMixin, _EngineMixin {
     } else if (msg is RunButtonMsg) {
       _input.setText('run');
       _submit();
+    } else if (msg is CloseIsolatesPanelMsg) {
+      _closeIsolatesPanel();
+    } else if (msg is SelectIsolateMsg) {
+      final rows = state.deps.isolateManager.isolates;
+      if (msg.index >= 0 && msg.index < rows.length) {
+        _isolateSelectedIndex = msg.index;
+        _isolatePendingG = false;
+      }
+    } else if (msg is IsolateActionMsg) {
+      unawaited(_runIsolateAction(msg.action, id: msg.id));
     } else if (msg is TranscriptLineClickMsg) {
       msg.action();
     } else if (msg is PickLaunchEntryMsg) {
@@ -186,6 +203,7 @@ mixin _ReducerMixin on _FrunModelBase, _KeyMixin, _MouseMixin, _EngineMixin {
       } else {
         state.showDiagnosticsPanel = !state.showDiagnosticsPanel;
         if (state.showDiagnosticsPanel) {
+          state.showIsolatesPanel = false;
           _diagSelectedIndex = 0;
           _diagScrollOffset = 0;
         }

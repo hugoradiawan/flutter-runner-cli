@@ -814,6 +814,381 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     return '${s.substring(0, max - 1)}…';
   }
 
+  // ── Isolates panel ──────────────────────────────────────────────────────
+
+  int _computeIsolatesPanelHeight() {
+    if (!state.showIsolatesPanel) return 0;
+    if (state.hasActivePicker || _configEditorActive) return 0;
+    if (state.showDiagnosticsPanel) return 0;
+    final rows = state.deps.isolateManager.isolates.length;
+    final body = math.max(1, rows);
+    final desired = 1 + 1 + body + 1;
+    final headroom = math.max(4, _height - 6);
+    const maxCap = 1 + 1 + _maxIsolateRows + 1;
+    return math.min(desired, math.min(maxCap, headroom));
+  }
+
+  void _closeIsolatesPanel() {
+    state.showIsolatesPanel = false;
+    _isolatePendingG = false;
+  }
+
+  void _clampIsolateSelection(List<IsolateInfo> rows) {
+    if (rows.isEmpty) {
+      _isolateSelectedIndex = 0;
+      _isolateScrollOffset = 0;
+      return;
+    }
+    _isolateSelectedIndex = _isolateSelectedIndex.clamp(0, rows.length - 1);
+  }
+
+  void _moveIsolateSelection(int delta) {
+    final rows = state.deps.isolateManager.isolates;
+    if (rows.isEmpty) return;
+    _isolateSelectedIndex =
+        (_isolateSelectedIndex + delta + rows.length) % rows.length;
+    _isolatePendingG = false;
+  }
+
+  void _isolateSelectEdge({required bool first}) {
+    final rows = state.deps.isolateManager.isolates;
+    if (rows.isEmpty) return;
+    _isolateSelectedIndex = first ? 0 : rows.length - 1;
+    _isolatePendingG = false;
+  }
+
+  IsolateInfo? _selectedIsolate() {
+    final rows = state.deps.isolateManager.isolates;
+    if (rows.isEmpty) return null;
+    _clampIsolateSelection(rows);
+    return rows[_isolateSelectedIndex];
+  }
+
+  void _scrollIsolatesByWheel({required bool up}) {
+    for (var n = 0; n < 3; n++) {
+      _moveIsolateSelection(up ? -1 : 1);
+    }
+  }
+
+  Future<bool> _ensureIsolateService() async {
+    final manager = state.deps.isolateManager;
+    if (manager.service != null) return true;
+    if (state.runController.hasTabs) {
+      await state.runController.ensureIsolatesForActiveTab();
+    }
+    if (manager.service != null) return true;
+    state.visibleTranscript.warn(
+      'No VM service yet. Start the app with /run, then try /isolates.',
+    );
+    return false;
+  }
+
+  Future<void> _runIsolateAction(
+    IsolatePanelAction action, {
+    String? id,
+  }) async {
+    final manager = state.deps.isolateManager;
+    if (action == IsolatePanelAction.start) {
+      if (state.runController.hasTabs) {
+        await state.runController.rerunActive();
+      } else {
+        _input.setText('run');
+        _submit();
+      }
+      return;
+    }
+    try {
+      if (action == IsolatePanelAction.refresh) {
+        if (await _ensureIsolateService()) await manager.refresh();
+        return;
+      }
+
+      final target = id ?? _selectedIsolate()?.id;
+      if (target == null) {
+        state.visibleTranscript.warn('No isolate selected.');
+        return;
+      }
+      if (!(await _ensureIsolateService())) return;
+
+      switch (action) {
+        case IsolatePanelAction.pause:
+          await manager.pause(target);
+          await manager.refresh();
+        case IsolatePanelAction.resume:
+          await manager.resume(target);
+          await manager.refresh();
+        case IsolatePanelAction.step:
+          await manager.resume(target, step: vm.StepOption.kOver);
+          await manager.refresh();
+        case IsolatePanelAction.kill:
+          await manager.kill(target);
+          await manager.refresh();
+        case IsolatePanelAction.stack:
+          await _printIsolateStack(target);
+        case IsolatePanelAction.start:
+        case IsolatePanelAction.refresh:
+          break;
+      }
+    } catch (e) {
+      state.visibleTranscript.error('VM service call failed: $e');
+    }
+  }
+
+  Future<void> _printIsolateStack(String id) async {
+    try {
+      final stack = await state.deps.isolateManager.getStack(id);
+      if (stack == null) {
+        state.visibleTranscript.warn('No stack available.');
+        return;
+      }
+      final frames = stack.frames ?? const <vm.Frame>[];
+      if (frames.isEmpty) {
+        state.visibleTranscript.info('Stack empty for $id.');
+        return;
+      }
+      state.visibleTranscript.system('Stack for $id:');
+      for (var i = 0; i < frames.length && i < 30; i++) {
+        final frame = frames[i];
+        final fn = frame.function?.name ?? '<anon>';
+        final script = frame.location?.script?.uri ?? '';
+        state.visibleTranscript.info('  #$i  $fn  $script');
+      }
+      final scriptUri = frames.first.location?.script?.uri;
+      if (scriptUri != null) {
+        final loc = SourceLocation.fromVmServiceUri(scriptUri);
+        if (loc != null) await state.deps.ideLauncher.open(loc, state);
+      }
+    } catch (e) {
+      state.visibleTranscript.error('Stack lookup failed: $e');
+    }
+  }
+
+  IsolatePanelAction _defaultIsolateAction(IsolateInfo iso) {
+    return switch (iso.status) {
+      IsolateStatus.paused => IsolatePanelAction.resume,
+      IsolateStatus.running => IsolatePanelAction.pause,
+      IsolateStatus.exited || IsolateStatus.unknown => IsolatePanelAction.stack,
+    };
+  }
+
+  List<(String, IsolatePanelAction)> _isolateActionsFor(IsolateInfo iso) {
+    return switch (iso.status) {
+      IsolateStatus.paused => <(String, IsolatePanelAction)>[
+        ('resume', IsolatePanelAction.resume),
+        ('step', IsolatePanelAction.step),
+        ('stack', IsolatePanelAction.stack),
+        ('kill', IsolatePanelAction.kill),
+      ],
+      IsolateStatus.running => <(String, IsolatePanelAction)>[
+        ('pause', IsolatePanelAction.pause),
+        ('stack', IsolatePanelAction.stack),
+        ('kill', IsolatePanelAction.kill),
+      ],
+      IsolateStatus.exited ||
+      IsolateStatus.unknown => <(String, IsolatePanelAction)>[
+        ('stack', IsolatePanelAction.stack),
+        ('kill', IsolatePanelAction.kill),
+      ],
+    };
+  }
+
+  Style _isolateStatusStyle(FrunTheme theme, IsolateStatus status) {
+    return switch (status) {
+      IsolateStatus.running => theme.successStyle,
+      IsolateStatus.paused => theme.warnStyle,
+      IsolateStatus.exited => theme.dimStyle,
+      IsolateStatus.unknown => theme.dimStyle,
+    };
+  }
+
+  String _shortIsolateId(String id) {
+    if (id.length <= 18) return id;
+    return '${id.substring(0, 9)}…${id.substring(id.length - 6)}';
+  }
+
+  int _paintIsolatePanelAction(
+    Canvas canvas,
+    FrunTheme theme,
+    int x,
+    int y,
+    String label,
+    IsolatePanelAction action, {
+    String? id,
+    bool stop = false,
+  }) {
+    final text = ' $label ';
+    final style = stop ? theme.buttonStopStyle : theme.buttonStyle;
+    canvas.paint(x, y, style.render(text));
+    _hits.add(
+      x: x,
+      y: y,
+      w: text.length,
+      h: 1,
+      msg: IsolateActionMsg(action, id: id),
+    );
+    return x + text.length + 1;
+  }
+
+  void _paintIsolatesPanel(
+    Canvas canvas,
+    FrunTheme theme,
+    int width,
+    int y,
+    int height,
+  ) {
+    if (height <= 0) return;
+    final manager = state.deps.isolateManager;
+    final rows = manager.isolates;
+    _clampIsolateSelection(rows);
+
+    var hx = 0;
+    const title = ' Isolates';
+    canvas.paint(hx, y, theme.dimStyle.render(title));
+    hx += title.length + 1;
+    final active = state.runController.activeTab;
+    final app = active == null ? '(no app)' : active.label;
+    canvas.paint(hx, y, theme.dimStyle.render(_clipText(app, 24)));
+    hx += math.min(app.length, 24) + 1;
+    if (hx + 20 < width) {
+      hx = _paintIsolatePanelAction(
+        canvas,
+        theme,
+        hx,
+        y,
+        state.runController.hasTabs ? 'rerun' : 'start',
+        IsolatePanelAction.start,
+      );
+      hx = _paintIsolatePanelAction(
+        canvas,
+        theme,
+        hx,
+        y,
+        'refresh',
+        IsolatePanelAction.refresh,
+      );
+    }
+
+    final closeX = (width - _pickerCloseLabel.length).clamp(0, width);
+    if (closeX > hx) {
+      canvas.paint(closeX, y, theme.buttonStopStyle.render(_pickerCloseLabel));
+      _hits.add(
+        x: closeX,
+        y: y,
+        w: _pickerCloseLabel.length,
+        h: 1,
+        msg: const CloseIsolatesPanelMsg(),
+      );
+    }
+
+    if (height < 3 || width < 4) return;
+    final topY = y + 1;
+    final bottomY = y + height - 1;
+    final innerStartY = y + 2;
+    final innerEndY = y + height - 2;
+    final horizontal = '─' * (width - 2);
+    canvas.paint(0, topY, theme.borderStyle.render('┌$horizontal┐'));
+    canvas.paint(0, bottomY, theme.borderStyle.render('└$horizontal┘'));
+    for (var r = innerStartY; r <= innerEndY; r++) {
+      canvas.paint(0, r, theme.borderStyle.render('│'));
+      canvas.paint(width - 1, r, theme.borderStyle.render('│'));
+    }
+
+    final innerH = innerEndY - innerStartY + 1;
+    if (innerH <= 0) return;
+    if (rows.isEmpty) {
+      final msg = manager.service == null
+          ? ' No VM service yet. Use /run, then /isolates. '
+          : ' No isolates connected. ';
+      canvas.paint(
+        _pickerIndent,
+        innerStartY,
+        theme.dimStyle.render(_clipText(msg, width - _pickerIndent * 2)),
+      );
+      return;
+    }
+
+    final totalHidden = math.max(0, rows.length - innerH);
+    final visibleCount = totalHidden > 0 ? innerH - 1 : rows.length;
+    if (visibleCount > 0) {
+      if (_isolateSelectedIndex < _isolateScrollOffset) {
+        _isolateScrollOffset = _isolateSelectedIndex;
+      } else if (_isolateSelectedIndex >= _isolateScrollOffset + visibleCount) {
+        _isolateScrollOffset = _isolateSelectedIndex - visibleCount + 1;
+      }
+      _isolateScrollOffset = _isolateScrollOffset.clamp(
+        0,
+        math.max(0, rows.length - visibleCount),
+      );
+    }
+
+    for (var r = 0; r < visibleCount; r++) {
+      final idx = _isolateScrollOffset + r;
+      if (idx >= rows.length) break;
+      final rowY = innerStartY + r;
+      final iso = rows[idx];
+      final selected = idx == _isolateSelectedIndex;
+      final actions = _isolateActionsFor(iso);
+      final actionTexts = actions.map((a) => ' ${a.$1} ').toList();
+      final actionWidth = actionTexts.fold<int>(
+        0,
+        (sum, text) => sum + text.length + 1,
+      );
+      final actionX = width - 1 - actionWidth;
+      final hasButtons = actionX > 28;
+      final textMax = hasButtons ? actionX - 2 : width - 2;
+      final reason = iso.pauseReason == null ? '' : ' ${iso.pauseReason}';
+      final text =
+          ' [$idx] ${iso.status.name.padRight(7)} ${iso.name}  ${_shortIsolateId(iso.id)}$reason';
+      final style = selected
+          ? theme.pickerChipSelectedStyle
+          : _isolateStatusStyle(theme, iso.status);
+      final clipped = _clipText(text, textMax);
+      canvas.paint(1, rowY, style.render(clipped));
+      _hits.add(
+        x: 1,
+        y: rowY,
+        w: clipped.length,
+        h: 1,
+        msg: SelectIsolateMsg(idx),
+      );
+
+      if (!hasButtons) continue;
+      var bx = actionX;
+      for (var i = 0; i < actions.length; i++) {
+        final (label, action) = actions[i];
+        final buttonText = actionTexts[i];
+        final stop = action == IsolatePanelAction.kill;
+        final buttonStyle = stop ? theme.buttonStopStyle : theme.buttonStyle;
+        canvas.paint(bx, rowY, buttonStyle.render(buttonText));
+        _hits.add(
+          x: bx,
+          y: rowY,
+          w: buttonText.length,
+          h: 1,
+          msg: IsolateActionMsg(action, id: iso.id),
+        );
+        bx += buttonText.length + 1;
+      }
+    }
+
+    if (totalHidden > 0) {
+      final rowY = innerStartY + visibleCount;
+      if (rowY <= innerEndY) {
+        final hiddenBelow = math.max(
+          0,
+          rows.length - _isolateScrollOffset - visibleCount,
+        );
+        final more =
+            ' +$hiddenBelow more — j/k move · p pause · r resume · s step · k kill ';
+        canvas.paint(
+          _pickerIndent,
+          rowY,
+          theme.dimStyle.render(_clipText(more, width - _pickerIndent * 2)),
+        );
+      }
+    }
+  }
+
   // ── Info bar / tabs ────────────────────────────────────────────────────
 
   int _computeInfoBarHeight(int width) {

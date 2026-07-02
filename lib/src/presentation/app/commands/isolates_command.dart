@@ -25,53 +25,93 @@ class IsolatesCommand extends Command {
   String get name => 'isolates';
 
   @override
-  String get summary => 'Inspect, pause/resume, step, kill Dart isolates';
+  String get summary => 'Inspect and manage Dart isolates';
 
   @override
-  String get usage => 'isolates [pause|resume|step|kill|stack `<id>`]';
+  String get usage =>
+      'isolates [list|panel|refresh|start|pause|resume|step|kill|stack `<id>`]';
 
   @override
   List<String> get aliases => const ['iso'];
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    // Re-point the shared VM connection at the selected tab's device so the
-    // listed / controlled isolates belong to the active tab.
-    await state.runController.ensureIsolatesForActiveTab();
-    if (manager.service == null) {
-      state.visibleTranscript.warn(
-        'No VM service yet. Start the app with /run, then try /isolates.',
-      );
-      return CommandResult.ok;
-    }
-
     if (args.isEmpty) {
-      _print(state);
+      // Re-point if possible, but still show the panel so its empty/no-service
+      // state can explain what to do next.
+      if (state.runController.hasTabs) {
+        await state.runController.ensureIsolatesForActiveTab();
+      }
+      _showPanel(state);
       return CommandResult.ok;
     }
 
     final sub = args.first;
     final id = args.length >= 2 ? args[1] : null;
     switch (sub) {
+      case 'panel':
+      case 'ui':
+        if (state.runController.hasTabs) {
+          await state.runController.ensureIsolatesForActiveTab();
+        }
+        _showPanel(state);
       case 'list':
       case 'ls':
+        if (state.runController.hasTabs) {
+          await state.runController.ensureIsolatesForActiveTab();
+        }
         _print(state);
+      case 'refresh':
+        if (await _ensureServiceForCommand(state)) {
+          await _wrap(state, manager.refresh);
+        }
+      case 'start':
+      case 'rerun':
+        await state.runController.rerunActive();
       case 'pause':
-        await _wrap(state, () async => manager.pause(_need(id)));
+        if (await _ensureServiceForCommand(state)) {
+          await _wrap(state, () async => manager.pause(_need(id)));
+        }
       case 'resume':
-        await _wrap(state, () async => manager.resume(_need(id)));
+        if (await _ensureServiceForCommand(state)) {
+          await _wrap(state, () async => manager.resume(_need(id)));
+        }
       case 'step':
-        final mode = args.length >= 3 ? args[2] : 'over';
-        final step = _stepFromMode(mode);
-        await _wrap(state, () async => manager.resume(_need(id), step: step));
+        if (await _ensureServiceForCommand(state)) {
+          final mode = args.length >= 3 ? args[2] : 'over';
+          final step = _stepFromMode(mode);
+          await _wrap(state, () async => manager.resume(_need(id), step: step));
+        }
       case 'kill':
-        await _wrap(state, () async => manager.kill(_need(id)));
+        if (await _ensureServiceForCommand(state)) {
+          await _wrap(state, () async => manager.kill(_need(id)));
+        }
       case 'stack':
-        await _printStack(state, _need(id));
+        if (await _ensureServiceForCommand(state)) {
+          await _printStack(state, _need(id));
+        }
       default:
         state.visibleTranscript.warn('Usage: $usage');
     }
     return CommandResult.ok;
+  }
+
+  void _showPanel(AppState state) {
+    state.clearPickers();
+    state.showDiagnosticsPanel = false;
+    state.showIsolatesPanel = true;
+  }
+
+  Future<bool> _ensureServiceForCommand(AppState state) async {
+    if (manager.service != null) return true;
+    if (state.runController.hasTabs) {
+      await state.runController.ensureIsolatesForActiveTab();
+    }
+    if (manager.service != null) return true;
+    state.visibleTranscript.warn(
+      'No VM service yet. Start the app with /run, then try /isolates.',
+    );
+    return false;
   }
 
   void _print(AppState state) {

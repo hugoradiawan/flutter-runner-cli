@@ -23,7 +23,14 @@ enum IsolateStatus { running, paused, exited, unknown }
 /// Connects to a running app's VM service and exposes its isolates plus
 /// pause/resume/step/kill controls.
 class IsolateManager {
-  IsolateManager();
+  IsolateManager({
+    vm.VmService? service,
+    Iterable<IsolateInfo> isolates = const <IsolateInfo>[],
+  }) : _service = service {
+    for (final isolate in isolates) {
+      _isolates[isolate.id] = isolate;
+    }
+  }
 
   vm.VmService? _service;
   final Map<String, IsolateInfo> _isolates = <String, IsolateInfo>{};
@@ -83,6 +90,8 @@ class IsolateManager {
     }
     _emit();
   }
+
+  Future<void> refresh() => _refreshAll();
 
   IsolateInfo _toInfo(vm.IsolateRef ref, vm.Isolate iso) {
     final id = ref.id ?? iso.id ?? 'unknown';

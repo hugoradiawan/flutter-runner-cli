@@ -49,10 +49,16 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
     final pickerH = _computePickerHeight(picker);
     final configEditorH = _computeConfigEditorHeight();
     final diagnosticsH = _computeDiagnosticsHeight();
+    final isolatesH = _computeIsolatesPanelHeight();
     final statusH = state.showStatusPanel
         ? _statusHeight(
             h,
-            infoBarH + pickerH + totalInputH + configEditorH + diagnosticsH,
+            infoBarH +
+                pickerH +
+                totalInputH +
+                configEditorH +
+                diagnosticsH +
+                isolatesH,
           )
         : 0;
     final bodyH =
@@ -62,7 +68,8 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
         infoBarH -
         pickerH -
         configEditorH -
-        diagnosticsH;
+        diagnosticsH -
+        isolatesH;
     _lastBodyHeight = bodyH;
     _lastBodyY = 0;
 
@@ -100,6 +107,15 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
         diagnosticsH,
       );
     }
+    if (isolatesH > 0) {
+      _paintIsolatesPanel(
+        canvas,
+        theme,
+        w,
+        h - totalInputH - infoBarH - diagnosticsH - isolatesH,
+        isolatesH,
+      );
+    }
     _paintInfoBar(canvas, theme, w, h - totalInputH - infoBarH, infoBarH);
     _paintInput(canvas, theme, w, h - totalInputH, inputH);
 
@@ -131,6 +147,14 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
   _ViewSignature _viewSignature(int w, int h) {
     final rc = state.runController;
     final transcript = state.visibleTranscript;
+    var isolatesHash = 0x456789;
+    for (final iso in state.deps.isolateManager.isolates) {
+      isolatesHash = 0x3fffffff & (isolatesHash * 31 + iso.id.hashCode);
+      isolatesHash = 0x3fffffff & (isolatesHash * 31 + iso.name.hashCode);
+      isolatesHash = 0x3fffffff & (isolatesHash * 31 + iso.status.index);
+      isolatesHash =
+          0x3fffffff & (isolatesHash * 31 + (iso.pauseReason?.hashCode ?? 0));
+    }
     var tabsHash = 0x345678;
     for (final t in rc.tabs) {
       tabsHash = 0x3fffffff & (tabsHash * 31 + t.id.hashCode);
@@ -157,8 +181,11 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
       _configEditorRow,
       identityHashCode(_configDraft),
       state.showDiagnosticsPanel ? 1 : 0,
+      state.showIsolatesPanel ? 1 : 0,
       _diagSelectedIndex,
       _diagScrollOffset,
+      _isolateSelectedIndex,
+      _isolateScrollOffset,
       state.diagnosticsFilter?.index ?? -1,
       state.diagnosticsSearch.hashCode,
       _diagSearching ? 1 : 0,
@@ -174,6 +201,8 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
       identityHashCode(rc.activeTab),
       rc.tabs.length,
       tabsHash,
+      isolatesHash,
+      state.deps.isolateManager.service == null ? 0 : 1,
     ]);
   }
 

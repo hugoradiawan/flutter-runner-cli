@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:frun/src/data/datasources/config_datasource.dart';
 import 'package:frun/src/data/datasources/config_store.dart';
 import 'package:frun/src/data/repositories/config_repository_impl.dart';
+import 'package:frun/src/data/services/isolate_manager.dart';
 import 'package:frun/src/data/services/project_detector.dart';
 import 'package:frun/src/domain/entities/app_config.dart';
 import 'package:frun/src/domain/value_objects/config_values.dart';
@@ -12,6 +13,7 @@ import 'package:frun/src/presentation/app/commands/command_registry.dart';
 import 'package:frun/src/presentation/app/commands/config_command.dart';
 import 'package:frun/src/presentation/app/commands/copy_command.dart';
 import 'package:frun/src/presentation/app/commands/help_command.dart';
+import 'package:frun/src/presentation/app/commands/isolates_command.dart';
 import 'package:frun/src/presentation/app/commands/quit_command.dart';
 import 'package:frun/src/presentation/app/transcript.dart';
 import 'package:frun/src/presentation/di/dependencies.dart';
@@ -116,5 +118,46 @@ void main() {
         .where((l) => l.level == TranscriptLevel.warn)
         .toList();
     expect(warns, isNotEmpty);
+  });
+
+  test('/isolates opens lifecycle panel', () async {
+    state.showDiagnosticsPanel = true;
+    final command = IsolatesCommand(
+      state.deps.isolateManager,
+      state.deps.ideLauncher,
+    );
+
+    await command.run(const [], state);
+
+    expect(state.showIsolatesPanel, isTrue);
+    expect(state.showDiagnosticsPanel, isFalse);
+  });
+
+  test('/isolates list still prints isolate rows', () async {
+    final manager = IsolateManager(
+      isolates: <IsolateInfo>[
+        IsolateInfo(
+          id: 'isolates/1234567890',
+          name: 'main',
+          status: IsolateStatus.running,
+        ),
+      ],
+    );
+    final localState = AppState(
+      project: state.project,
+      config: AppConfigEntity.defaults(),
+      deps: Dependencies(isolateManager: manager),
+    );
+    final command = IsolatesCommand(
+      localState.deps.isolateManager,
+      localState.deps.ideLauncher,
+    );
+
+    await command.run(const ['list'], localState);
+
+    final text = localState.transcript.lines.map((l) => l.text).join('\n');
+    expect(text, contains('Isolates:'));
+    expect(text, contains('main'));
+    expect(text, contains('running'));
   });
 }

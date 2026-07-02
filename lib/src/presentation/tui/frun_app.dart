@@ -4,9 +4,11 @@ import 'dart:math' as math;
 
 import 'package:dart_tui/dart_tui.dart';
 import 'package:path/path.dart' as p;
+import 'package:vm_service/vm_service.dart' as vm;
 
 import '../../data/models/source_location.dart';
 import '../../data/services/history_store.dart';
+import '../../data/services/isolate_manager.dart';
 import '../../domain/entities/app_config.dart';
 import '../../domain/entities/diagnostic.dart';
 import '../../domain/value_objects/config_values.dart';
@@ -86,6 +88,11 @@ abstract class _FrunModelBase extends TeaModel {
   // is active (so bare letters feed the filter instead of acting as motions).
   bool _diagPendingG = false;
   bool _diagSearching = false;
+
+  // Isolate lifecycle panel selection and scroll offset.
+  int _isolateSelectedIndex = 0;
+  int _isolateScrollOffset = 0;
+  bool _isolatePendingG = false;
 
   // Mouse-drag selection state. `_mouseAnchor` is captured on left-click
   // inside the transcript body when no hit-region intercepts; the selection
@@ -230,4 +237,5 @@ final class FrunModel extends _FrunModelBase
   int get debugSearchBuilds => _debugSearchBuilds;
   int get debugVisibleLinkBuilds => _debugVisibleLinkBuilds;
   int get debugTranscriptScroll => _transcriptScroll;
+  int get debugIsolateSelectedIndex => _isolateSelectedIndex;
 }

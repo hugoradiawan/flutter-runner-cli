@@ -100,6 +100,10 @@ class AppState {
   /// `/diagnostics`, by clicking the prompt-box counters, or closed with esc.
   bool showDiagnosticsPanel = false;
 
+  /// Whether the isolate lifecycle panel is open. Toggled by `/isolates` and
+  /// closed with esc/q.
+  bool showIsolatesPanel = false;
+
   /// Active category filter in the diagnostics overlay; null = show all.
   DiagnosticCategory? diagnosticsFilter;
 

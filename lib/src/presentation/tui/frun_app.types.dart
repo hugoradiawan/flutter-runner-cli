@@ -64,6 +64,7 @@ const int _maxInputRows = 8;
 const int _maxInfoBarRows = 6;
 const int _maxPickerRows = 12;
 const int _maxDiagnosticsRows = 16;
+const int _maxIsolateRows = 12;
 const int _pickerIndent = 2;
 const String _runButtonLabel = ' > ';
 const String _pickerCloseLabel = ' x ';

@@ -35,6 +35,25 @@ final class RunButtonMsg extends Msg {
   const RunButtonMsg();
 }
 
+enum IsolatePanelAction { start, refresh, pause, resume, step, kill, stack }
+
+final class CloseIsolatesPanelMsg extends Msg {
+  const CloseIsolatesPanelMsg();
+}
+
+final class SelectIsolateMsg extends Msg {
+  const SelectIsolateMsg(this.index);
+
+  final int index;
+}
+
+final class IsolateActionMsg extends Msg {
+  const IsolateActionMsg(this.action, {this.id});
+
+  final IsolatePanelAction action;
+  final String? id;
+}
+
 final class TranscriptLineClickMsg extends Msg {
   TranscriptLineClickMsg(this.action);
   final void Function() action;
