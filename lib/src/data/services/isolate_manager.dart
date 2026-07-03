@@ -51,10 +51,20 @@ class IsolateManager {
   /// integration to react to selection changes.
   Stream<vm.Event> get extensionEvents => _extensionStream.stream;
 
+  List<IsolateInfo>? _sortedCache;
+  int _revision = 0;
+
+  /// Monotonic version, bumped on every isolate list/status change. Lets the
+  /// TUI's frame signature use one int instead of hashing every isolate per
+  /// frame.
+  int get revision => _revision;
+
   List<IsolateInfo> get isolates {
+    final cached = _sortedCache;
+    if (cached != null) return cached;
     final list = _isolates.values.toList();
     list.sort((a, b) => a.name.compareTo(b.name));
-    return list;
+    return _sortedCache = list;
   }
 
   IsolateInfo? byId(String id) => _isolates[id];
@@ -162,6 +172,8 @@ class IsolateManager {
   }
 
   void _emit() {
+    _sortedCache = null;
+    _revision++;
     if (!_changes.isClosed) _changes.add(isolates);
   }
 

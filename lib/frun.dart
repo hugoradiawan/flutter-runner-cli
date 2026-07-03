@@ -184,6 +184,7 @@ Future<void> _bootLiveDiagnostics(
 ) async {
   final todoRoot = state.project.root;
   final todoIndex = TodoDiagnosticsIndex(root: todoRoot);
+  state.deps.todoIndex = todoIndex;
   var todos = const <DiagnosticEntity>[];
   var todoIndexReady = false;
   final pendingTodoChanges = <(String, DartFileChangeType)>[];
@@ -237,8 +238,15 @@ Future<void> _bootLiveDiagnostics(
       },
     );
     watcher.start();
+    // FS events arrive in bursts (branch switches, format-on-save sweeps);
+    // coalesce them so the merge/publish pass runs once per burst, matching
+    // the analysis server's own emit debounce.
+    Timer? publishDebounce;
     watcher.onChange.listen((_) {
-      publish(server.snapshot);
+      publishDebounce?.cancel();
+      publishDebounce = Timer(const Duration(milliseconds: 250), () {
+        publish(server.snapshot);
+      });
     });
     state.deps.diagnosticsWatcher = watcher;
     state.transcript.system('Live diagnostics started.');
@@ -247,6 +255,7 @@ Future<void> _bootLiveDiagnostics(
           .then((initialTodos) {
             todoIndex.replaceAll(initialTodos);
             todoIndexReady = true;
+            state.deps.todoIndexReady = true;
             for (final (path, type) in pendingTodoChanges) {
               applyTodoChange(path, type);
             }

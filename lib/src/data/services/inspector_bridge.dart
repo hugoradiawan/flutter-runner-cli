@@ -15,19 +15,35 @@ import '../models/source_location.dart';
 ///     [_handleSelectionEvent].
 ///   • DevTools widget-tree click → no useful extension event is broadcast
 ///     (Flutter only fires `Flutter.Frame`/`Flutter.ServiceExtensionStateChanged`).
-///     A 500 ms poll on `ext.flutter.inspector.getSelectedSummaryWidget`
-///     picks up the change.
+///     A poll on `ext.flutter.inspector.getSelectedSummaryWidget` picks up the
+///     change. The poll adapts: 500 ms while the selection is actively
+///     changing, backing off to 2 s once it has been quiet for a few seconds —
+///     each poll is a VM-service RPC round-trip, so the fast cadence would
+///     otherwise burn CPU/network for as long as the bridge stays attached.
 class InspectorBridge {
   static const _objectGroup = 'frun-inspector';
   static const _pollInterval = Duration(milliseconds: 500);
+  static const _idlePollInterval = Duration(seconds: 2);
+
+  /// Consecutive no-change polls (~5 s at the fast cadence) before backing off.
+  static const _idleThreshold = 10;
 
   StreamSubscription<vm.Event>? _sub;
   Timer? _poll;
   bool _polling = false;
   bool _primed = false;
   String? _lastKey;
+  int _quietPolls = 0;
+  bool _pollIdle = false;
+
+  /// Invalidates in-flight poll chains when attach/detach swaps state.
+  int _pollGeneration = 0;
 
   bool get isAttached => _sub != null || _poll != null;
+
+  /// Current poll cadence (test hook).
+  Duration get debugPollInterval =>
+      _pollIdle ? _idlePollInterval : _pollInterval;
 
   /// (Re)subscribe to selection events and start polling. Safe to call
   /// repeatedly; cancels any prior subscription/timer first so the bridge
@@ -36,15 +52,19 @@ class InspectorBridge {
     _sub?.cancel();
     _poll?.cancel();
     _primed = false;
+    _quietPolls = 0;
+    _pollIdle = false;
+    _pollGeneration++;
     _sub = state.deps.isolateManager.extensionEvents.listen((event) {
       if (event.extensionKind == 'Flutter.Selection') {
         _handleSelectionEvent(event, state);
       }
     });
-    _poll = Timer.periodic(_pollInterval, (_) => _pollSelection(state));
+    _schedulePoll(state);
   }
 
   Future<void> detach() async {
+    _pollGeneration++;
     await _sub?.cancel();
     _poll?.cancel();
     _sub = null;
@@ -53,7 +73,27 @@ class InspectorBridge {
     _primed = false;
   }
 
+  void _schedulePoll(AppState state) {
+    final generation = _pollGeneration;
+    _poll = Timer(_pollIdle ? _idlePollInterval : _pollInterval, () async {
+      if (generation != _pollGeneration) return;
+      final before = _lastKey;
+      await _pollSelection(state);
+      if (generation != _pollGeneration) return;
+      if (_lastKey != before) {
+        _quietPolls = 0;
+        _pollIdle = false;
+      } else if (!_pollIdle && ++_quietPolls >= _idleThreshold) {
+        _pollIdle = true;
+      }
+      _schedulePoll(state);
+    });
+  }
+
   Future<void> _handleSelectionEvent(vm.Event event, AppState state) async {
+    // The user is actively inspecting — restore the fast poll cadence.
+    _quietPolls = 0;
+    _pollIdle = false;
     final data = event.extensionData?.data ?? const <String, dynamic>{};
     final loc = _extractLocation(data);
     // User-driven tap — always open regardless of _primed state.

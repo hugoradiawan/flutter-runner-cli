@@ -24,10 +24,10 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
     // changed. Always repaint while drag-selecting (the selection extent moves
     // with the mouse and isn't in the signature) and at least once per
     // _maxSkippedFrames ticks as a self-heal.
-    final sig = _viewSignature(w, h);
+    final sigUnchanged = _viewSignatureUnchanged(w, h);
     if (!_mouseSelecting &&
         _lastViewContent != null &&
-        sig == _lastViewSig &&
+        sigUnchanged &&
         _framesSinceFullPaint < _FrunModelBase._maxSkippedFrames) {
       _framesSinceFullPaint++;
       return View(
@@ -125,7 +125,8 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
         : null;
 
     final content = canvas.render();
-    _lastViewSig = sig;
+    _sigPrevious.setAll(0, _sigCurrent);
+    _sigValid = true;
     _lastViewContent = content;
     _lastViewCursor = inputCursor;
     _framesSinceFullPaint = 0;
@@ -139,71 +140,73 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
   }
 
   /// Compact fingerprint of every piece of state that affects the rendered
-  /// frame. When it is unchanged between ticks the paint is skipped. Identity
-  /// hashes are used for collections/objects that are replaced wholesale on
-  /// change (config, diagnostics, picker lists, sessions); content hashes for
-  /// the free-text fields. Anything missed here self-heals within
-  /// _maxSkippedFrames ticks via the forced repaint.
-  _ViewSignature _viewSignature(int w, int h) {
+  /// frame, written into the preallocated [_sigCurrent] slots. Returns whether
+  /// it matches the previous painted frame's signature (so the paint can be
+  /// skipped). Identity hashes are used for collections/objects that are
+  /// replaced wholesale on change (config, diagnostics, picker lists,
+  /// sessions); content hashes for the free-text fields; monotonic revisions
+  /// for the isolate list and diagnostics. Anything missed here self-heals
+  /// within _maxSkippedFrames ticks via the forced repaint.
+  bool _viewSignatureUnchanged(int w, int h) {
     final rc = state.runController;
     final transcript = state.visibleTranscript;
-    var isolatesHash = 0x456789;
-    for (final iso in state.deps.isolateManager.isolates) {
-      isolatesHash = 0x3fffffff & (isolatesHash * 31 + iso.id.hashCode);
-      isolatesHash = 0x3fffffff & (isolatesHash * 31 + iso.name.hashCode);
-      isolatesHash = 0x3fffffff & (isolatesHash * 31 + iso.status.index);
-      isolatesHash =
-          0x3fffffff & (isolatesHash * 31 + (iso.pauseReason?.hashCode ?? 0));
-    }
     var tabsHash = 0x345678;
     for (final t in rc.tabs) {
       tabsHash = 0x3fffffff & (tabsHash * 31 + t.id.hashCode);
       tabsHash = 0x3fffffff & (tabsHash * 31 + (t.isRunning ? 1 : 0));
     }
-    return _ViewSignature(<int>[
-      w,
-      h,
-      identityHashCode(state.config),
-      identityHashCode(transcript),
-      transcript.revision,
-      _transcriptScroll,
-      _focusedLinkIndex,
-      _input.text.hashCode,
-      _input.cursor.row,
-      _input.cursor.col,
-      _vimState.mode.index,
-      _tc.active ? 1 : 0,
-      _tc.searchQuery.hashCode,
-      _tc.row,
-      _tc.col,
-      state.showStatusPanel ? 1 : 0,
-      _configEditorActive ? 1 : 0,
-      _configEditorRow,
-      identityHashCode(_configDraft),
-      state.showDiagnosticsPanel ? 1 : 0,
-      state.showIsolatesPanel ? 1 : 0,
-      _diagSelectedIndex,
-      _diagScrollOffset,
-      _isolateSelectedIndex,
-      _isolateScrollOffset,
-      state.diagnosticsFilter?.index ?? -1,
-      state.diagnosticsSearch.hashCode,
-      _diagSearching ? 1 : 0,
-      state.diagnosticsRevision,
-      identityHashCode(state.diagnostics),
-      state.diagnostics.length,
-      identityHashCode(_activePicker()),
-      _pickerSelectedIndex,
-      _pickerScrollOffset,
-      _pickerWasActive ? 1 : 0,
-      identityHashCode(rc.session),
-      identityHashCode(rc.lastEntry),
-      identityHashCode(rc.activeTab),
-      rc.tabs.length,
-      tabsHash,
-      isolatesHash,
-      state.deps.isolateManager.service == null ? 0 : 1,
-    ]);
+    final sig = _sigCurrent;
+    var i = 0;
+    sig[i++] = w;
+    sig[i++] = h;
+    sig[i++] = identityHashCode(state.config);
+    sig[i++] = identityHashCode(transcript);
+    sig[i++] = transcript.revision;
+    sig[i++] = _transcriptScroll;
+    sig[i++] = _focusedLinkIndex;
+    sig[i++] = _input.text.hashCode;
+    sig[i++] = _input.cursor.row;
+    sig[i++] = _input.cursor.col;
+    sig[i++] = _vimState.mode.index;
+    sig[i++] = _tc.active ? 1 : 0;
+    sig[i++] = _tc.searchQuery.hashCode;
+    sig[i++] = _tc.row;
+    sig[i++] = _tc.col;
+    sig[i++] = state.showStatusPanel ? 1 : 0;
+    sig[i++] = _configEditorActive ? 1 : 0;
+    sig[i++] = _configEditorRow;
+    sig[i++] = identityHashCode(_configDraft);
+    sig[i++] = state.showDiagnosticsPanel ? 1 : 0;
+    sig[i++] = state.showIsolatesPanel ? 1 : 0;
+    sig[i++] = _diagSelectedIndex;
+    sig[i++] = _diagScrollOffset;
+    sig[i++] = _isolateSelectedIndex;
+    sig[i++] = _isolateScrollOffset;
+    sig[i++] = state.diagnosticsFilter?.index ?? -1;
+    sig[i++] = state.diagnosticsSearch.hashCode;
+    sig[i++] = _diagSearching ? 1 : 0;
+    sig[i++] = state.diagnosticsRevision;
+    sig[i++] = identityHashCode(state.diagnostics);
+    sig[i++] = state.diagnostics.length;
+    sig[i++] = identityHashCode(_activePicker());
+    sig[i++] = _pickerSelectedIndex;
+    sig[i++] = _pickerScrollOffset;
+    sig[i++] = _pickerWasActive ? 1 : 0;
+    sig[i++] = identityHashCode(rc.session);
+    sig[i++] = identityHashCode(rc.lastEntry);
+    sig[i++] = identityHashCode(rc.activeTab);
+    sig[i++] = rc.tabs.length;
+    sig[i++] = tabsHash;
+    sig[i++] = state.deps.isolateManager.revision;
+    sig[i++] = state.deps.isolateManager.service == null ? 0 : 1;
+    assert(i == _FrunModelBase._sigLength);
+
+    if (!_sigValid) return false;
+    final prev = _sigPrevious;
+    for (var j = 0; j < _FrunModelBase._sigLength; j++) {
+      if (sig[j] != prev[j]) return false;
+    }
+    return true;
   }
 
   bool _shouldShowHardwareCursor() {

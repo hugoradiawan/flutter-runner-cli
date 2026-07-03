@@ -2,28 +2,6 @@ part of 'frun_app.dart';
 
 // ─── Shared layout/render value types ──────────────────────────────────────
 
-class _ViewSignature {
-  _ViewSignature(this.values);
-
-  final List<int> values;
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! _ViewSignature) return false;
-    final a = values;
-    final b = other.values;
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
-  }
-
-  @override
-  int get hashCode => Object.hashAll(values);
-}
-
 class _VisibleLink {
   _VisibleLink(this.transcriptLineIndex, this.link, this.visStart, this.visEnd);
   final int transcriptLineIndex;
@@ -37,6 +15,11 @@ class _VisibleLink {
 
 /// One row's worth of text after soft-wrapping. A long transcript line wraps
 /// into several `_DisplayRow`s.
+///
+/// [lineIndex] is the *absolute* transcript line index (i.e. offset by
+/// `Transcript.baseIndex`), so rows stay valid without re-indexing when the
+/// ring buffer trims; subtract the current `baseIndex` to index into the
+/// transcript's line snapshot.
 ///
 /// [text] is the *visible* content with ANSI escape codes stripped, so column
 /// indices into it map 1:1 onto on-screen cells. All column arithmetic — mouse
@@ -53,9 +36,32 @@ class _DisplayRow {
   final int startCol;
   final String text;
   final String rendered;
+}
 
-  _DisplayRow reindex(int nextLineIndex) =>
-      _DisplayRow(nextLineIndex, startCol, text, rendered: rendered);
+/// Read-only window over the tail of a shared backing list, starting at a
+/// dynamic head offset. The layout cache evicts rows by advancing the head and
+/// appends in place, while long-lived readers (mouse handling, the vim cursor's
+/// rows provider, scroll math) hold one stable list whose contents track the
+/// live region.
+class _ListSliceView<T> extends ListBase<T> {
+  _ListSliceView(this._backing, this._head);
+
+  final List<T> Function() _backing;
+  final int Function() _head;
+
+  @override
+  int get length => _backing().length - _head();
+
+  @override
+  set length(int newLength) =>
+      throw UnsupportedError('Cannot resize a read-only view');
+
+  @override
+  T operator [](int index) => _backing()[_head() + index];
+
+  @override
+  void operator []=(int index, T value) =>
+      throw UnsupportedError('Cannot modify a read-only view');
 }
 
 // ─── Tuning constants (library-private; shared across the behaviour mixins) ─

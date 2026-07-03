@@ -32,10 +32,11 @@ class CopyCommand extends Command {
       return CommandResult.ok;
     }
 
+    final lineCount = lines.length;
     final text = lines.map((l) => l.text).join('\n');
     final ok = await _copy(text);
     if (ok) {
-      transcript.system('Copied ${lines.length} lines (${text.length} chars).');
+      transcript.system('Copied $lineCount lines (${text.length} chars).');
     } else {
       transcript.warn(
         'Copy failed — no clipboard helper available (headless or SSH session?).',

@@ -252,4 +252,49 @@ void main() {
       isNotEmpty,
     );
   });
+
+  group('mergeDiagnostics', () {
+    DiagnosticEntity diag(
+      String path,
+      int line, {
+      String? code,
+      DiagnosticSeverity severity = DiagnosticSeverity.warning,
+    }) => DiagnosticEntity(
+      filePath: path,
+      line: line,
+      column: 1,
+      severity: severity,
+      message: 'm',
+      code: code,
+    );
+
+    test('dedupes identical (path, line, column, code) entries', () {
+      final a = diag(p.normalize('/x/lib/a.dart'), 3, code: 'todo');
+      final dup = diag(p.normalize('/x/lib/a.dart'), 3, code: 'todo');
+      final other = diag(p.normalize('/x/lib/a.dart'), 4, code: 'todo');
+
+      final merged = mergeDiagnostics([a], [dup, other]);
+      expect(merged, [a, other]);
+    });
+
+    test('keeps analyzer entry when a todo duplicates it', () {
+      final analyzer = diag(
+        p.normalize('/x/lib/a.dart'),
+        3,
+        code: 'todo',
+        severity: DiagnosticSeverity.info,
+      );
+      final todo = diag(p.normalize('/x/lib/a.dart'), 3, code: 'todo');
+
+      final merged = mergeDiagnostics([analyzer], [todo]);
+      expect(merged.single.severity, DiagnosticSeverity.info);
+    });
+
+    test('distinct codes on the same location are kept', () {
+      final a = diag(p.normalize('/x/lib/a.dart'), 3, code: 'todo');
+      final b = diag(p.normalize('/x/lib/a.dart'), 3, code: 'fixme');
+
+      expect(mergeDiagnostics([a], [b]), hasLength(2));
+    });
+  });
 }

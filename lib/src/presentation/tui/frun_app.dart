@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -117,11 +118,30 @@ abstract class _FrunModelBase extends TeaModel {
   int _visibleLinksCacheStart = -1;
   int _visibleLinksCacheEnd = -1;
   List<_VisibleLink> _visibleLinksCache = const <_VisibleLink>[];
-  List<_DisplayRow> _lastDisplayRows = const <_DisplayRow>[];
-  List<String> _displayRowsText = const <String>[];
-  // Snapshot of the transcript lines the cached layout was built from. The
-  // `lines` getter copies the whole queue (List.unmodifiable), so reusing this
-  // on a cache hit avoids an O(n) copy per paint as well.
+  // Master storage for the wrapped display rows. Appends go in place at the
+  // tail; scrollback eviction advances _rowsHead past dropped rows instead of
+  // copying the survivors, and the dead prefix is compacted away only once it
+  // outgrows the live region — so a content frame at a full ring buffer costs
+  // O(changed rows), not O(total rows). _lastDisplayRows/_displayRowsText are
+  // stable read-only views over the live region; row indices into them shift
+  // when the head advances, exactly as they did when the lists were rebuilt.
+  final List<_DisplayRow> _rowsBuffer = <_DisplayRow>[];
+  final List<String> _rowTextsBuffer = <String>[];
+  int _rowsHead = 0;
+  // Bumped whenever existing buffer indices shift (full rebuild, compaction);
+  // stable across pure appends and head advances. Dependent caches that store
+  // buffer-index-aligned data (the search lowercase mirror) key off it.
+  int _rowsBufferGeneration = 0;
+  late final List<_DisplayRow> _lastDisplayRows = _ListSliceView(
+    () => _rowsBuffer,
+    () => _rowsHead,
+  );
+  late final List<String> _displayRowsText = _ListSliceView(
+    () => _rowTextsBuffer,
+    () => _rowsHead,
+  );
+  // Live view of the transcript lines the cached layout was built from.
+  // Index 0 always corresponds to `transcript.baseIndex`.
   List<TranscriptLine> _lastLines = const <TranscriptLine>[];
   // Keys for reusing the display-row layout across paints. _layoutDisplayRows
   // walks the whole transcript (ANSI parse + soft-wrap), so re-running it on
@@ -135,6 +155,16 @@ abstract class _FrunModelBase extends TeaModel {
   int _layoutCacheBaseIndex = 0;
   int _layoutCacheLineCount = 0;
   int _layoutAppendedRowCount = 0;
+  // Display rows evicted off the top by the last layout sync (scrollback
+  // trim). Row-index-anchored state (transcript cursor, selection, drag
+  // anchor) shifts up by this much so it keeps pointing at the same content.
+  int _layoutDroppedRowCount = 0;
+  // Lowercased mirror of _rowTextsBuffer (aligned to raw buffer indices, dead
+  // prefix included) so successive search keystrokes share one lowercase pass
+  // instead of re-allocating a lowercased copy of every row per keystroke.
+  // Populated only while a search query is active; emptied when search exits.
+  final List<String> _lowerRowTexts = <String>[];
+  int _lowerCacheGeneration = -1;
   Transcript? _searchCacheTranscript;
   int _searchCacheRevision = -1;
   int _searchCacheWidth = -1;
@@ -145,6 +175,15 @@ abstract class _FrunModelBase extends TeaModel {
   int _debugLayoutBuilds = 0;
   int _debugSearchBuilds = 0;
   int _debugVisibleLinkBuilds = 0;
+  int _debugRowBufferCopies = 0;
+  int _debugSearchLowerBuilds = 0;
+  // Diagnostic counters memo: counts() walks every diagnostic (with a
+  // per-entry toLowerCase in `category`); the tallies only change when the
+  // diagnostics list is replaced, so recompute at most once per revision
+  // instead of every painted frame.
+  int _diagCountsCacheRevision = -1;
+  (int, int, int, int) _diagCountsCache = (0, 0, 0, 0);
+  int _debugDiagCountsBuilds = 0;
   int _diagnosticRowsCacheRevision = -1;
   DiagnosticCategory? _diagnosticRowsCacheFilter;
   String _diagnosticRowsCacheSearch = '';
@@ -159,6 +198,8 @@ abstract class _FrunModelBase extends TeaModel {
   int _lastBodyY = 0;
   int _width = 80;
   int _height = 24;
+  // Tick counter for the Windows resize-poll fallback (checks every 4th tick).
+  int _resizePollTick = 0;
 
   // Frame-skip gate. The UI has no animated elements, so when no
   // render-affecting state changed since the last frame we re-emit the previous
@@ -166,7 +207,12 @@ abstract class _FrunModelBase extends TeaModel {
   // while idle). A full repaint is forced at least every _maxSkippedFrames ticks
   // to self-heal any state the signature doesn't capture.
   static const int _maxSkippedFrames = 4; // ~1s at the 250ms tick interval
-  _ViewSignature? _lastViewSig;
+  // Preallocated signature slots, filled by index and compared element-wise
+  // each frame — the skip path allocates nothing.
+  static const int _sigLength = 42;
+  final List<int> _sigCurrent = List<int>.filled(_sigLength, 0);
+  final List<int> _sigPrevious = List<int>.filled(_sigLength, 0);
+  bool _sigValid = false;
   String? _lastViewContent;
   Cursor? _lastViewCursor;
   int _framesSinceFullPaint = 0;
@@ -236,6 +282,10 @@ final class FrunModel extends _FrunModelBase
   int get debugLayoutBuilds => _debugLayoutBuilds;
   int get debugSearchBuilds => _debugSearchBuilds;
   int get debugVisibleLinkBuilds => _debugVisibleLinkBuilds;
+  int get debugRowBufferCopies => _debugRowBufferCopies;
+  int get debugDisplayRowsBufferIdentity => identityHashCode(_rowsBuffer);
+  int get debugSearchLowerBuilds => _debugSearchLowerBuilds;
+  int get debugDiagCountsBuilds => _debugDiagCountsBuilds;
   int get debugTranscriptScroll => _transcriptScroll;
   int get debugIsolateSelectedIndex => _isolateSelectedIndex;
 }

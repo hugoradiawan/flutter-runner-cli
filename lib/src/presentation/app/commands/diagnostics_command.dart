@@ -51,7 +51,16 @@ class DiagnosticsCommand extends Command {
 
     state.diagnosticsFilter = parsedFilter.filter;
     state.diagnosticsSearch = '';
-    final todos = scanDartTodoDiagnostics(root: state.project.root);
+    // Prefer the live watcher-maintained index; a fresh walk of the whole
+    // source tree (readAsLinesSync per file) would block the UI thread. When
+    // the index isn't ready yet, scan in an isolate instead.
+    final List<DiagnosticEntity> todos;
+    final liveIndex = state.deps.todoIndex;
+    if (liveIndex != null && state.deps.todoIndexReady) {
+      todos = liveIndex.diagnostics;
+    } else {
+      todos = await scanDartTodoDiagnosticsInIsolate(root: state.project.root);
+    }
     final currentAnalyzerDiagnostics = state.diagnostics
         .where((d) => d.category != DiagnosticCategory.todo)
         .toList(growable: false);
@@ -207,16 +216,20 @@ class DiagnosticsCommand extends Command {
   }
 }
 
+/// Dedupe key is a record over the raw fields — every producer (LSP publishes,
+/// `dart analyze` JSON, the TODO scanner) already normalizes [filePath] at
+/// construction, so no per-entry `p.normalize` or string-concat key is needed
+/// here (this runs on every analyzer settle over up to thousands of entries).
 List<DiagnosticEntity> mergeDiagnostics(
   List<DiagnosticEntity> analyzer,
   List<DiagnosticEntity> todos,
 ) {
   final out = <DiagnosticEntity>[];
-  final seen = <String>{};
-  for (final d in [...analyzer, ...todos]) {
-    final key =
-        '${p.normalize(d.filePath)}\x00${d.line}\x00${d.column}\x00${d.code ?? ''}';
-    if (seen.add(key)) out.add(d);
+  final seen = <(String, int, int, String?)>{};
+  for (final list in [analyzer, todos]) {
+    for (final d in list) {
+      if (seen.add((d.filePath, d.line, d.column, d.code))) out.add(d);
+    }
   }
   return out;
 }

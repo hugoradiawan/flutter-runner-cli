@@ -104,6 +104,19 @@ class DaemonEventRouter {
     multiLine: true,
   );
 
-  static String _stripLogcatPrefix(String log) =>
-      log.replaceAll(_logcatPrefix, '');
+  /// Cheap reject before the regex: this runs for every `app.log` event, and
+  /// most payloads are single untagged lines. Only reach [_logcatPrefix] when
+  /// the first line looks tagged (`X/` with X in VDIWEF) or the payload is
+  /// multi-line (later lines may be tagged).
+  static String _stripLogcatPrefix(String log) {
+    if (log.length < 4) return log;
+    final tagged =
+        log.codeUnitAt(1) == 0x2F /* '/' */ &&
+        switch (log.codeUnitAt(0)) {
+          0x56 || 0x44 || 0x49 || 0x57 || 0x45 || 0x46 => true, // VDIWEF
+          _ => false,
+        };
+    if (!tagged && !log.contains('\n')) return log;
+    return log.replaceAll(_logcatPrefix, '');
+  }
 }

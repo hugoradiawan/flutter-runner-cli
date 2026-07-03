@@ -62,16 +62,21 @@ mixin _ReducerMixin
       }
       // Windows ConPTY does not deliver SIGWINCH; dart_tui's resize watcher
       // never fires. Poll stdout dimensions and request a size refresh when
-      // they change so the layout reflows on terminal resize.
+      // they change so the layout reflows on terminal resize. Each read is a
+      // pair of console syscalls, so only check every 4th tick (~1 s) — plenty
+      // responsive for a resize fallback.
       if (Platform.isWindows && stdout.hasTerminal) {
-        try {
-          final w = stdout.terminalColumns;
-          final h = stdout.terminalLines;
-          if (w != _width || h != _height) {
-            return (this, () async => requestWindowSize());
+        if (++_resizePollTick >= 4) {
+          _resizePollTick = 0;
+          try {
+            final w = stdout.terminalColumns;
+            final h = stdout.terminalLines;
+            if (w != _width || h != _height) {
+              return (this, () async => requestWindowSize());
+            }
+          } catch (_) {
+            // ignore — fall through
           }
-        } catch (_) {
-          // ignore — fall through
         }
       }
       return (this, null);

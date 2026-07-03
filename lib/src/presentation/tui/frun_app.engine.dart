@@ -156,6 +156,8 @@ mixin _EngineMixin on _FrunModelBase {
       _searchCacheMatches = const <SearchMatch>[];
       _searchCacheMatchIndexesByRow = const <int, List<int>>{};
       _searchMatchIndexesByRow = const <int, List<int>>{};
+      _lowerRowTexts.clear();
+      _lowerCacheGeneration = -1;
       return;
     }
 
@@ -180,8 +182,18 @@ mixin _EngineMixin on _FrunModelBase {
     final out = <SearchMatch>[];
     final byRow = <int, List<int>>{};
     _debugSearchBuilds++;
+    // Reuse one lowercased mirror of the row texts across keystrokes; only
+    // rows appended since the last search frame pay a toLowerCase.
+    if (_lowerCacheGeneration != _rowsBufferGeneration) {
+      _lowerRowTexts.clear();
+      _lowerCacheGeneration = _rowsBufferGeneration;
+      _debugSearchLowerBuilds++;
+    }
+    while (_lowerRowTexts.length < _rowTextsBuffer.length) {
+      _lowerRowTexts.add(_rowTextsBuffer[_lowerRowTexts.length].toLowerCase());
+    }
     for (var i = 0; i < _lastDisplayRows.length; i++) {
-      final hay = _lastDisplayRows[i].text.toLowerCase();
+      final hay = _lowerRowTexts[_rowsHead + i];
       var from = 0;
       while (from <= hay.length - needle.length) {
         final idx = hay.indexOf(needle, from);

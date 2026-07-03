@@ -72,20 +72,46 @@ void main() {
       expect(t.lines.last.text, 'msg ${cap * 10 - 1}');
     });
 
-    test('reuses snapshots until content changes and tracks trim base', () {
+    test('snapshot is a stable live view and tracks trim base', () {
       final t = Transcript(maxLines: 3);
       t.info('a');
       final first = t.snapshot;
       expect(identical(first, t.snapshot), isTrue);
 
       t.info('b');
-      expect(identical(first, t.snapshot), isFalse);
+      expect(
+        identical(first, t.snapshot),
+        isTrue,
+        reason: 'live view survives appends — no per-append copy',
+      );
+      expect(first.map((l) => l.text), ['a', 'b']);
       expect(t.baseIndex, 0);
 
       t.info('c');
       t.info('d');
       expect(t.baseIndex, 1);
       expect(t.snapshot.map((l) => l.text), ['b', 'c', 'd']);
+      expect(() => first[3], throwsRangeError);
+      expect(() => t.snapshot.add(TranscriptLine(text: 'x', level: TranscriptLevel.info)), throwsUnsupportedError);
+    });
+
+    test('appends at capacity stay amortized O(1) via rare compaction', () {
+      final t = Transcript(maxLines: 50);
+      for (var i = 0; i < 50; i++) {
+        t.info('seed $i');
+      }
+      final before = t.debugCompactions;
+      for (var i = 0; i < 100; i++) {
+        t.info('n $i');
+      }
+      expect(
+        t.debugCompactions - before,
+        lessThanOrEqualTo(2),
+        reason: 'dead prefix compacts only when it outgrows the live region',
+      );
+      expect(t.lines.length, 50);
+      expect(t.lines.first.text, 'n 50');
+      expect(t.lines.last.text, 'n 99');
     });
   });
 }

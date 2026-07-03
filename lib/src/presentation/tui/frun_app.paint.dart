@@ -28,17 +28,29 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     // matters when scrollback trimming removes old rows at the top while new
     // rows arrive at the bottom; total rows may stay flat, but the tail offset
     // still needs to grow to keep the same visible content. At the bottom
-    // (offset == 0) do nothing, so the view keeps following new output. Skip on
-    // width changes, where the row count shifts from re-wrapping rather than
-    // new content.
+    // (offset == 0) the view keeps following new output — unless the user is
+    // reading with the transcript cursor (vim navigation or an in-progress
+    // drag selection), where sliding the text out from under them loses their
+    // place even inside the bottom screen. Skip on width changes, where the
+    // row count shifts from re-wrapping rather than new content.
     final total = displayRows.length;
-    if (width == _lastLayoutWidth && _transcriptScroll > 0) {
+    if (width == _lastLayoutWidth && (_transcriptScroll > 0 || _tc.active)) {
       final appendedRows = _layoutAppendedRowCount;
       if (appendedRows > 0) {
         _transcriptScroll += appendedRows;
       } else {
         final delta = total - _lastTotalRows;
         if (delta > 0) _transcriptScroll += delta;
+      }
+    }
+    // Scrollback trim shifted every surviving row up; move row-anchored
+    // reading state (cursor, selection, drag anchor) with the content.
+    final droppedRows = _layoutDroppedRowCount;
+    if (droppedRows > 0) {
+      _tc.shiftRows(droppedRows);
+      final anchor = _mouseAnchor;
+      if (anchor != null) {
+        _mouseAnchor = Pos(math.max(0, anchor.row - droppedRows), anchor.col);
       }
     }
     _lastTotalRows = total;
@@ -85,9 +97,10 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     final selection = _tc.selectionRange();
     final visualKind = _tc.visualKind;
 
+    final baseIndex = transcript.baseIndex;
     for (var r = start; r < endExclusive && r < displayRows.length; r++) {
       final row = displayRows[r];
-      final line = lines[row.lineIndex];
+      final line = lines[row.lineIndex - baseIndex];
       final yRow = y + (r - start);
       final baseStyle = line.onClick != null
           ? theme.accentStyle
@@ -184,6 +197,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
         transcript.revision == _layoutCacheRevision &&
         width == _layoutCacheWidth) {
       _layoutAppendedRowCount = 0;
+      _layoutDroppedRowCount = 0;
       return (lines: _lastLines, rows: _lastDisplayRows);
     }
 
@@ -202,59 +216,78 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     if (canIncrement) {
       final survivorCount = _layoutCacheLineCount - removed;
       if (survivorCount <= lines.length) {
-        var rows = _lastDisplayRows;
-        var rowTexts = _displayRowsText;
+        _layoutDroppedRowCount = 0;
         if (removed > 0) {
-          var dropRows = 0;
-          while (dropRows < rows.length && rows[dropRows].lineIndex < removed) {
-            dropRows++;
+          // Rows carry absolute line indices, so eviction is just advancing
+          // the head past rows whose line fell below the new baseIndex —
+          // O(dropped rows), no survivor copy or re-index.
+          var head = _rowsHead;
+          while (head < _rowsBuffer.length &&
+              _rowsBuffer[head].lineIndex < baseIndex) {
+            head++;
           }
-          rows = <_DisplayRow>[
-            for (var i = dropRows; i < rows.length; i++)
-              rows[i].reindex(rows[i].lineIndex - removed),
-          ];
-          rowTexts = rowTexts.sublist(dropRows);
-        } else {
-          rows = List<_DisplayRow>.of(rows);
-          rowTexts = List<String>.of(rowTexts);
+          _layoutDroppedRowCount = head - _rowsHead;
+          _rowsHead = head;
+          _compactRowBuffersIfNeeded();
         }
 
         if (survivorCount < lines.length) {
           final appended = _layoutDisplayRows(
             lines.sublist(survivorCount),
             width,
-            startLineIndex: survivorCount,
+            startLineIndex: baseIndex + survivorCount,
           );
           _layoutAppendedRowCount = appended.length;
-          rows.addAll(appended);
-          rowTexts.addAll(appended.map((r) => r.text));
+          _rowsBuffer.addAll(appended);
+          for (final r in appended) {
+            _rowTextsBuffer.add(r.text);
+          }
         } else {
           _layoutAppendedRowCount = 0;
         }
 
         _lastLines = lines;
-        _lastDisplayRows = rows;
-        _displayRowsText = rowTexts;
         _layoutCacheTranscript = transcript;
         _layoutCacheRevision = transcript.revision;
         _layoutCacheWidth = width;
         _layoutCacheBaseIndex = baseIndex;
         _layoutCacheLineCount = lines.length;
-        return (lines: lines, rows: rows);
+        return (lines: lines, rows: _lastDisplayRows);
       }
     }
 
-    final rows = _layoutDisplayRows(lines, width);
+    final rows = _layoutDisplayRows(lines, width, startLineIndex: baseIndex);
     _layoutAppendedRowCount = 0;
+    _layoutDroppedRowCount = 0;
     _lastLines = lines;
-    _lastDisplayRows = rows;
-    _displayRowsText = rows.map((r) => r.text).toList(growable: false);
+    _rowsBuffer
+      ..clear()
+      ..addAll(rows);
+    _rowTextsBuffer.clear();
+    for (final r in rows) {
+      _rowTextsBuffer.add(r.text);
+    }
+    _rowsHead = 0;
+    _rowsBufferGeneration++;
+    _debugRowBufferCopies++;
     _layoutCacheTranscript = transcript;
     _layoutCacheRevision = transcript.revision;
     _layoutCacheWidth = width;
     _layoutCacheBaseIndex = baseIndex;
     _layoutCacheLineCount = lines.length;
-    return (lines: lines, rows: rows);
+    return (lines: lines, rows: _lastDisplayRows);
+  }
+
+  /// Compact the evicted prefix out of the row buffers once it outgrows the
+  /// live region, keeping head-advance eviction amortized O(1) per row.
+  void _compactRowBuffersIfNeeded() {
+    if (_rowsHead > _rowsBuffer.length - _rowsHead) {
+      _rowsBuffer.removeRange(0, _rowsHead);
+      _rowTextsBuffer.removeRange(0, _rowsHead);
+      _rowsHead = 0;
+      _rowsBufferGeneration++;
+      _debugRowBufferCopies++;
+    }
   }
 
   List<_DisplayRow> _layoutDisplayRows(
@@ -358,7 +391,13 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       return _visibleLinksCache;
     }
 
-    final links = _collectVisibleLinks(lines, displayRows, start, endExclusive);
+    final links = _collectVisibleLinks(
+      lines,
+      displayRows,
+      start,
+      endExclusive,
+      transcript.baseIndex,
+    );
     _debugVisibleLinkBuilds++;
     _visibleLinksCacheTranscript = transcript;
     _visibleLinksCacheRevision = transcript.revision;
@@ -407,6 +446,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     List<_DisplayRow> displayRows,
     int start,
     int endExclusive,
+    int baseIndex,
   ) {
     final seenLines = <int>{};
     for (var r = start; r < endExclusive && r < displayRows.length; r++) {
@@ -415,7 +455,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     final sorted = seenLines.toList()..sort();
     final out = <_VisibleLink>[];
     for (final i in sorted) {
-      final src = lines[i].text;
+      final src = lines[i - baseIndex].text;
       for (final link in LinkExtractor.extract(src)) {
         out.add(
           _VisibleLink(
@@ -583,7 +623,12 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
   ) {
     final diags = state.diagnostics;
     if (diags.isEmpty) return rightX;
-    final (e, w, i, t) = DiagnosticEntity.counts(diags);
+    if (state.diagnosticsRevision != _diagCountsCacheRevision) {
+      _diagCountsCache = DiagnosticEntity.counts(diags);
+      _diagCountsCacheRevision = state.diagnosticsRevision;
+      _debugDiagCountsBuilds++;
+    }
+    final (e, w, i, t) = _diagCountsCache;
     final segs = <(String, Style)>[
       if (e > 0)
         ('${_categoryIcon(DiagnosticCategory.error)} $e', theme.errorStyle),

@@ -22,14 +22,19 @@ class Transcript {
   /// scrollback depth can be tuned at runtime (the `scrollback` command sets it
   /// for the system transcript, every open tab, and any future tab). Long
   /// sessions (hours of hot reload + daemon events) would otherwise grow
-  /// [_lines] without bound; once full the oldest lines are evicted so retained
-  /// memory stays flat regardless of uptime.
+  /// [_buffer] without bound; once full the oldest lines are evicted so
+  /// retained memory stays flat regardless of uptime.
   static int defaultMaxLines = 1000;
 
-  final Queue<TranscriptLine> _lines = Queue<TranscriptLine>();
+  /// Backing store plus a head pointer. Eviction advances [_head] instead of
+  /// shifting elements, so appends at a full buffer stay amortized O(1); the
+  /// dead prefix is compacted away only once it outgrows the live region.
+  final List<TranscriptLine> _buffer = <TranscriptLine>[];
+  int _head = 0;
   int _revision = 0;
   int _baseIndex = 0;
-  List<TranscriptLine>? _snapshot;
+  _TranscriptView? _view;
+  int _debugCompactions = 0;
 
   int _maxLines;
 
@@ -50,10 +55,19 @@ class Transcript {
   /// trims, letting render caches drop only evicted rows.
   int get baseIndex => _baseIndex;
 
-  /// Cached immutable view of retained lines. Rebuilt only when content changes.
-  List<TranscriptLine> get snapshot => _snapshot ??= List.unmodifiable(_lines);
+  /// Number of retained lines.
+  int get length => _buffer.length - _head;
+
+  /// Live read-only view of retained lines. The view tracks the transcript as
+  /// it mutates: index 0 is always the line at [baseIndex]. Callers that need
+  /// point-in-time stability must key off [revision] (all render caches do)
+  /// or copy — do not hold this across an await expecting frozen contents.
+  List<TranscriptLine> get snapshot => _view ??= _TranscriptView(this);
 
   List<TranscriptLine> get lines => snapshot;
+
+  /// Times the dead prefix was compacted out of [_buffer] (test hook).
+  int get debugCompactions => _debugCompactions;
 
   void info(String text) => _add(text, TranscriptLevel.info);
   void success(String text) => _add(text, TranscriptLevel.success);
@@ -73,30 +87,62 @@ class Transcript {
 
   void _add(String text, TranscriptLevel level, {void Function()? onClick}) {
     for (final raw in text.split('\n')) {
-      _lines.add(TranscriptLine(text: raw, level: level, onClick: onClick));
+      _buffer.add(TranscriptLine(text: raw, level: level, onClick: onClick));
     }
     _trim();
-    _snapshot = null;
     _revision++;
   }
 
   /// Evict the oldest lines until within [_maxLines]. Returns whether any line
-  /// was removed.
+  /// was removed. Eviction just advances [_head]; the buffer is compacted only
+  /// when the dead prefix exceeds the live region, keeping eviction amortized
+  /// O(1) per appended line.
   bool _trim() {
     var removed = false;
-    while (_lines.length > _maxLines) {
-      _lines.removeFirst();
+    while (_buffer.length - _head > _maxLines) {
+      _head++;
       _baseIndex++;
       removed = true;
     }
-    if (removed) _snapshot = null;
+    if (_head > _buffer.length - _head) {
+      _buffer.removeRange(0, _head);
+      _head = 0;
+      _debugCompactions++;
+    }
     return removed;
   }
 
   void clear() {
-    _lines.clear();
+    _buffer.clear();
+    _head = 0;
     _baseIndex = 0;
-    _snapshot = null;
     _revision++;
   }
+}
+
+/// Unmodifiable live window over a [Transcript]'s retained lines.
+class _TranscriptView extends ListBase<TranscriptLine> {
+  _TranscriptView(this._owner);
+
+  final Transcript _owner;
+
+  @override
+  int get length => _owner.length;
+
+  @override
+  set length(int newLength) =>
+      throw UnsupportedError('Cannot resize a transcript snapshot');
+
+  @override
+  TranscriptLine operator [](int index) {
+    final head = _owner._head;
+    if (index < 0 || head + index >= _owner._buffer.length) {
+      throw RangeError.index(index, this, 'index', null, _owner.length);
+    }
+    return _owner._buffer[head + index];
+  }
+
+  @override
+  void operator []=(int index, TranscriptLine value) =>
+      throw UnsupportedError('Cannot modify a transcript snapshot');
 }

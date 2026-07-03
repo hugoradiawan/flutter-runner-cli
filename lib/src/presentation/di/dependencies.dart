@@ -23,6 +23,7 @@ import '../../domain/usecases/list_emulators.dart';
 import '../../domain/usecases/save_config.dart';
 import '../../domain/usecases/set_config.dart';
 import '../../domain/usecases/stop_session.dart';
+import '../app/commands/diagnostics_command.dart';
 
 /// Dependency container assembled at the composition root ([runFrun]).
 ///
@@ -61,6 +62,13 @@ class Dependencies {
   DartAnalysisServer? analysisServer;
   DartFileWatcher? diagnosticsWatcher;
   StreamSubscription<List<DiagnosticEntity>>? diagnosticsSubscription;
+
+  /// Live TODO/FIXME index maintained by the boot scan + file watcher. Set by
+  /// `_bootLiveDiagnostics`; [todoIndexReady] flips true once the initial
+  /// isolate scan has populated it. Consumers (the `/diagnostics` command)
+  /// read it instead of re-walking the whole source tree.
+  TodoDiagnosticsIndex? todoIndex;
+  bool todoIndexReady = false;
 
   // ── Use cases (built once, lazily, from their repository) ─────────────────
   ListDevicesUseCase? _listDevices;

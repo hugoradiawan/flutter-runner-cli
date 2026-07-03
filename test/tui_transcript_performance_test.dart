@@ -2,6 +2,8 @@ import 'package:dart_tui/dart_tui.dart';
 import 'package:frun/src/data/services/isolate_manager.dart';
 import 'package:frun/src/data/services/project_detector.dart';
 import 'package:frun/src/domain/entities/app_config.dart';
+import 'package:frun/src/domain/entities/diagnostic.dart';
+import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:frun/src/presentation/app/app_state.dart';
 import 'package:frun/src/presentation/app/commands/command_registry.dart';
 import 'package:frun/src/presentation/di/dependencies.dart';
@@ -103,6 +105,156 @@ void main() {
       expect(h.model.debugTranscriptScroll, 0);
     });
 
+    test('appends extend the row buffer in place without copying', () {
+      final h = _harness();
+      for (var i = 0; i < 60; i++) {
+        h.state.transcript.info('line $i');
+      }
+
+      h.model.view();
+      final identity = h.model.debugDisplayRowsBufferIdentity;
+      final copies = h.model.debugRowBufferCopies;
+
+      for (var i = 0; i < 5; i++) {
+        h.state.transcript.info('extra $i');
+        h.model.view();
+      }
+
+      expect(h.model.debugDisplayRowsBufferIdentity, identity);
+      expect(h.model.debugRowBufferCopies, copies);
+    });
+
+    test('appends at a full ring buffer avoid survivor copies', () {
+      final h = _harness(scrollbackLines: 30);
+      for (var i = 0; i < 30; i++) {
+        h.state.transcript.info('line $i');
+      }
+
+      h.model.view();
+      final copies = h.model.debugRowBufferCopies;
+
+      // Every append now also trims one line off the top; the head pointer
+      // advances instead of copying the survivors (compaction threshold is
+      // not reached within 10 appends).
+      for (var i = 0; i < 10; i++) {
+        h.state.transcript.info('overflow $i');
+        h.model.view();
+      }
+
+      expect(h.model.debugRowBufferCopies, copies);
+    });
+
+    test('sustained trimming past compaction matches a fresh layout', () {
+      final h = _harness(scrollbackLines: 30);
+      for (var i = 0; i < 100; i++) {
+        h.state.transcript.info('line $i');
+        h.model.view();
+      }
+
+      final fresh = _harness(scrollbackLines: 30);
+      for (var i = 0; i < 100; i++) {
+        fresh.state.transcript.info('line $i');
+      }
+
+      expect(
+        _plain(h.model.view().content),
+        _plain(fresh.model.view().content),
+      );
+    });
+
+    test('lowering scrollback mid-session matches a fresh layout', () {
+      final h = _harness();
+      for (var i = 0; i < 80; i++) {
+        h.state.transcript.info('line $i');
+      }
+      h.model.view();
+
+      h.state.transcript.maxLines = 25;
+      h.model.view();
+      h.state.transcript.info('after shrink');
+      h.model.view();
+
+      final fresh = _harness(scrollbackLines: 25);
+      for (var i = 0; i < 80; i++) {
+        fresh.state.transcript.info('line $i');
+      }
+      fresh.state.transcript.info('after shrink');
+
+      expect(
+        _plain(h.model.view().content),
+        _plain(fresh.model.view().content),
+      );
+    });
+
+    test('repeated searches reuse the lowercase row mirror', () {
+      final h = _harness(editorMode: FrunEditorMode.vim);
+      for (var i = 0; i < 40; i++) {
+        h.state.transcript.info('line $i');
+      }
+      h.model.view();
+
+      // Empty-input escape drops into transcript-cursor mode; `/…<enter>`
+      // runs a transcript search.
+      h.key(KeyCode.escape);
+      h.model.view();
+      h.search('line');
+      h.model.view();
+
+      final builds = h.model.debugSearchLowerBuilds;
+      expect(builds, greaterThan(0));
+      expect(h.model.debugSearchBuilds, greaterThan(0));
+
+      // A different query re-matches but reuses the lowercase mirror.
+      final matchBuilds = h.model.debugSearchBuilds;
+      h.search('9');
+      h.model.view();
+      expect(h.model.debugSearchBuilds, greaterThan(matchBuilds));
+      expect(h.model.debugSearchLowerBuilds, builds);
+
+      // Appended rows only extend the mirror's tail — no full rebuild.
+      h.state.transcript.info('line 40');
+      h.search('40');
+      h.model.view();
+      expect(h.model.debugSearchLowerBuilds, builds);
+    });
+
+    test('diagnostic counters recompute once per diagnostics revision', () {
+      final h = _harness();
+      h.state.transcript.info('hello');
+      h.state.diagnostics = const <DiagnosticEntity>[
+        DiagnosticEntity(
+          filePath: 'lib/a.dart',
+          line: 1,
+          column: 1,
+          severity: DiagnosticSeverity.error,
+          message: 'broken',
+        ),
+        DiagnosticEntity(
+          filePath: 'lib/b.dart',
+          line: 2,
+          column: 1,
+          severity: DiagnosticSeverity.warning,
+          message: 'meh',
+        ),
+      ];
+
+      h.model.view();
+      h.model.view();
+      expect(h.model.debugDiagCountsBuilds, 1);
+
+      h.state.diagnostics = const <DiagnosticEntity>[
+        DiagnosticEntity(
+          filePath: 'lib/a.dart',
+          line: 1,
+          column: 1,
+          severity: DiagnosticSeverity.error,
+          message: 'broken',
+        ),
+      ];
+      h.model.view();
+      expect(h.model.debugDiagCountsBuilds, 2);
+    });
+
     test('isolate panel renders lifecycle controls', () {
       final h = _harness(
         width: 120,
@@ -160,6 +312,7 @@ _Harness _harness({
   int height = 20,
   int? scrollbackLines,
   List<IsolateInfo> isolates = const <IsolateInfo>[],
+  FrunEditorMode? editorMode,
 }) {
   final state = AppState(
     project: FlutterProject(
@@ -170,7 +323,9 @@ _Harness _harness({
       hasVsCodeFolder: false,
       hasZedFolder: false,
     ),
-    config: AppConfigEntity.defaults(),
+    config: editorMode == null
+        ? AppConfigEntity.defaults()
+        : AppConfigEntity.defaults().copyWith(editorMode: editorMode),
     deps: Dependencies(isolateManager: IsolateManager(isolates: isolates)),
   );
   if (scrollbackLines != null) {
@@ -203,6 +358,16 @@ final class _Harness {
 
   void key(KeyCode code) {
     model.update(KeyPressMsg(TeaKey(code: code)));
+  }
+
+  /// Types `/pattern<enter>` — a transcript search when the model is in
+  /// transcript-cursor mode (vim editor mode, empty input, after escape).
+  void search(String pattern) {
+    keyRune('/');
+    for (final ch in pattern.split('')) {
+      keyRune(ch);
+    }
+    key(KeyCode.enter);
   }
 }
 

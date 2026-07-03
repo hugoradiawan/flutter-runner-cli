@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'vim/vim_buffer.dart';
 import 'vim/vim_mode.dart';
 
@@ -71,6 +73,23 @@ class TranscriptCursor extends VimBuffer {
     _selection = null;
     _visualKind = VimMode.normal;
     searchPromptOpen = false;
+  }
+
+  /// Shift all row-anchored state up by [dropped] display rows after the
+  /// renderer evicts that many rows from the top (scrollback trim), so the
+  /// cursor and selection keep pointing at the same content instead of
+  /// drifting toward newer lines. Rows whose content was evicted clamp to 0.
+  void shiftRows(int dropped) {
+    if (!active || dropped <= 0) return;
+    _cursor = Pos(math.max(0, _cursor.row - dropped), _cursor.col);
+    final s = _selection;
+    if (s != null) {
+      _selection = Range(
+        Pos(math.max(0, s.start.row - dropped), s.start.col),
+        Pos(math.max(0, s.end.row - dropped), s.end.col),
+        s.kind,
+      );
+    }
   }
 
   /// Compatibility helpers for renderer that still thinks in raw row/col.

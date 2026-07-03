@@ -127,7 +127,9 @@ void applyPublishDiagnostics(
 String? _uriToPath(String uri) {
   final parsed = Uri.tryParse(uri);
   if (parsed == null || parsed.scheme != 'file') return null;
-  return parsed.toFilePath();
+  // Normalized at the source so every downstream consumer (dedupe keys,
+  // grouping, jump targets) can compare paths without re-normalizing.
+  return p.normalize(parsed.toFilePath());
 }
 
 /// Thin LSP client for the Dart Analysis Server (`dart language-server`).
@@ -200,9 +202,15 @@ class DartAnalysisServer {
   /// stderr lines from the language-server process (surfaces startup failures).
   Stream<String> get stderrLines => _stderr.stream;
 
-  /// The latest known full diagnostic set across all files.
-  List<DiagnosticModel> get snapshot =>
-      _byUri.values.expand((e) => e).toList(growable: false);
+  List<DiagnosticModel>? _snapshotCache;
+
+  /// The latest known full diagnostic set across all files. Flattened lazily
+  /// and cached until the next `publishDiagnostics` mutates [_byUri], so
+  /// repeated reads (watcher events, repository queries) don't re-copy
+  /// thousands of entries.
+  List<DiagnosticModel> get snapshot => _snapshotCache ??= _byUri.values
+      .expand((e) => e)
+      .toList(growable: false);
 
   static String _defaultDartExecutable() =>
       Platform.isWindows ? 'dart.bat' : 'dart';
@@ -279,6 +287,7 @@ class DartAnalysisServer {
         if (_byUri.length > _maxByUri) {
           _byUri.remove(_byUri.keys.first);
         }
+        _snapshotCache = null;
         _scheduleEmit();
       }
       return;
