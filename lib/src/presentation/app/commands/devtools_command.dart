@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import '../../../data/services/frun_notifier.dart';
+import '../../../domain/value_objects/notification_event.dart';
 import '../app_state.dart';
 import 'command.dart';
 

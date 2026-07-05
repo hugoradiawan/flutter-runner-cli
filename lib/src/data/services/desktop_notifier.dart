@@ -1,60 +1,15 @@
 import 'dart:async';
 import 'dart:io';
 
-import '../../presentation/app/run_tab.dart';
+import '../../domain/ports/notifier.dart';
+import '../../domain/value_objects/notification_event.dart';
 
-enum FrunNotifEvent {
-  appLaunching,
-  appStarted,
-  hotReloading,
-  hotReloaded,
-  restarting,
-  restarted,
-  openingDevTools,
-  devToolsReady,
-  enteringInspect,
-  inspectReady,
-  launchingEmulator,
-  emulatorReady;
+/// Desktop [Notifier] backed by native notification CLIs: `osascript` on
+/// macOS, a PowerShell toast on Windows. Best-effort — failures are swallowed.
+class DesktopNotifier extends Notifier {
+  const DesktopNotifier();
 
-  String get defaultBody {
-    switch (this) {
-      case appLaunching:
-        return 'Launching app…';
-      case appStarted:
-        return 'App started';
-      case hotReloading:
-        return 'Hot reloading…';
-      case hotReloaded:
-        return 'Hot reload complete';
-      case restarting:
-        return 'Restarting…';
-      case restarted:
-        return 'Restart complete';
-      case openingDevTools:
-        return 'Opening DevTools…';
-      case devToolsReady:
-        return 'DevTools ready';
-      case enteringInspect:
-        return 'Inspector ON — tap widgets to jump to source';
-      case inspectReady:
-        return 'Inspector ready';
-      case launchingEmulator:
-        return 'Launching emulator…';
-      case emulatorReady:
-        return 'Emulator ready';
-    }
-  }
-}
-
-class FrunNotifier {
-  const FrunNotifier();
-
-  void notifyTab(RunTab tab, FrunNotifEvent event, {String? detail}) {
-    final label = '${tab.entry.name} · ${tab.deviceId}';
-    _sendAsync('frun · $label', detail ?? event.defaultBody);
-  }
-
+  @override
   void notify(FrunNotifEvent event, {String? label, String? detail}) {
     final title = label != null ? 'frun · $label' : 'frun';
     _sendAsync(title, detail ?? event.defaultBody);

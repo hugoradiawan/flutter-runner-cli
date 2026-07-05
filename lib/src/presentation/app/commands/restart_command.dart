@@ -1,5 +1,5 @@
-import '../../../data/services/frun_notifier.dart';
 import '../../../domain/params/reload_params.dart';
+import '../../../domain/value_objects/notification_event.dart';
 import '../app_state.dart';
 import 'command.dart';
 
@@ -25,13 +25,19 @@ class RestartCommand extends Command {
       state.transcript.warn('No app running. Use /run first.');
       return CommandResult.ok;
     }
-    state.deps.notifier.notifyTab(tab, FrunNotifEvent.restarting);
+    state.deps.notifier.notify(
+      FrunNotifEvent.restarting,
+      label: tab.notificationLabel,
+    );
     final result = await useCase.call(ReloadParams(tabId: tab.id));
     result.fold(
       (failure) =>
           tab.transcript.error('Hot restart failed: ${failure.message}'),
       (_) {
-        state.deps.notifier.notifyTab(tab, FrunNotifEvent.restarted);
+        state.deps.notifier.notify(
+          FrunNotifEvent.restarted,
+          label: tab.notificationLabel,
+        );
         tab.transcript.success('Hot restart requested.');
       },
     );

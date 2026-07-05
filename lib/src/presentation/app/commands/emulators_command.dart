@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import '../../../data/datasources/emulator_manager.dart';
-import '../../../data/services/frun_notifier.dart';
 import '../../../domain/entities/emulator.dart';
 import '../../../domain/params/emulator_launch_params.dart';
 import '../../../domain/value_objects/config_values.dart';
+import '../../../domain/value_objects/notification_event.dart';
 import '../app_state.dart';
 import 'command.dart';
 

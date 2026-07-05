@@ -4,12 +4,13 @@ import '../../data/datasources/analysis_server.dart';
 import '../../data/datasources/device_manager.dart';
 import '../../data/datasources/flutter_daemon.dart';
 import '../../data/services/dart_file_watcher.dart';
-import '../../data/services/frun_notifier.dart';
+import '../../data/services/desktop_notifier.dart';
 import '../../data/services/ide_launcher.dart';
 import '../../data/services/inspector_bridge.dart';
 import '../../data/services/isolate_manager.dart';
 import '../../data/services/package_config_uri_resolver.dart';
 import '../../domain/entities/diagnostic.dart';
+import '../../domain/ports/notifier.dart';
 import '../../domain/ports/vm_uri_resolver.dart';
 import '../../domain/repositories/config_repository.dart';
 import '../../domain/repositories/device_repository.dart';
@@ -45,7 +46,7 @@ class Dependencies {
   final IsolateManager isolateManager;
   final IdeLauncher ideLauncher = IdeLauncher();
   final InspectorBridge inspectorBridge = InspectorBridge();
-  final FrunNotifier notifier = const FrunNotifier();
+  final Notifier notifier = const DesktopNotifier();
   final VmUriResolver vmUriResolver = const PackageConfigUriResolver();
 
   // ── Services populated as the daemon comes up ─────────────────────────────

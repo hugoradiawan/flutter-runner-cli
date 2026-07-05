@@ -37,6 +37,10 @@ class RunTab {
   /// daemon has an app id to reload.
   bool get canHotReload => session?.appId != null;
 
+  /// Title scope for desktop notifications. Unlike [label] there is no
+  /// basename fallback — preserves the exact pre-existing toast title.
+  String get notificationLabel => '${entry.name} · $deviceId';
+
   /// Short label rendered in the tab strip. Falls back to the dart entry's
   /// basename when the launch entry has a generic name.
   String get label {

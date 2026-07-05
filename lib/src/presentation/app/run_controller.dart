@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import '../../data/datasources/app_session.dart';
-import '../../data/services/frun_notifier.dart';
 import '../../domain/entities/device.dart';
 import '../../domain/entities/emulator.dart';
 import '../../domain/entities/launch_entry.dart';
 import '../../domain/params/emulator_launch_params.dart';
 import '../../domain/params/reload_params.dart';
 import '../../domain/value_objects/config_values.dart';
+import '../../domain/value_objects/notification_event.dart';
 import 'app_state.dart';
 import 'daemon_event_router.dart';
 import 'isolate_connection.dart';
@@ -165,7 +165,10 @@ class RunController {
     tab.transcript.system(
       'Launching ${entry.name} on $deviceId (${entry.program})…',
     );
-    state.deps.notifier.notifyTab(tab, FrunNotifEvent.appLaunching);
+    state.deps.notifier.notify(
+      FrunNotifEvent.appLaunching,
+      label: tab.notificationLabel,
+    );
     try {
       final session = await AppRunSession.start(
         projectRoot: state.project.root,
@@ -223,12 +226,18 @@ class RunController {
   Future<void> _reload(RunTab tab) async {
     final useCase = state.deps.hotReloadUseCase;
     if (useCase == null) return;
-    state.deps.notifier.notifyTab(tab, FrunNotifEvent.hotReloading);
+    state.deps.notifier.notify(
+      FrunNotifEvent.hotReloading,
+      label: tab.notificationLabel,
+    );
     final result = await useCase.call(ReloadParams(tabId: tab.id));
     result.fold(
       (f) => tab.transcript.error('Hot reload failed: ${f.message}'),
       (_) {
-        state.deps.notifier.notifyTab(tab, FrunNotifEvent.hotReloaded);
+        state.deps.notifier.notify(
+          FrunNotifEvent.hotReloaded,
+          label: tab.notificationLabel,
+        );
         tab.transcript.success('Hot reload requested.');
       },
     );
@@ -241,12 +250,18 @@ class RunController {
     }
     final useCase = state.deps.hotRestartUseCase;
     if (useCase == null) return;
-    state.deps.notifier.notifyTab(tab, FrunNotifEvent.restarting);
+    state.deps.notifier.notify(
+      FrunNotifEvent.restarting,
+      label: tab.notificationLabel,
+    );
     final result = await useCase.call(ReloadParams(tabId: tab.id));
     result.fold(
       (f) => tab.transcript.error('Hot restart failed: ${f.message}'),
       (_) {
-        state.deps.notifier.notifyTab(tab, FrunNotifEvent.restarted);
+        state.deps.notifier.notify(
+          FrunNotifEvent.restarted,
+          label: tab.notificationLabel,
+        );
         tab.transcript.success('Hot restart requested.');
       },
     );

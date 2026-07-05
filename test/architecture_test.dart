@@ -21,30 +21,22 @@ import 'package:test/test.dart';
 /// data -> presentation (the import-direction cycle). Format:
 /// 'importer -> imported', both lib-relative posix paths.
 const knownDataToPresentation = <String>{
-  'src/data/services/frun_notifier.dart -> src/presentation/app/run_tab.dart',
   'src/data/services/ide_launcher.dart -> src/presentation/app/app_state.dart',
   'src/data/services/inspector_bridge.dart -> src/presentation/app/app_state.dart',
 };
 
 /// presentation -> data outside the sanctioned seam (di/dependencies.dart).
 const knownPresentationToData = <String>{
-  'src/presentation/app/commands/devtools_command.dart -> src/data/services/frun_notifier.dart',
   'src/presentation/app/commands/diagnostics_command.dart -> src/data/services/dart_source_walker.dart',
   'src/presentation/app/commands/emulators_command.dart -> src/data/datasources/emulator_manager.dart',
-  'src/presentation/app/commands/emulators_command.dart -> src/data/services/frun_notifier.dart',
-  'src/presentation/app/commands/inspect_command.dart -> src/data/services/frun_notifier.dart',
   'src/presentation/app/commands/isolates_command.dart -> src/data/services/ide_launcher.dart',
   'src/presentation/app/commands/isolates_command.dart -> src/data/services/isolate_manager.dart',
-  'src/presentation/app/commands/reload_command.dart -> src/data/services/frun_notifier.dart',
-  'src/presentation/app/commands/restart_command.dart -> src/data/services/frun_notifier.dart',
   'src/presentation/app/commands/run_command.dart -> src/data/models/launch_config.dart',
   'src/presentation/app/commands/run_command.dart -> src/data/services/main_scanner.dart',
   'src/presentation/app/daemon_event_router.dart -> src/data/datasources/app_session.dart',
   'src/presentation/app/daemon_event_router.dart -> src/data/models/daemon_messages.dart',
-  'src/presentation/app/daemon_event_router.dart -> src/data/services/frun_notifier.dart',
   'src/presentation/app/reload_watcher.dart -> src/data/services/dart_file_watcher.dart',
   'src/presentation/app/run_controller.dart -> src/data/datasources/app_session.dart',
-  'src/presentation/app/run_controller.dart -> src/data/services/frun_notifier.dart',
   'src/presentation/app/run_tab.dart -> src/data/datasources/app_session.dart',
   'src/presentation/app/run_tab.dart -> src/data/models/daemon_messages.dart',
   'src/presentation/tui/clipboard.dart -> src/data/services/windows_clipboard.dart',
