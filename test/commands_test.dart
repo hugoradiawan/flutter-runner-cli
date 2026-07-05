@@ -4,8 +4,8 @@ import 'package:frun/src/data/datasources/config_datasource.dart';
 import 'package:frun/src/data/datasources/config_store.dart';
 import 'package:frun/src/data/repositories/config_repository_impl.dart';
 import 'package:frun/src/data/services/isolate_manager.dart';
-import 'package:frun/src/data/services/project_detector.dart';
 import 'package:frun/src/domain/entities/app_config.dart';
+import 'package:frun/src/domain/entities/flutter_project.dart';
 import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:frun/src/presentation/app/app_state.dart';
 import 'package:frun/src/presentation/app/commands/clear_command.dart';
@@ -29,7 +29,7 @@ void main() {
     temp = Directory.systemTemp.createTempSync('frun_cmd_');
     store = ConfigStore(overridePath: p.join(temp.path, 'cfg.yaml'));
     state = AppState(
-      project: FlutterProject(
+      project: FlutterProjectEntity(
         root: temp.path,
         name: 'demo',
         workspaceRoot: temp.path,

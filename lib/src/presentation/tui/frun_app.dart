@@ -7,12 +7,12 @@ import 'package:dart_tui/dart_tui.dart';
 import 'package:path/path.dart' as p;
 import 'package:vm_service/vm_service.dart' as vm;
 
-import '../../data/models/source_location.dart';
 import '../../data/services/history_store.dart';
 import '../../data/services/isolate_manager.dart';
 import '../../domain/entities/app_config.dart';
 import '../../domain/entities/diagnostic.dart';
 import '../../domain/value_objects/config_values.dart';
+import '../../domain/value_objects/source_location.dart';
 import '../../version.dart';
 import '../app/app_state.dart';
 import '../app/commands/command.dart';
@@ -32,11 +32,11 @@ import 'vim/vim_engine.dart';
 import 'vim/vim_mode.dart';
 import 'vim/vim_state.dart';
 
+part 'frun_app.chrome.dart';
 part 'frun_app.engine.dart';
 part 'frun_app.keys.dart';
 part 'frun_app.messages.dart';
 part 'frun_app.mouse.dart';
-part 'frun_app.chrome.dart';
 part 'frun_app.overlays.dart';
 part 'frun_app.paint.dart';
 part 'frun_app.reducer.dart';

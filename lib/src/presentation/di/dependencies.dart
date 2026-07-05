@@ -8,7 +8,9 @@ import '../../data/services/frun_notifier.dart';
 import '../../data/services/ide_launcher.dart';
 import '../../data/services/inspector_bridge.dart';
 import '../../data/services/isolate_manager.dart';
+import '../../data/services/package_config_uri_resolver.dart';
 import '../../domain/entities/diagnostic.dart';
+import '../../domain/ports/vm_uri_resolver.dart';
 import '../../domain/repositories/config_repository.dart';
 import '../../domain/repositories/device_repository.dart';
 import '../../domain/repositories/diagnostics_repository.dart';
@@ -44,6 +46,7 @@ class Dependencies {
   final IdeLauncher ideLauncher = IdeLauncher();
   final InspectorBridge inspectorBridge = InspectorBridge();
   final FrunNotifier notifier = const FrunNotifier();
+  final VmUriResolver vmUriResolver = const PackageConfigUriResolver();
 
   // ── Services populated as the daemon comes up ─────────────────────────────
   FlutterDaemon? daemon;

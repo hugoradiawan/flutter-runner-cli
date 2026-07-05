@@ -208,9 +208,8 @@ class DartAnalysisServer {
   /// and cached until the next `publishDiagnostics` mutates [_byUri], so
   /// repeated reads (watcher events, repository queries) don't re-copy
   /// thousands of entries.
-  List<DiagnosticModel> get snapshot => _snapshotCache ??= _byUri.values
-      .expand((e) => e)
-      .toList(growable: false);
+  List<DiagnosticModel> get snapshot =>
+      _snapshotCache ??= _byUri.values.expand((e) => e).toList(growable: false);
 
   static String _defaultDartExecutable() =>
       Platform.isWindows ? 'dart.bat' : 'dart';

@@ -1,6 +1,7 @@
-import 'package:frun/src/data/models/source_location.dart';
 import 'package:frun/src/data/services/ide_launcher.dart';
+import 'package:frun/src/data/services/package_config_uri_resolver.dart';
 import 'package:frun/src/domain/value_objects/config_values.dart';
+import 'package:frun/src/domain/value_objects/source_location.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -43,9 +44,11 @@ void main() {
     });
   });
 
-  group('SourceLocation.fromVmServiceUri', () {
+  group('PackageConfigUriResolver.resolve', () {
+    const resolver = PackageConfigUriResolver();
+
     test('parses file:/// URIs', () {
-      final loc = SourceLocation.fromVmServiceUri(
+      final loc = resolver.resolve(
         'file:///tmp/app/lib/main.dart',
         line: 7,
         column: 2,
@@ -59,11 +62,11 @@ void main() {
     });
 
     test('rejects unsupported schemes without project root', () {
-      expect(SourceLocation.fromVmServiceUri('dart:io/file.dart'), isNull);
+      expect(resolver.resolve('dart:io/file.dart'), isNull);
     });
 
     test('rejects package: URIs when no project root', () {
-      expect(SourceLocation.fromVmServiceUri('package:foo/bar.dart'), isNull);
+      expect(resolver.resolve('package:foo/bar.dart'), isNull);
     });
   });
 }

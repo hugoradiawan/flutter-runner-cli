@@ -1,4 +1,4 @@
-import 'package:frun/src/data/models/launch_config.dart';
+import 'package:frun/src/domain/entities/launch_entry.dart';
 import 'package:frun/src/presentation/app/run_tab.dart';
 import 'package:frun/src/presentation/app/tab_list.dart';
 import 'package:test/test.dart';
@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 /// inspects session state.
 RunTab _tab(String name) => RunTab(
   id: 0,
-  entry: LaunchEntry(name: name, program: '$name.dart'),
+  entry: LaunchEntryEntity(name: name, program: '$name.dart'),
   deviceId: 'dev-$name',
 );
 

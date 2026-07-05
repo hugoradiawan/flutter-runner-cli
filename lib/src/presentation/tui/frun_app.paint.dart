@@ -631,7 +631,12 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
         // Right info shifted left to make room for button
         final rightX = btnX - rightInfo.length;
         if (rightX > 1 + prompt.length) {
-          canvas.paint(rightX, yRow, rightInfo, style: theme.panelSubtitleStyle);
+          canvas.paint(
+            rightX,
+            yRow,
+            rightInfo,
+            style: theme.panelSubtitleStyle,
+          );
         }
         // Diagnostics counters sit just left of the right info, inside the box.
         // The input text must stop before whichever of them is leftmost.

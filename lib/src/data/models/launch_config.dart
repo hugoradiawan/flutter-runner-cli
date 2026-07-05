@@ -1,47 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-/// One launch configuration discovered for `/run`. May come from
-/// `.vscode/launch.json` or from a `main()` we found in `lib/`.
-class LaunchEntry {
-  const LaunchEntry({
-    required this.name,
-    required this.program,
-    this.cwd,
-    this.deviceId,
-    this.flutterMode,
-    this.flavor,
-    this.args = const <String>[],
-    this.toolArgs = const <String>[],
-    this.source = LaunchEntrySource.launchJson,
-  });
-
-  final String name;
-
-  /// Dart entry-point. Relative to [cwd] if [cwd] is set, otherwise relative
-  /// to the project root.
-  final String program;
-
-  /// Working directory for `flutter run`. When null, the Flutter project
-  /// root is used. Lets monorepos point `cwd` at the actual sub-project from a
-  /// workspace-level launch.json.
-  final String? cwd;
-
-  /// Optional device id from launch.json (`deviceId` field). If present,
-  /// `/run` will use it instead of the user's currently-selected device.
-  final String? deviceId;
-
-  final String? flutterMode; // debug | profile | release
-  final String? flavor;
-  final List<String> args;
-  final List<String> toolArgs;
-  final LaunchEntrySource source;
-
-  @override
-  String toString() => '$name ($program)';
-}
-
-enum LaunchEntrySource { launchJson, mainScanner }
+import '../../domain/entities/launch_entry.dart';
 
 class LaunchConfigParser {
   /// Parse `.vscode/launch.json` (JSONC). Returns entries with `type == "dart"`.
@@ -50,24 +10,27 @@ class LaunchConfigParser {
   /// (and `${workspaceFolderBasename}`) in `program`, `cwd`, `args`, and
   /// `toolArgs`. Pass the absolute path to the directory that contains
   /// `.vscode/`. When null, no substitution is performed.
-  static List<LaunchEntry> parse(String jsonc, {String? workspaceFolder}) {
+  static List<LaunchEntryEntity> parse(
+    String jsonc, {
+    String? workspaceFolder,
+  }) {
     final stripped = _stripJsonc(jsonc);
-    if (stripped.trim().isEmpty) return const <LaunchEntry>[];
+    if (stripped.trim().isEmpty) return const <LaunchEntryEntity>[];
     final Object? decoded;
     try {
       decoded = json.decode(stripped);
     } on FormatException {
-      return const <LaunchEntry>[];
+      return const <LaunchEntryEntity>[];
     }
-    if (decoded is! Map) return const <LaunchEntry>[];
+    if (decoded is! Map) return const <LaunchEntryEntity>[];
     final configs = decoded['configurations'];
-    if (configs is! List) return const <LaunchEntry>[];
+    if (configs is! List) return const <LaunchEntryEntity>[];
 
     String subst(String? value) => _substitute(value, workspaceFolder);
     List<String> substList(Object? value) =>
         _stringList(value).map(subst).toList(growable: false);
 
-    final out = <LaunchEntry>[];
+    final out = <LaunchEntryEntity>[];
     for (final raw in configs) {
       if (raw is! Map) continue;
       final type = raw['type']?.toString();
@@ -92,7 +55,7 @@ class LaunchConfigParser {
         ...substList(raw['args']),
       ];
       out.add(
-        LaunchEntry(
+        LaunchEntryEntity(
           name: name,
           program: program,
           cwd: cwd,
@@ -107,8 +70,11 @@ class LaunchConfigParser {
     return out;
   }
 
-  static List<LaunchEntry> parseFile(File file, {String? workspaceFolder}) {
-    if (!file.existsSync()) return const <LaunchEntry>[];
+  static List<LaunchEntryEntity> parseFile(
+    File file, {
+    String? workspaceFolder,
+  }) {
+    if (!file.existsSync()) return const <LaunchEntryEntity>[];
     return parse(file.readAsStringSync(), workspaceFolder: workspaceFolder);
   }
 

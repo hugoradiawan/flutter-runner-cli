@@ -1,8 +1,8 @@
-import '../../data/models/launch_config.dart';
-import '../../data/services/project_detector.dart';
 import '../../domain/entities/app_config.dart';
 import '../../domain/entities/diagnostic.dart';
 import '../../domain/entities/emulator.dart';
+import '../../domain/entities/flutter_project.dart';
+import '../../domain/entities/launch_entry.dart';
 import '../di/dependencies.dart';
 import 'run_controller.dart';
 import 'run_target.dart';
@@ -23,7 +23,7 @@ class AppState {
   }) : _config = config,
        transcript = Transcript();
 
-  final FlutterProject project;
+  final FlutterProjectEntity project;
 
   /// Use cases, repositories, and infrastructure services, assembled at the
   /// composition root. See [Dependencies].
@@ -114,7 +114,7 @@ class AppState {
   /// Active `/run` picker. When non-empty, the TUI renders a button bar of
   /// launch entries above the input line. Cleared after the user picks one
   /// or dismisses the picker.
-  List<LaunchEntry> launchChoices = const <LaunchEntry>[];
+  List<LaunchEntryEntity> launchChoices = const <LaunchEntryEntity>[];
 
   /// Active `/emulators` picker. Same shape as [launchChoices] — only one
   /// picker is open at a time; opening one clears the others.
@@ -122,7 +122,7 @@ class AppState {
 
   /// Launch entry awaiting a run-target choice. Set when the user picks an
   /// entry in the `/run` launch picker; cleared once a target is chosen.
-  LaunchEntry? pendingRunEntry;
+  LaunchEntryEntity? pendingRunEntry;
 
   /// Active `/run` target picker — connected devices plus offline emulators.
   List<RunTarget> runTargetChoices = const <RunTarget>[];
@@ -140,14 +140,14 @@ class AppState {
       runTargetChoices.isNotEmpty;
 
   void clearPickers() {
-    launchChoices = const <LaunchEntry>[];
+    launchChoices = const <LaunchEntryEntity>[];
     emulatorChoices = const <EmulatorEntity>[];
     bootModeChoices = const <String>[];
     pendingEmulatorId = null;
     runTargetChoices = const <RunTarget>[];
   }
 
-  void setLaunchPicker(List<LaunchEntry> entries) {
+  void setLaunchPicker(List<LaunchEntryEntity> entries) {
     clearPickers();
     launchChoices = entries;
   }

@@ -4,8 +4,8 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+import '../../domain/entities/launch_entry.dart';
 import '../models/daemon_messages.dart';
-import '../models/launch_config.dart';
 
 /// A single `flutter run --machine` invocation.
 ///
@@ -45,7 +45,7 @@ class AppRunSession {
 
   static Future<AppRunSession> start({
     required String projectRoot,
-    required LaunchEntry entry,
+    required LaunchEntryEntity entry,
     required String deviceId,
     String? flutterExecutable,
     Map<String, String>? environment,

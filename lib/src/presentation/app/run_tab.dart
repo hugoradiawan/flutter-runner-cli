@@ -4,7 +4,7 @@ import 'package:path/path.dart' as p;
 
 import '../../data/datasources/app_session.dart';
 import '../../data/models/daemon_messages.dart';
-import '../../data/models/launch_config.dart';
+import '../../domain/entities/launch_entry.dart';
 import 'transcript.dart';
 
 /// One concurrent `flutter run` session and the UI state that belongs to it
@@ -17,7 +17,7 @@ class RunTab {
   /// Stable identity assigned by [RunController] (monotonic counter).
   final int id;
 
-  final LaunchEntry entry;
+  final LaunchEntryEntity entry;
   final String deviceId;
 
   /// Per-tab transcript so logs from different devices don't interleave.

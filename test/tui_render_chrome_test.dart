@@ -1,9 +1,9 @@
 import 'package:dart_tui/dart_tui.dart';
-import 'package:frun/src/data/models/launch_config.dart';
 import 'package:frun/src/data/services/isolate_manager.dart';
-import 'package:frun/src/data/services/project_detector.dart';
 import 'package:frun/src/domain/entities/app_config.dart';
 import 'package:frun/src/domain/entities/diagnostic.dart';
+import 'package:frun/src/domain/entities/flutter_project.dart';
+import 'package:frun/src/domain/entities/launch_entry.dart';
 import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:frun/src/presentation/app/app_state.dart';
 import 'package:frun/src/presentation/app/commands/command_registry.dart';
@@ -108,7 +108,7 @@ void main() {
 RunTab _tab(int id, String name) {
   return RunTab(
     id: id,
-    entry: LaunchEntry(name: name, program: 'lib/$name.dart'),
+    entry: LaunchEntryEntity(name: name, program: 'lib/$name.dart'),
     deviceId: 'pixel-8-pro-very-long-id',
   );
 }
@@ -120,7 +120,7 @@ _Harness _harness({
   IsolateManager? isolateManager,
 }) {
   final state = AppState(
-    project: FlutterProject(
+    project: const FlutterProjectEntity(
       root: '.',
       name: 'test',
       workspaceRoot: '.',

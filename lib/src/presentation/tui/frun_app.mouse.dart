@@ -196,7 +196,7 @@ mixin _MouseMixin on _FrunModelBase {
       return;
     }
     final ref = _visibleLinks[_focusedLinkIndex];
-    final loc = SourceLocation.fromVmServiceUri(
+    final loc = state.deps.vmUriResolver.resolve(
       ref.link.uri.startsWith('package:')
           ? ref.link.uri
           : _toFileUri(ref.link.uri),

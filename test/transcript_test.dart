@@ -92,7 +92,12 @@ void main() {
       expect(t.baseIndex, 1);
       expect(t.snapshot.map((l) => l.text), ['b', 'c', 'd']);
       expect(() => first[3], throwsRangeError);
-      expect(() => t.snapshot.add(TranscriptLine(text: 'x', level: TranscriptLevel.info)), throwsUnsupportedError);
+      expect(
+        () => t.snapshot.add(
+          TranscriptLine(text: 'x', level: TranscriptLevel.info),
+        ),
+        throwsUnsupportedError,
+      );
     });
 
     test('appends at capacity stay amortized O(1) via rare compaction', () {

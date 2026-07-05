@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:path/path.dart' as p;
 
-import '../../data/models/source_location.dart';
+import '../../domain/value_objects/source_location.dart';
 
 /// Renders a `Flutter.Error` event payload into a compact, useful log.
 ///
@@ -170,12 +170,9 @@ String? _extractLocation(String desc, String? projectRoot) {
   final colSuffix = col != null ? ':$col' : '';
   if (uri.startsWith('package:')) return '$uri:$line$colSuffix';
 
-  final loc = SourceLocation.fromVmServiceUri(
-    uri,
-    projectRoot: projectRoot,
-    line: line,
-    column: col ?? 1,
-  );
+  // Only `file://` URIs reach this point (`package:` returned above), so the
+  // pure conversion suffices — no package-config resolution needed.
+  final loc = SourceLocation.fromFileUri(uri, line: line, column: col ?? 1);
   if (loc == null) return null;
   var path = loc.file;
   if (projectRoot != null) {

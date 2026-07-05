@@ -3,25 +3,16 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
-/// A file location to open in the user's IDE.
-class SourceLocation {
-  const SourceLocation({required this.file, this.line = 1, this.column = 1});
+import '../../domain/ports/vm_uri_resolver.dart';
+import '../../domain/value_objects/source_location.dart';
 
-  /// Absolute path on disk.
-  final String file;
-  final int line;
-  final int column;
+/// Resolves `package:` URIs through `.dart_tool/package_config.json` (and
+/// `file://` URIs directly).
+class PackageConfigUriResolver extends VmUriResolver {
+  const PackageConfigUriResolver();
 
   @override
-  String toString() => '$file:$line:$column';
-
-  /// Best-effort conversion from a VM service / dart:* script URI.
-  ///
-  /// - `file:///abs/path.dart` → that abs path.
-  /// - `package:foo/bar.dart`  → resolved via `.dart_tool/package_config.json`
-  ///                             relative to [projectRoot] if supplied.
-  /// - Otherwise returns null.
-  static SourceLocation? fromVmServiceUri(
+  SourceLocation? resolve(
     String uri, {
     String? projectRoot,
     int line = 1,

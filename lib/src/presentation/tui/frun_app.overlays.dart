@@ -956,7 +956,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       }
       final scriptUri = frames.first.location?.script?.uri;
       if (scriptUri != null) {
-        final loc = SourceLocation.fromVmServiceUri(scriptUri);
+        final loc = state.deps.vmUriResolver.resolve(scriptUri);
         if (loc != null) await state.deps.ideLauncher.open(loc, state);
       }
     } catch (e) {

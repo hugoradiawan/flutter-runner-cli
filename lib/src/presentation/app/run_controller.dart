@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import '../../data/datasources/app_session.dart';
-import '../../data/models/launch_config.dart';
 import '../../data/services/frun_notifier.dart';
 import '../../domain/entities/device.dart';
 import '../../domain/entities/emulator.dart';
+import '../../domain/entities/launch_entry.dart';
 import '../../domain/params/emulator_launch_params.dart';
 import '../../domain/params/reload_params.dart';
 import '../../domain/value_objects/config_values.dart';
@@ -60,13 +60,13 @@ class RunController {
   AppRunSession? get session => activeTab?.session;
 
   /// Legacy "last entry" getter, kept for the status panel.
-  LaunchEntry? get lastEntry => activeTab?.entry;
+  LaunchEntryEntity? get lastEntry => activeTab?.entry;
 
   /// Stash [entry] as the pending run and open the run-target picker. The
   /// picker lists connected devices (physical, running emulators, desktop and
   /// web platforms) plus offline emulators that can be booted on demand. The
   /// TUI renders it; picking a target calls [launchOnTarget].
-  Future<void> openRunTargetPicker(LaunchEntry entry) async {
+  Future<void> openRunTargetPicker(LaunchEntryEntity entry) async {
     state.pendingRunEntry = entry;
 
     final devicesResult = await state.deps.listDevicesUseCase?.call();
@@ -145,7 +145,7 @@ class RunController {
 
   /// Start an app, or focus an existing tab that matches this entry + device.
   Future<RunTab?> startOrFocus(
-    LaunchEntry entry, {
+    LaunchEntryEntity entry, {
     required String deviceId,
   }) async {
     final dedupeKey = '${entry.name}|${entry.program}|$deviceId';

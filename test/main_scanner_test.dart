@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:frun/src/data/models/launch_config.dart';
 import 'package:frun/src/data/services/main_scanner.dart';
+import 'package:frun/src/domain/entities/launch_entry.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -54,16 +54,16 @@ void main() {
     });
 
     test('merge dedupes by program', () {
-      const launchJson = <LaunchEntry>[
-        LaunchEntry(name: 'dev', program: 'lib/main.dart'),
+      const launchJson = <LaunchEntryEntity>[
+        LaunchEntryEntity(name: 'dev', program: 'lib/main.dart'),
       ];
-      const scanned = <LaunchEntry>[
-        LaunchEntry(
+      const scanned = <LaunchEntryEntity>[
+        LaunchEntryEntity(
           name: 'lib/main.dart',
           program: 'lib/main.dart',
           source: LaunchEntrySource.mainScanner,
         ),
-        LaunchEntry(
+        LaunchEntryEntity(
           name: 'lib/main_dev.dart',
           program: 'lib/main_dev.dart',
           source: LaunchEntrySource.mainScanner,

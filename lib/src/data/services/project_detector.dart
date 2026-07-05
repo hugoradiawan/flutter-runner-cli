@@ -3,43 +3,13 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
-/// Information about the Flutter project that `frun` is launched inside.
-///
-/// In a monorepo, [root] is where the runnable Flutter project's `pubspec.yaml`
-/// lives (e.g. `apps/client`) while [workspaceRoot] is the highest ancestor
-/// that contains a `.vscode/` directory (e.g. the monorepo root). They are
-/// equal when the project is its own workspace.
-///
-/// [watchRoot] is the highest ancestor with any repo/workspace marker
-/// (`.git`, `.vscode`, `.zed`, `melos.yaml`) — used by the file watcher so
-/// edits in monorepo packages outside [root] still trigger hot reload.
-class FlutterProject {
-  FlutterProject({
-    required this.root,
-    required this.name,
-    required this.workspaceRoot,
-    required this.watchRoot,
-    required this.hasVsCodeFolder,
-    required this.hasZedFolder,
-  });
-
-  final String root;
-  final String name;
-  final String workspaceRoot;
-  final String watchRoot;
-  final bool hasVsCodeFolder;
-  final bool hasZedFolder;
-
-  String get pubspecPath => p.join(root, 'pubspec.yaml');
-  String get launchJsonPath => p.join(workspaceRoot, '.vscode', 'launch.json');
-  String get libDir => p.join(root, 'lib');
-}
+import '../../domain/entities/flutter_project.dart';
 
 class ProjectDetectionResult {
   ProjectDetectionResult.success(this.project) : error = null;
   ProjectDetectionResult.failure(this.error) : project = null;
 
-  final FlutterProject? project;
+  final FlutterProjectEntity? project;
   final String? error;
 
   bool get isOk => project != null;
@@ -181,7 +151,7 @@ class ProjectDetector {
     final workspaceRoot = _findWorkspaceRoot(dir);
     final watchRoot = _findWatchRoot(dir);
     return ProjectDetectionResult.success(
-      FlutterProject(
+      FlutterProjectEntity(
         root: dir,
         name: name,
         workspaceRoot: workspaceRoot,

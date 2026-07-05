@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:vm_service/vm_service.dart' as vm;
 
 import '../../presentation/app/app_state.dart';
-import '../models/source_location.dart';
+import 'package_config_uri_resolver.dart';
 
 /// Bridges widget-inspector selection in the running app to a jump-to-source
 /// action in the user's IDE.
@@ -116,7 +116,7 @@ class InspectorBridge {
     AppState state, {
     bool skipPrimingCheck = false,
   }) async {
-    final src = SourceLocation.fromVmServiceUri(
+    final src = const PackageConfigUriResolver().resolve(
       loc.uri,
       projectRoot: state.project.root,
       line: loc.line,

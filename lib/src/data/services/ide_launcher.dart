@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import '../../domain/value_objects/config_values.dart';
+import '../../domain/value_objects/source_location.dart';
 import '../../presentation/app/app_state.dart';
-import '../models/source_location.dart';
 
 /// Opens a [SourceLocation] in the user's configured IDE by shelling out to
 /// its CLI.

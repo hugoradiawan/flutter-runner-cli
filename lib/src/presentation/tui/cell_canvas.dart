@@ -137,7 +137,13 @@ final class CellCanvas {
   /// (`\x1b[0m` / `\x1b[m`) drops back to *plain* (not [baseStyle]), any other
   /// SGR appends to the current open-sequence run. Non-SGR CSI sequences are
   /// consumed and ignored.
-  void paintAnsi(int x, int y, String text, {Style? baseStyle, int zIndex = 0}) {
+  void paintAnsi(
+    int x,
+    int y,
+    String text, {
+    Style? baseStyle,
+    int zIndex = 0,
+  }) {
     var styleId = baseStyle == null ? 0 : _styleIdOf(baseStyle);
     var openSeq = _openSeqs[styleId];
     var col = x;
@@ -154,7 +160,7 @@ final class CellCanvas {
           i++;
           if (finalByte >= 0x40 && finalByte <= 0x7E) break;
         }
-        if (finalByte == 0x6D /* m */) {
+        if (finalByte == 0x6D /* m */ ) {
           final seq = text.substring(seqStart, i);
           if (seq == '\x1b[0m' || seq == '\x1b[m') {
             openSeq = '';
@@ -209,7 +215,7 @@ final class CellCanvas {
           i++;
           if (finalByte >= 0x40 && finalByte <= 0x7E) break;
         }
-        if (finalByte == 0x6D /* m */) {
+        if (finalByte == 0x6D /* m */ ) {
           if (vis > runStart) {
             out.add(StyleRun(runStart, vis, seq, onBase: onBase));
             runStart = vis;

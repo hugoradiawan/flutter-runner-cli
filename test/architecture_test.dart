@@ -28,14 +28,11 @@ const knownDataToPresentation = <String>{
 
 /// presentation -> data outside the sanctioned seam (di/dependencies.dart).
 const knownPresentationToData = <String>{
-  'src/presentation/app/app_state.dart -> src/data/models/launch_config.dart',
-  'src/presentation/app/app_state.dart -> src/data/services/project_detector.dart',
   'src/presentation/app/commands/devtools_command.dart -> src/data/services/frun_notifier.dart',
   'src/presentation/app/commands/diagnostics_command.dart -> src/data/services/dart_source_walker.dart',
   'src/presentation/app/commands/emulators_command.dart -> src/data/datasources/emulator_manager.dart',
   'src/presentation/app/commands/emulators_command.dart -> src/data/services/frun_notifier.dart',
   'src/presentation/app/commands/inspect_command.dart -> src/data/services/frun_notifier.dart',
-  'src/presentation/app/commands/isolates_command.dart -> src/data/models/source_location.dart',
   'src/presentation/app/commands/isolates_command.dart -> src/data/services/ide_launcher.dart',
   'src/presentation/app/commands/isolates_command.dart -> src/data/services/isolate_manager.dart',
   'src/presentation/app/commands/reload_command.dart -> src/data/services/frun_notifier.dart',
@@ -45,16 +42,12 @@ const knownPresentationToData = <String>{
   'src/presentation/app/daemon_event_router.dart -> src/data/datasources/app_session.dart',
   'src/presentation/app/daemon_event_router.dart -> src/data/models/daemon_messages.dart',
   'src/presentation/app/daemon_event_router.dart -> src/data/services/frun_notifier.dart',
-  'src/presentation/app/flutter_error_renderer.dart -> src/data/models/source_location.dart',
   'src/presentation/app/reload_watcher.dart -> src/data/services/dart_file_watcher.dart',
   'src/presentation/app/run_controller.dart -> src/data/datasources/app_session.dart',
-  'src/presentation/app/run_controller.dart -> src/data/models/launch_config.dart',
   'src/presentation/app/run_controller.dart -> src/data/services/frun_notifier.dart',
   'src/presentation/app/run_tab.dart -> src/data/datasources/app_session.dart',
   'src/presentation/app/run_tab.dart -> src/data/models/daemon_messages.dart',
-  'src/presentation/app/run_tab.dart -> src/data/models/launch_config.dart',
   'src/presentation/tui/clipboard.dart -> src/data/services/windows_clipboard.dart',
-  'src/presentation/tui/frun_app.dart -> src/data/models/source_location.dart',
   'src/presentation/tui/frun_app.dart -> src/data/services/history_store.dart',
   'src/presentation/tui/frun_app.dart -> src/data/services/isolate_manager.dart',
 };

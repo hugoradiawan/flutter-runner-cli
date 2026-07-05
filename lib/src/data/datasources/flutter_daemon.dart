@@ -180,9 +180,7 @@ class FlutterDaemon {
   }
 
   Future<void> createEmulator({String? name}) async {
-    await request('emulator.create', <String, Object?>{
-      'name': ?name,
-    });
+    await request('emulator.create', <String, Object?>{'name': ?name});
   }
 
   /// Ask the daemon to serve DevTools. Returns the served `host:port`.

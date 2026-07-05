@@ -2,6 +2,7 @@ import 'dart:io';
 
 import '../../../data/models/launch_config.dart';
 import '../../../data/services/main_scanner.dart';
+import '../../../domain/entities/launch_entry.dart';
 import '../app_state.dart';
 import '../run_controller.dart';
 import 'command.dart';
@@ -55,7 +56,7 @@ class RunCommand extends Command {
     return CommandResult.ok;
   }
 
-  List<LaunchEntry> _discover(AppState state) {
+  List<LaunchEntryEntity> _discover(AppState state) {
     final launchJsonFile = File(state.project.launchJsonPath);
     final launchJson = LaunchConfigParser.parseFile(
       launchJsonFile,
@@ -65,7 +66,7 @@ class RunCommand extends Command {
     return MainScanner.merge(launchJson, scanned);
   }
 
-  LaunchEntry? _resolve(String token, List<LaunchEntry> entries) {
+  LaunchEntryEntity? _resolve(String token, List<LaunchEntryEntity> entries) {
     final asInt = int.tryParse(token);
     if (asInt != null && asInt >= 0 && asInt < entries.length) {
       return entries[asInt];

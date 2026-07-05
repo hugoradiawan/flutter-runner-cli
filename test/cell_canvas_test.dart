@@ -90,16 +90,19 @@ void main() {
       expect(out, contains('\x1b[0md'));
     });
 
-    test('paintAnsi baseStyle styles leading cells until an embedded reset', () {
-      final base = const Style().foregroundColor256(78);
-      final c = CellCanvas()..reset(6, 1);
-      c.paintAnsi(0, 0, 'ab\x1b[0mcd', baseStyle: base);
-      final out = c.render();
-      expect(_plain(out), 'abcd  ');
-      final baseOpen = base.render('x').split('x').first;
-      expect(out, startsWith('\x1b[0m${baseOpen}ab'));
-      expect(out, contains('\x1b[0mcd'));
-    });
+    test(
+      'paintAnsi baseStyle styles leading cells until an embedded reset',
+      () {
+        final base = const Style().foregroundColor256(78);
+        final c = CellCanvas()..reset(6, 1);
+        c.paintAnsi(0, 0, 'ab\x1b[0mcd', baseStyle: base);
+        final out = c.render();
+        expect(_plain(out), 'abcd  ');
+        final baseOpen = base.render('x').split('x').first;
+        expect(out, startsWith('\x1b[0m${baseOpen}ab'));
+        expect(out, contains('\x1b[0mcd'));
+      },
+    );
 
     test('paintAnsi consumes non-SGR CSI sequences without painting them', () {
       final c = CellCanvas()..reset(6, 1);
@@ -174,22 +177,49 @@ void main() {
     test('every theme style yields a well-formed SGR open prefix', () {
       for (final theme in [FrunTheme.dark(), FrunTheme.light()]) {
         final styles = <Style>[
-          theme.textStyle, theme.valueStyle, theme.titleStyle,
-          theme.panelTitleStyle, theme.panelSubtitleStyle, theme.borderStyle,
-          theme.borderStrongStyle, theme.inputBorderStyle, theme.dimStyle,
-          theme.accentStyle, theme.errorStyle, theme.warnStyle,
-          theme.successStyle, theme.systemStyle, theme.surfaceStyle,
-          theme.surfaceMutedStyle, theme.selectedRowStyle, theme.emptyStyle,
-          theme.badgeNeutralStyle, theme.badgeInfoStyle, theme.badgeErrorStyle,
-          theme.badgeWarnStyle, theme.badgeSuccessStyle, theme.statusBarStyle,
-          theme.promptStyle, theme.activeTabStyle, theme.inactiveTabStyle,
-          theme.exitedTabStyle, theme.buttonStyle, theme.buttonStopStyle,
-          theme.pickerChipStyle, theme.pickerEmulatorChipStyle,
-          theme.pickerDeviceChipStyle, theme.pickerChipSelectedStyle,
+          theme.textStyle,
+          theme.valueStyle,
+          theme.titleStyle,
+          theme.panelTitleStyle,
+          theme.panelSubtitleStyle,
+          theme.borderStyle,
+          theme.borderStrongStyle,
+          theme.inputBorderStyle,
+          theme.dimStyle,
+          theme.accentStyle,
+          theme.errorStyle,
+          theme.warnStyle,
+          theme.successStyle,
+          theme.systemStyle,
+          theme.surfaceStyle,
+          theme.surfaceMutedStyle,
+          theme.selectedRowStyle,
+          theme.emptyStyle,
+          theme.badgeNeutralStyle,
+          theme.badgeInfoStyle,
+          theme.badgeErrorStyle,
+          theme.badgeWarnStyle,
+          theme.badgeSuccessStyle,
+          theme.statusBarStyle,
+          theme.promptStyle,
+          theme.activeTabStyle,
+          theme.inactiveTabStyle,
+          theme.exitedTabStyle,
+          theme.buttonStyle,
+          theme.buttonStopStyle,
+          theme.pickerChipStyle,
+          theme.pickerEmulatorChipStyle,
+          theme.pickerDeviceChipStyle,
+          theme.pickerChipSelectedStyle,
           theme.pickerEmulatorChipSelectedStyle,
-          theme.pickerDeviceChipSelectedStyle, theme.linkHighlightStyle,
-          theme.selectionStyle, theme.visualLineStyle, theme.visualBlockStyle,
-          theme.searchMatchStyle, theme.searchActiveStyle, theme.cursorStyle,
+          theme.pickerDeviceChipSelectedStyle,
+          theme.linkHighlightStyle,
+          theme.selectionStyle,
+          theme.visualLineStyle,
+          theme.visualBlockStyle,
+          theme.searchMatchStyle,
+          theme.searchActiveStyle,
+          theme.cursorStyle,
           theme.replaceCursorStyle,
         ];
         for (final style in styles) {

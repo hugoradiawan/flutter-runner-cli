@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:frun/src/data/services/project_detector.dart';
 import 'package:frun/src/domain/entities/app_config.dart';
 import 'package:frun/src/domain/entities/diagnostic.dart';
+import 'package:frun/src/domain/entities/flutter_project.dart';
 import 'package:frun/src/presentation/app/app_state.dart';
 import 'package:frun/src/presentation/app/commands/diagnostics_command.dart';
 import 'package:frun/src/presentation/app/transcript.dart';
@@ -19,7 +19,7 @@ void main() {
   setUp(() {
     temp = Directory.systemTemp.createTempSync('frun_diag_cmd_');
     state = AppState(
-      project: FlutterProject(
+      project: FlutterProjectEntity(
         root: temp.path,
         name: 'demo',
         workspaceRoot: temp.path,
@@ -154,7 +154,7 @@ void main() {
     ).writeAsStringSync('// TODO: sibling');
 
     state = AppState(
-      project: FlutterProject(
+      project: FlutterProjectEntity(
         root: appRoot,
         name: 'demo',
         workspaceRoot: temp.path,

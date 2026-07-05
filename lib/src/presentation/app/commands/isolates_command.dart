@@ -1,6 +1,5 @@
 import 'package:vm_service/vm_service.dart' as vm;
 
-import '../../../data/models/source_location.dart';
 import '../../../data/services/ide_launcher.dart';
 import '../../../data/services/isolate_manager.dart';
 import '../app_state.dart';
@@ -153,7 +152,7 @@ class IsolatesCommand extends Command {
       final top = frames.first;
       final scriptUri = top.location?.script?.uri;
       if (scriptUri != null) {
-        final loc = SourceLocation.fromVmServiceUri(scriptUri);
+        final loc = state.deps.vmUriResolver.resolve(scriptUri);
         if (loc != null) await ide.open(loc, state);
       }
     } catch (e) {
