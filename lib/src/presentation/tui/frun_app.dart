@@ -17,6 +17,7 @@ import '../../version.dart';
 import '../app/app_state.dart';
 import '../app/commands/command.dart';
 import '../app/commands/command_registry.dart';
+import '../app/ide_opener.dart';
 import '../app/link_extractor.dart';
 import '../app/run_tab.dart';
 import '../app/transcript.dart';

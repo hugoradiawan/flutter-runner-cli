@@ -1,8 +1,8 @@
 import 'package:vm_service/vm_service.dart' as vm;
 
-import '../../../data/services/ide_launcher.dart';
 import '../../../data/services/isolate_manager.dart';
 import '../app_state.dart';
+import '../ide_opener.dart';
 import 'command.dart';
 
 /// `isolates` — inspect and control Dart isolates.
@@ -15,10 +15,9 @@ import 'command.dart';
 ///   isolates kill `<id>`           → kill an isolate
 ///   isolates stack `<id>`          → print the current stack (opens top frame in IDE)
 class IsolatesCommand extends Command {
-  IsolatesCommand(this.manager, this.ide);
+  IsolatesCommand(this.manager);
 
   final IsolateManager manager;
-  final IdeLauncher ide;
 
   @override
   String get name => 'isolates';
@@ -153,7 +152,7 @@ class IsolatesCommand extends Command {
       final scriptUri = top.location?.script?.uri;
       if (scriptUri != null) {
         final loc = state.deps.vmUriResolver.resolve(scriptUri);
-        if (loc != null) await ide.open(loc, state);
+        if (loc != null) await openInIde(loc, state);
       }
     } catch (e) {
       state.visibleTranscript.error('Stack lookup failed: $e');

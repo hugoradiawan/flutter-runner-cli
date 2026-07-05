@@ -957,7 +957,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       final scriptUri = frames.first.location?.script?.uri;
       if (scriptUri != null) {
         final loc = state.deps.vmUriResolver.resolve(scriptUri);
-        if (loc != null) await state.deps.ideLauncher.open(loc, state);
+        if (loc != null) await openInIde(loc, state);
       }
     } catch (e) {
       state.visibleTranscript.error('Stack lookup failed: $e');

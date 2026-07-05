@@ -47,6 +47,7 @@ import 'src/presentation/app/commands/run_command.dart';
 import 'src/presentation/app/commands/scrollback_command.dart';
 import 'src/presentation/app/commands/status_command.dart';
 import 'src/presentation/app/commands/stop_command.dart';
+import 'src/presentation/app/ide_opener.dart';
 import 'src/presentation/app/transcript.dart';
 import 'src/presentation/di/dependencies.dart';
 import 'src/presentation/tui/clipboard.dart';
@@ -123,9 +124,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     ..register(StopCommand())
     ..register(DetachCommand())
     ..register(PerformanceOverlayCommand())
-    ..register(
-      IsolatesCommand(state.deps.isolateManager, state.deps.ideLauncher),
-    )
+    ..register(IsolatesCommand(state.deps.isolateManager))
     ..register(InspectCommand())
     ..register(StatusCommand())
     ..register(MemCommand())
@@ -148,6 +147,12 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     onQuit: program.quit,
   );
 
+  // Widget-inspector selections resolve to source locations; route them into
+  // the user's IDE.
+  final inspectorJumpsSub = deps.inspectorBridge.selectionJumps.listen(
+    (loc) => openInIde(loc, state),
+  );
+
   // Kick the daemon off in the background so the TUI is interactive
   // immediately. Any failure is surfaced in the transcript.
   unawaited(_bootDaemon(state));
@@ -160,6 +165,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   } finally {
     restoreConsole();
   }
+  await inspectorJumpsSub.cancel();
   await state.runController.stopAll();
   await state.deps.isolateManager.disconnect();
   await state.deps.diagnosticsSubscription?.cancel();

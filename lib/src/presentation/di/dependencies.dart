@@ -10,6 +10,7 @@ import '../../data/services/inspector_bridge.dart';
 import '../../data/services/isolate_manager.dart';
 import '../../data/services/package_config_uri_resolver.dart';
 import '../../domain/entities/diagnostic.dart';
+import '../../domain/ports/ide_launcher.dart';
 import '../../domain/ports/notifier.dart';
 import '../../domain/ports/vm_uri_resolver.dart';
 import '../../domain/repositories/config_repository.dart';
@@ -44,8 +45,10 @@ class Dependencies {
 
   // ── Eager infrastructure services ─────────────────────────────────────────
   final IsolateManager isolateManager;
-  final IdeLauncher ideLauncher = IdeLauncher();
-  final InspectorBridge inspectorBridge = InspectorBridge();
+  final IdeLauncher ideLauncher = const DesktopIdeLauncher();
+  late final InspectorBridge inspectorBridge = InspectorBridge(
+    extensionEvents: isolateManager.extensionEvents,
+  );
   final Notifier notifier = const DesktopNotifier();
   final VmUriResolver vmUriResolver = const PackageConfigUriResolver();
 

@@ -49,7 +49,10 @@ class InspectCommand extends Command {
       return CommandResult.ok;
     }
     if (tab.inspectEnabled) {
-      state.deps.inspectorBridge.attach(state);
+      state.deps.inspectorBridge.attach(
+        serviceExtension: () => state.runController.serviceExtensionCaller,
+        projectRoot: state.project.root,
+      );
       state.deps.notifier.notify(FrunNotifEvent.inspectReady);
       state.visibleTranscript.success(
         'Inspector ON — tap widgets in the app to jump to source.',

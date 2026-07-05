@@ -52,7 +52,10 @@ class DevToolsCommand extends Command {
     // Re-point the shared VM connection at this tab's device so DevTools widget
     // clicks open source from the selected app.
     await state.runController.ensureIsolatesForActiveTab();
-    state.deps.inspectorBridge.attach(state);
+    state.deps.inspectorBridge.attach(
+      serviceExtension: () => state.runController.serviceExtensionCaller,
+      projectRoot: state.project.root,
+    );
     state.visibleTranscript.system(
       'Inspector bridge ON — leaf clicks in DevTools open in ${state.config.ide.id}.',
     );

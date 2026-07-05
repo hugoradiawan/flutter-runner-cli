@@ -62,6 +62,16 @@ class RunController {
   /// Legacy "last entry" getter, kept for the status panel.
   LaunchEntryEntity? get lastEntry => activeTab?.entry;
 
+  /// Service-extension caller targeting the active session, or null when no
+  /// app is running. Handed to the inspector bridge so it always polls the
+  /// currently-selected tab.
+  Future<Object?> Function(String method, Map<String, Object?> params)?
+  get serviceExtensionCaller {
+    final s = session;
+    if (s == null) return null;
+    return (method, params) => s.callServiceExtension(method, params);
+  }
+
   /// Stash [entry] as the pending run and open the run-target picker. The
   /// picker lists connected devices (physical, running emulators, desktop and
   /// web platforms) plus offline emulators that can be booted on demand. The

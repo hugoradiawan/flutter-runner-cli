@@ -20,16 +20,12 @@ import 'package:test/test.dart';
 
 /// data -> presentation (the import-direction cycle). Format:
 /// 'importer -> imported', both lib-relative posix paths.
-const knownDataToPresentation = <String>{
-  'src/data/services/ide_launcher.dart -> src/presentation/app/app_state.dart',
-  'src/data/services/inspector_bridge.dart -> src/presentation/app/app_state.dart',
-};
+const knownDataToPresentation = <String>{};
 
 /// presentation -> data outside the sanctioned seam (di/dependencies.dart).
 const knownPresentationToData = <String>{
   'src/presentation/app/commands/diagnostics_command.dart -> src/data/services/dart_source_walker.dart',
   'src/presentation/app/commands/emulators_command.dart -> src/data/datasources/emulator_manager.dart',
-  'src/presentation/app/commands/isolates_command.dart -> src/data/services/ide_launcher.dart',
   'src/presentation/app/commands/isolates_command.dart -> src/data/services/isolate_manager.dart',
   'src/presentation/app/commands/run_command.dart -> src/data/models/launch_config.dart',
   'src/presentation/app/commands/run_command.dart -> src/data/services/main_scanner.dart',

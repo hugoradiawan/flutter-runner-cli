@@ -208,7 +208,7 @@ mixin _MouseMixin on _FrunModelBase {
       state.transcript.warn('Could not resolve ${ref.link.uri} to a file.');
       return;
     }
-    await state.deps.ideLauncher.open(loc, state);
+    await openInIde(loc, state);
   }
 
   String _toFileUri(String pathLike) {

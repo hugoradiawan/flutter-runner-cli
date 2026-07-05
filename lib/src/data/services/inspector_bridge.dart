@@ -3,11 +3,19 @@ import 'dart:convert';
 
 import 'package:vm_service/vm_service.dart' as vm;
 
-import '../../presentation/app/app_state.dart';
+import '../../domain/ports/vm_uri_resolver.dart';
+import '../../domain/value_objects/source_location.dart';
 import 'package_config_uri_resolver.dart';
 
+/// Calls a service extension on the currently-running app. Returns the
+/// decoded response. The bridge asks for a fresh caller before every poll so
+/// it always targets the active session (which may be swapped by restarts).
+typedef ServiceExtensionCaller =
+    Future<Object?> Function(String method, Map<String, Object?> params);
+
 /// Bridges widget-inspector selection in the running app to a jump-to-source
-/// action in the user's IDE.
+/// action, emitted as [selectionJumps] for the presentation layer to route
+/// into the user's IDE.
 ///
 /// Two paths:
 ///   • In-app tap during `inspect` mode → Flutter posts `Flutter.Selection`
@@ -21,12 +29,31 @@ import 'package_config_uri_resolver.dart';
 ///     each poll is a VM-service RPC round-trip, so the fast cadence would
 ///     otherwise burn CPU/network for as long as the bridge stays attached.
 class InspectorBridge {
+  InspectorBridge({
+    required Stream<vm.Event> extensionEvents,
+    VmUriResolver resolver = const PackageConfigUriResolver(),
+  }) : _extensionEvents = extensionEvents,
+       _resolver = resolver;
+
   static const _objectGroup = 'frun-inspector';
   static const _pollInterval = Duration(milliseconds: 500);
   static const _idlePollInterval = Duration(seconds: 2);
 
   /// Consecutive no-change polls (~5 s at the fast cadence) before backing off.
   static const _idleThreshold = 10;
+
+  final Stream<vm.Event> _extensionEvents;
+  final VmUriResolver _resolver;
+
+  final StreamController<SourceLocation> _jumps =
+      StreamController<SourceLocation>.broadcast();
+
+  /// Resolved source locations the user selected in the running app. The
+  /// composition root routes these into the IDE opener.
+  Stream<SourceLocation> get selectionJumps => _jumps.stream;
+
+  ServiceExtensionCaller? Function()? _serviceExtension;
+  String? _projectRoot;
 
   StreamSubscription<vm.Event>? _sub;
   Timer? _poll;
@@ -48,19 +75,27 @@ class InspectorBridge {
   /// (Re)subscribe to selection events and start polling. Safe to call
   /// repeatedly; cancels any prior subscription/timer first so the bridge
   /// survives app restarts that swap the underlying VM-service stream.
-  void attach(AppState state) {
+  ///
+  /// [serviceExtension] is re-invoked before every poll and must return the
+  /// caller for the currently-active session, or null when none is running.
+  void attach({
+    required ServiceExtensionCaller? Function() serviceExtension,
+    required String projectRoot,
+  }) {
+    _serviceExtension = serviceExtension;
+    _projectRoot = projectRoot;
     _sub?.cancel();
     _poll?.cancel();
     _primed = false;
     _quietPolls = 0;
     _pollIdle = false;
     _pollGeneration++;
-    _sub = state.deps.isolateManager.extensionEvents.listen((event) {
+    _sub = _extensionEvents.listen((event) {
       if (event.extensionKind == 'Flutter.Selection') {
-        _handleSelectionEvent(event, state);
+        _handleSelectionEvent(event);
       }
     });
-    _schedulePoll(state);
+    _schedulePoll();
   }
 
   Future<void> detach() async {
@@ -73,12 +108,12 @@ class InspectorBridge {
     _primed = false;
   }
 
-  void _schedulePoll(AppState state) {
+  void _schedulePoll() {
     final generation = _pollGeneration;
     _poll = Timer(_pollIdle ? _idlePollInterval : _pollInterval, () async {
       if (generation != _pollGeneration) return;
       final before = _lastKey;
-      await _pollSelection(state);
+      await _pollSelection();
       if (generation != _pollGeneration) return;
       if (_lastKey != before) {
         _quietPolls = 0;
@@ -86,39 +121,35 @@ class InspectorBridge {
       } else if (!_pollIdle && ++_quietPolls >= _idleThreshold) {
         _pollIdle = true;
       }
-      _schedulePoll(state);
+      _schedulePoll();
     });
   }
 
-  Future<void> _handleSelectionEvent(vm.Event event, AppState state) async {
+  Future<void> _handleSelectionEvent(vm.Event event) async {
     // The user is actively inspecting — restore the fast poll cadence.
     _quietPolls = 0;
     _pollIdle = false;
     final data = event.extensionData?.data ?? const <String, dynamic>{};
     final loc = _extractLocation(data);
     // User-driven tap — always open regardless of _primed state.
-    if (loc != null) await _open(loc, state, skipPrimingCheck: true);
+    if (loc != null) _open(loc, skipPrimingCheck: true);
   }
 
-  Future<void> _pollSelection(AppState state) async {
+  Future<void> _pollSelection() async {
     if (_polling) return;
     _polling = true;
     try {
-      final loc = await _fetchSelectedLocation(state);
-      if (loc != null) await _open(loc, state);
+      final loc = await _fetchSelectedLocation();
+      if (loc != null) _open(loc);
     } finally {
       _polling = false;
     }
   }
 
-  Future<void> _open(
-    _CreationLocation loc,
-    AppState state, {
-    bool skipPrimingCheck = false,
-  }) async {
-    final src = const PackageConfigUriResolver().resolve(
+  void _open(_CreationLocation loc, {bool skipPrimingCheck = false}) {
+    final src = _resolver.resolve(
       loc.uri,
-      projectRoot: state.project.root,
+      projectRoot: _projectRoot,
       line: loc.line,
       column: loc.column,
     );
@@ -134,23 +165,22 @@ class InspectorBridge {
     // First poll observation after attach is the pre-existing selection —
     // skip it. User-driven Flutter.Selection events bypass this guard.
     if (!wasPrimed && !skipPrimingCheck) return;
-    await state.deps.ideLauncher.open(src, state);
+    _jumps.add(src);
   }
 
   /// Asks the running app for the currently-selected widget and pulls its
   /// `creationLocation`.
-  Future<_CreationLocation?> _fetchSelectedLocation(AppState state) async {
-    final session = state.runController.session;
-    if (session == null) return null;
+  Future<_CreationLocation?> _fetchSelectedLocation() async {
+    final call = _serviceExtension?.call();
+    if (call == null) return null;
     for (final method in const [
       'ext.flutter.inspector.getSelectedSummaryWidget',
       'ext.flutter.inspector.getSelectedWidget',
     ]) {
       try {
-        final result = await session.callServiceExtension(
-          method,
-          <String, Object?>{'objectGroup': _objectGroup},
-        );
+        final result = await call(method, <String, Object?>{
+          'objectGroup': _objectGroup,
+        });
         final loc = _extractFromResponse(result);
         if (loc != null) return loc;
       } catch (_) {

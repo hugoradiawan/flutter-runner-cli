@@ -122,10 +122,7 @@ void main() {
 
   test('/isolates opens lifecycle panel', () async {
     state.showDiagnosticsPanel = true;
-    final command = IsolatesCommand(
-      state.deps.isolateManager,
-      state.deps.ideLauncher,
-    );
+    final command = IsolatesCommand(state.deps.isolateManager);
 
     await command.run(const [], state);
 
@@ -148,10 +145,7 @@ void main() {
       config: AppConfigEntity.defaults(),
       deps: Dependencies(isolateManager: manager),
     );
-    final command = IsolatesCommand(
-      localState.deps.isolateManager,
-      localState.deps.ideLauncher,
-    );
+    final command = IsolatesCommand(localState.deps.isolateManager);
 
     await command.run(const ['list'], localState);
 

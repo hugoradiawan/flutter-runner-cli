@@ -314,6 +314,6 @@ mixin _EngineMixin on _FrunModelBase {
       line: d.line,
       column: d.column,
     );
-    await state.deps.ideLauncher.open(loc, state);
+    await openInIde(loc, state);
   }
 }

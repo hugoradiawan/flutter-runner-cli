@@ -1,30 +1,37 @@
 import 'dart:io';
 
+import '../../core/result.dart';
+import '../../domain/failures/ide_failure.dart';
+import '../../domain/ports/ide_launcher.dart';
 import '../../domain/value_objects/config_values.dart';
 import '../../domain/value_objects/source_location.dart';
-import '../../presentation/app/app_state.dart';
 
-/// Opens a [SourceLocation] in the user's configured IDE by shelling out to
-/// its CLI.
-class IdeLauncher {
-  IdeLauncher();
+/// [IdeLauncher] that opens a [SourceLocation] by shelling out to the IDE's
+/// CLI (`code`, `zed`, or `nvim --remote-send`).
+class DesktopIdeLauncher extends IdeLauncher {
+  const DesktopIdeLauncher();
 
-  Future<void> open(SourceLocation loc, AppState state) async {
-    final ide = state.config.ide;
-    String? nvimServer;
+  @override
+  Future<Result<IdeFailure, void>> open(
+    SourceLocation location, {
+    required FrunIde ide,
+    String? nvimServer,
+  }) async {
+    String? server = nvimServer;
     if (ide == FrunIde.neovim) {
-      nvimServer = _neovimServer(state);
-      if (nvimServer == null) {
-        state.transcript.error(
-          'Neovim server not found. Run frun inside a Neovim/Neovide :terminal '
-          '(sets \$NVIM), or set "/config set nvim_server <addr>" to your nvim '
-          '--listen address.',
+      server = _neovimServer(nvimServer);
+      if (server == null) {
+        return Result.failure(
+          const IdeFailure(
+            message:
+                'Neovim server not found. Run frun inside a Neovim/Neovide '
+                ':terminal (sets \$NVIM), or set "/config set nvim_server '
+                '<addr>" to your nvim --listen address.',
+          ),
         );
-        return;
       }
     }
-    final spec = _commandFor(ide, loc, nvimServer: nvimServer);
-    state.transcript.system('Opening ${loc.file}:${loc.line} in ${ide.id}…');
+    final spec = _commandFor(ide, location, nvimServer: server);
     try {
       final result = await Process.run(
         spec.executable,
@@ -32,13 +39,22 @@ class IdeLauncher {
         runInShell: Platform.isWindows && spec.runInShell,
       );
       if (result.exitCode != 0) {
-        state.transcript.error(
-          '${ide.id} exited ${result.exitCode}: ${result.stderr}',
+        return Result.failure(
+          IdeFailure(
+            message: '${ide.id} exited ${result.exitCode}: ${result.stderr}',
+          ),
         );
       }
-    } on ProcessException catch (e) {
-      state.transcript.error(
-        'Could not run "${spec.executable}". Is ${ide.id} on your PATH? ($e)',
+      return Result.success(null);
+    } on ProcessException catch (e, st) {
+      return Result.failure(
+        IdeFailure(
+          message:
+              'Could not run "${spec.executable}". '
+              'Is ${ide.id} on your PATH? ($e)',
+          cause: e,
+          stackTrace: st,
+        ),
       );
     }
   }
@@ -46,9 +62,10 @@ class IdeLauncher {
   /// Resolve the Neovim/Neovide RPC server address: explicit config first, then
   /// `$NVIM` (set inside an nvim/Neovide `:terminal`), then the legacy
   /// `$NVIM_LISTEN_ADDRESS`. Null when none is available.
-  static String? _neovimServer(AppState state) {
-    final cfg = state.config.nvimServer;
-    if (cfg != null && cfg.trim().isNotEmpty) return cfg.trim();
+  static String? _neovimServer(String? configured) {
+    if (configured != null && configured.trim().isNotEmpty) {
+      return configured.trim();
+    }
     return Platform.environment['NVIM'] ??
         Platform.environment['NVIM_LISTEN_ADDRESS'];
   }
