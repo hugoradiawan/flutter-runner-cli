@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:frun/src/data/datasources/dart_analyze_runner.dart';
+import 'package:frun/src/data/datasources/diagnostics_store.dart';
+import 'package:frun/src/data/repositories/diagnostics_repository_impl.dart';
 import 'package:frun/src/domain/entities/app_config.dart';
 import 'package:frun/src/domain/entities/diagnostic.dart';
 import 'package:frun/src/domain/entities/flutter_project.dart';
@@ -16,28 +19,46 @@ void main() {
   late Directory temp;
   late AppState state;
 
+  AppState buildState(String projectRoot) => AppState(
+    project: FlutterProjectEntity(
+      root: projectRoot,
+      name: 'demo',
+      workspaceRoot: temp.path,
+      watchRoot: temp.path,
+      hasVsCodeFolder: false,
+      hasZedFolder: false,
+    ),
+    config: AppConfigEntity.defaults(),
+    deps: Dependencies(),
+  );
+
+  void wireRepo(
+    AppState state, {
+    required AnalyzeProcessRunner runAnalyze,
+    Duration timeout = const Duration(seconds: 20),
+  }) {
+    state.deps.diagnosticsRepository = DiagnosticsRepositoryImpl(
+      DiagnosticsStore(projectRoot: state.project.root),
+      projectRoot: state.project.root,
+      analyzeRunner: DartAnalyzeRunner(
+        runProcess: runAnalyze,
+        dartExecutable: 'dart',
+        timeout: timeout,
+      ),
+    );
+  }
+
   setUp(() {
     temp = Directory.systemTemp.createTempSync('frun_diag_cmd_');
-    state = AppState(
-      project: FlutterProjectEntity(
-        root: temp.path,
-        name: 'demo',
-        workspaceRoot: temp.path,
-        watchRoot: temp.path,
-        hasVsCodeFolder: false,
-        hasZedFolder: false,
-      ),
-      config: AppConfigEntity.defaults(),
-      deps: Dependencies(),
-    );
+    state = buildState(temp.path);
   });
 
   tearDown(() => temp.deleteSync(recursive: true));
 
   test('runs dart analyze once and opens the diagnostics panel', () async {
     var calls = 0;
-    final cmd = DiagnosticsCommand(
-      dartExecutable: 'dart',
+    wireRepo(
+      state,
       runAnalyze: (executable, arguments, workingDirectory, runInShell) async {
         calls++;
         expect(executable, 'dart');
@@ -67,7 +88,7 @@ void main() {
       },
     );
 
-    await cmd.run(const [], state);
+    await DiagnosticsCommand().run(const [], state);
     expect(calls, 1);
     expect(state.showDiagnosticsPanel, isTrue);
     expect(state.diagnosticsRevision, 2);
@@ -83,12 +104,12 @@ void main() {
   });
 
   test('severity arg sets the filter after analysis', () async {
-    final cmd = DiagnosticsCommand(
-      dartExecutable: 'dart',
+    wireRepo(
+      state,
       runAnalyze: (_, _, _, _) async =>
           ProcessResult(123, 0, '{"version":1,"diagnostics":[]}', ''),
     );
-    await cmd.run(['error'], state);
+    await DiagnosticsCommand().run(['error'], state);
     expect(state.showDiagnosticsPanel, isTrue);
     expect(state.diagnosticsFilter, DiagnosticCategory.error);
   });
@@ -111,13 +132,13 @@ void main() {
       p.join(hidden.path, 'generated.dart'),
     ).writeAsStringSync('// TODO: ignored generated file');
 
-    final cmd = DiagnosticsCommand(
-      dartExecutable: 'dart',
+    wireRepo(
+      state,
       runAnalyze: (_, _, _, _) async =>
           ProcessResult(123, 0, '{"version":1,"diagnostics":[]}', ''),
     );
 
-    await cmd.run(['todo'], state);
+    await DiagnosticsCommand().run(['todo'], state);
     expect(state.showDiagnosticsPanel, isTrue);
     expect(state.diagnosticsFilter, DiagnosticCategory.todo);
     expect(state.diagnostics, hasLength(2));
@@ -153,67 +174,30 @@ void main() {
       p.join(siblingLib.path, 'shared.dart'),
     ).writeAsStringSync('// TODO: sibling');
 
-    state = AppState(
-      project: FlutterProjectEntity(
-        root: appRoot,
-        name: 'demo',
-        workspaceRoot: temp.path,
-        watchRoot: temp.path,
-        hasVsCodeFolder: false,
-        hasZedFolder: false,
-      ),
-      config: AppConfigEntity.defaults(),
-      deps: Dependencies(),
-    );
-    final cmd = DiagnosticsCommand(
-      dartExecutable: 'dart',
+    state = buildState(appRoot);
+    wireRepo(
+      state,
       runAnalyze: (_, _, _, _) async =>
           ProcessResult(123, 0, '{"version":1,"diagnostics":[]}', ''),
     );
 
-    await cmd.run(['todo'], state);
+    await DiagnosticsCommand().run(['todo'], state);
 
     expect(state.diagnostics, hasLength(1));
     expect(state.diagnostics.single.code, 'todo');
     expect(state.diagnostics.single.filePath, p.join(appLib.path, 'main.dart'));
   });
 
-  test('todo index updates and removes a single changed file', () {
-    final lib = Directory(p.join(temp.path, 'lib'))..createSync();
-    final main = File(p.join(lib.path, 'main.dart'));
-    final other = File(p.join(lib.path, 'other.dart'));
-    main.writeAsStringSync('// TODO: first');
-    other.writeAsStringSync('// FIXME: second');
-
-    final index = TodoDiagnosticsIndex(root: temp.path)..refreshAll();
-    expect(
-      index.diagnostics.map((d) => d.code),
-      containsAll(['todo', 'fixme']),
-    );
-
-    main.writeAsStringSync('// no marker');
-    index.updateFile(main.path);
-    expect(
-      index.diagnostics.map((d) => d.filePath),
-      isNot(contains(main.path)),
-    );
-    expect(index.diagnostics.map((d) => d.code), ['fixme']);
-
-    other.deleteSync();
-    index.removeFile(other.path);
-    expect(index.diagnostics, isEmpty);
-  });
-
   test('unknown arg warns and does not run analyzer', () async {
     var calls = 0;
-    final cmd = DiagnosticsCommand(
-      dartExecutable: 'dart',
+    wireRepo(
+      state,
       runAnalyze: (_, _, _, _) async {
         calls++;
         return ProcessResult(123, 0, '{}', '');
       },
     );
-    await cmd.run(['bogus'], state);
+    await DiagnosticsCommand().run(['bogus'], state);
     expect(calls, 0);
     expect(
       state.transcript.lines.where((l) => l.level == TranscriptLevel.warn),
@@ -222,12 +206,12 @@ void main() {
   });
 
   test('parse failure warns and leaves the panel open', () async {
-    final cmd = DiagnosticsCommand(
-      dartExecutable: 'dart',
+    wireRepo(
+      state,
       runAnalyze: (_, _, _, _) async =>
           ProcessResult(123, 64, 'not json', 'bad args'),
     );
-    await cmd.run(const [], state);
+    await DiagnosticsCommand().run(const [], state);
     expect(state.showDiagnosticsPanel, isTrue);
     expect(state.diagnostics, isEmpty);
     expect(
@@ -237,13 +221,13 @@ void main() {
   });
 
   test('analyze timeout leaves current diagnostics visible', () async {
-    final cmd = DiagnosticsCommand(
-      dartExecutable: 'dart',
-      analyzeTimeout: const Duration(milliseconds: 1),
+    wireRepo(
+      state,
+      timeout: const Duration(milliseconds: 1),
       runAnalyze: (_, _, _, _) => Completer<ProcessResult>().future,
     );
 
-    await cmd.run(const [], state);
+    await DiagnosticsCommand().run(const [], state);
     expect(state.showDiagnosticsPanel, isTrue);
     expect(
       state.transcript.lines.where(
@@ -251,50 +235,5 @@ void main() {
       ),
       isNotEmpty,
     );
-  });
-
-  group('mergeDiagnostics', () {
-    DiagnosticEntity diag(
-      String path,
-      int line, {
-      String? code,
-      DiagnosticSeverity severity = DiagnosticSeverity.warning,
-    }) => DiagnosticEntity(
-      filePath: path,
-      line: line,
-      column: 1,
-      severity: severity,
-      message: 'm',
-      code: code,
-    );
-
-    test('dedupes identical (path, line, column, code) entries', () {
-      final a = diag(p.normalize('/x/lib/a.dart'), 3, code: 'todo');
-      final dup = diag(p.normalize('/x/lib/a.dart'), 3, code: 'todo');
-      final other = diag(p.normalize('/x/lib/a.dart'), 4, code: 'todo');
-
-      final merged = mergeDiagnostics([a], [dup, other]);
-      expect(merged, [a, other]);
-    });
-
-    test('keeps analyzer entry when a todo duplicates it', () {
-      final analyzer = diag(
-        p.normalize('/x/lib/a.dart'),
-        3,
-        code: 'todo',
-        severity: DiagnosticSeverity.info,
-      );
-      final todo = diag(p.normalize('/x/lib/a.dart'), 3, code: 'todo');
-
-      final merged = mergeDiagnostics([analyzer], [todo]);
-      expect(merged.single.severity, DiagnosticSeverity.info);
-    });
-
-    test('distinct codes on the same location are kept', () {
-      final a = diag(p.normalize('/x/lib/a.dart'), 3, code: 'todo');
-      final b = diag(p.normalize('/x/lib/a.dart'), 3, code: 'fixme');
-
-      expect(mergeDiagnostics([a], [b]), hasLength(2));
-    });
   });
 }

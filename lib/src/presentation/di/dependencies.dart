@@ -1,15 +1,12 @@
-import 'dart:async';
-
 import '../../data/datasources/analysis_server.dart';
 import '../../data/datasources/device_manager.dart';
 import '../../data/datasources/flutter_daemon.dart';
-import '../../data/services/dart_file_watcher.dart';
 import '../../data/services/desktop_notifier.dart';
 import '../../data/services/ide_launcher.dart';
 import '../../data/services/inspector_bridge.dart';
 import '../../data/services/isolate_manager.dart';
+import '../../data/services/live_diagnostics.dart';
 import '../../data/services/package_config_uri_resolver.dart';
-import '../../domain/entities/diagnostic.dart';
 import '../../domain/ports/ide_launcher.dart';
 import '../../domain/ports/notifier.dart';
 import '../../domain/ports/vm_uri_resolver.dart';
@@ -18,7 +15,9 @@ import '../../domain/repositories/device_repository.dart';
 import '../../domain/repositories/diagnostics_repository.dart';
 import '../../domain/repositories/emulator_repository.dart';
 import '../../domain/repositories/session_repository.dart';
+import '../../domain/usecases/analyze_project.dart';
 import '../../domain/usecases/get_config.dart';
+import '../../domain/usecases/get_diagnostics.dart';
 import '../../domain/usecases/hot_reload.dart';
 import '../../domain/usecases/hot_restart.dart';
 import '../../domain/usecases/launch_emulator.dart';
@@ -27,7 +26,7 @@ import '../../domain/usecases/list_emulators.dart';
 import '../../domain/usecases/save_config.dart';
 import '../../domain/usecases/set_config.dart';
 import '../../domain/usecases/stop_session.dart';
-import '../app/commands/diagnostics_command.dart';
+import '../../domain/usecases/watch_diagnostics.dart';
 
 /// Dependency container assembled at the composition root ([runFrun]).
 ///
@@ -67,15 +66,10 @@ class Dependencies {
 
   // ── Live diagnostics services ────────────────────────────────────────────
   DartAnalysisServer? analysisServer;
-  DartFileWatcher? diagnosticsWatcher;
-  StreamSubscription<List<DiagnosticEntity>>? diagnosticsSubscription;
 
-  /// Live TODO/FIXME index maintained by the boot scan + file watcher. Set by
-  /// `_bootLiveDiagnostics`; [todoIndexReady] flips true once the initial
-  /// isolate scan has populated it. Consumers (the `/diagnostics` command)
-  /// read it instead of re-walking the whole source tree.
-  TodoDiagnosticsIndex? todoIndex;
-  bool todoIndexReady = false;
+  /// The live analyzer + TODO pipeline. Set by `_bootLiveDiagnostics`; owns
+  /// the TODO index, the source watcher, and the merged publish debounce.
+  LiveDiagnosticsCoordinator? liveDiagnostics;
 
   // ── Use cases (built once, lazily, from their repository) ─────────────────
   ListDevicesUseCase? _listDevices;
@@ -122,4 +116,31 @@ class Dependencies {
   StopSessionUseCase? get stopSessionUseCase => sessionRepository == null
       ? null
       : (_stopSession ??= StopSessionUseCase(sessionRepository!));
+
+  GetDiagnosticsUseCase? _getDiagnostics;
+  GetDiagnosticsUseCase? get getDiagnosticsUseCase =>
+      diagnosticsRepository == null
+      ? null
+      : (_getDiagnostics ??= GetDiagnosticsUseCase(diagnosticsRepository!));
+
+  WatchDiagnosticsUseCase? _watchDiagnostics;
+  WatchDiagnosticsUseCase? get watchDiagnosticsUseCase =>
+      diagnosticsRepository == null
+      ? null
+      : (_watchDiagnostics ??= WatchDiagnosticsUseCase(diagnosticsRepository!));
+
+  AnalyzeProjectUseCase? _analyzeProject;
+  AnalyzeProjectUseCase? get analyzeProjectUseCase =>
+      diagnosticsRepository == null
+      ? null
+      : (_analyzeProject ??= AnalyzeProjectUseCase(diagnosticsRepository!));
+
+  /// Tear down every service this container owns. Called once by the
+  /// composition root after the TUI run loop exits.
+  Future<void> dispose() async {
+    await isolateManager.disconnect();
+    await liveDiagnostics?.dispose();
+    await analysisServer?.shutdown();
+    await daemon?.shutdown();
+  }
 }

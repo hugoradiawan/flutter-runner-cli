@@ -52,6 +52,26 @@ class DiagnosticEntity extends Entity<DiagnosticEntity> {
     };
   }
 
+  /// Merges [analyzer] and [todos] into one list, deduping on
+  /// `(filePath, line, column, code)` with analyzer entries winning. The key is
+  /// a record over the raw fields — every producer (LSP publishes,
+  /// `dart analyze` JSON, the TODO scanner) already normalizes [filePath] at
+  /// construction, so no per-entry normalize or string-concat key is needed
+  /// here (this runs on every analyzer settle over up to thousands of entries).
+  static List<DiagnosticEntity> merge(
+    List<DiagnosticEntity> analyzer,
+    List<DiagnosticEntity> todos,
+  ) {
+    final out = <DiagnosticEntity>[];
+    final seen = <(String, int, int, String?)>{};
+    for (final list in [analyzer, todos]) {
+      for (final d in list) {
+        if (seen.add((d.filePath, d.line, d.column, d.code))) out.add(d);
+      }
+    }
+    return out;
+  }
+
   /// `(errors, warnings, infos, todos)` tallied across [diagnostics] by
   /// [category] (todos are excluded from the info count).
   static (int, int, int, int) counts(List<DiagnosticEntity> diagnostics) {

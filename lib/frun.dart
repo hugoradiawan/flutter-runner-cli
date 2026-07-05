@@ -5,11 +5,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dart_tui/dart_tui.dart';
-import 'package:path/path.dart' as p;
 
 import 'src/data/datasources/analysis_server.dart';
 import 'src/data/datasources/config_datasource.dart';
 import 'src/data/datasources/config_store.dart';
+import 'src/data/datasources/dart_analyze_runner.dart';
 import 'src/data/datasources/device_manager.dart';
 import 'src/data/datasources/diagnostics_store.dart';
 import 'src/data/datasources/emulator_manager.dart';
@@ -19,12 +19,10 @@ import 'src/data/repositories/device_repository_impl.dart';
 import 'src/data/repositories/diagnostics_repository_impl.dart';
 import 'src/data/repositories/emulator_repository_impl.dart';
 import 'src/data/repositories/session_repository_impl.dart';
-import 'src/data/services/dart_file_watcher.dart';
+import 'src/data/services/live_diagnostics.dart';
 import 'src/data/services/project_detector.dart';
 import 'src/data/services/windows_console.dart';
 import 'src/domain/entities/app_config.dart';
-import 'src/domain/entities/diagnostic.dart';
-import 'src/domain/params/diagnostics_filter_params.dart';
 import 'src/presentation/app/app_state.dart';
 import 'src/presentation/app/commands/clear_command.dart';
 import 'src/presentation/app/commands/command_registry.dart';
@@ -93,6 +91,8 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
 
   final diagnosticsRepository = DiagnosticsRepositoryImpl(
     DiagnosticsStore(projectRoot: project.root),
+    projectRoot: project.root,
+    analyzeRunner: DartAnalyzeRunner(),
   );
   final deps = Dependencies()
     ..configRepository = configRepository
@@ -167,11 +167,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   }
   await inspectorJumpsSub.cancel();
   await state.runController.stopAll();
-  await state.deps.isolateManager.disconnect();
-  await state.deps.diagnosticsSubscription?.cancel();
-  await state.deps.diagnosticsWatcher?.dispose();
-  await state.deps.analysisServer?.shutdown();
-  await state.deps.daemon?.shutdown();
+  await state.deps.dispose();
   return 0;
 }
 
@@ -188,30 +184,6 @@ Future<void> _bootLiveDiagnostics(
   AppState state,
   DiagnosticsRepositoryImpl diagnosticsRepository,
 ) async {
-  final todoRoot = state.project.root;
-  final todoIndex = TodoDiagnosticsIndex(root: todoRoot);
-  state.deps.todoIndex = todoIndex;
-  var todos = const <DiagnosticEntity>[];
-  var todoIndexReady = false;
-  final pendingTodoChanges = <(String, DartFileChangeType)>[];
-
-  void publish(List<DiagnosticEntity> analyzerDiagnostics) {
-    state.diagnostics = mergeDiagnostics(analyzerDiagnostics, todos);
-  }
-
-  void applyTodoChange(String path, DartFileChangeType type) {
-    if (!_isWithinRoot(todoRoot, path)) return;
-    switch (type) {
-      case DartFileChangeType.add:
-      case DartFileChangeType.modify:
-      case DartFileChangeType.other:
-        todoIndex.updateFile(path);
-      case DartFileChangeType.remove:
-        todoIndex.removeFile(path);
-    }
-    todos = todoIndex.diagnostics;
-  }
-
   try {
     final server = await DartAnalysisServer.start(
       projectRoot: state.project.root,
@@ -219,70 +191,31 @@ Future<void> _bootLiveDiagnostics(
     );
     state.deps.analysisServer = server;
     diagnosticsRepository.bindServer(server);
-    state.deps.diagnosticsSubscription = diagnosticsRepository
-        .watchDiagnostics(const DiagnosticsFilterParams())
-        .listen(
-          publish,
-          onError: (Object e) {
-            state.transcript.warn('Live diagnostics error: $e');
-          },
-        );
 
-    final watcher = DartFileWatcher(
-      root: state.project.watchRoot,
+    final coordinator = LiveDiagnosticsCoordinator(
+      projectRoot: state.project.root,
+      watchRoot: state.project.watchRoot,
+      analyzerDiagnostics: server.diagnostics,
+      analyzerSnapshot: () => server.snapshot,
       onFileChanged: server.openFile,
-      onDartFileChanged: (String path, DartFileChangeType type) {
-        if (!_isWithinRoot(todoRoot, path)) return;
-        if (!todoIndexReady) {
-          pendingTodoChanges.add((path, type));
-        } else {
-          applyTodoChange(path, type);
-        }
-      },
-      onWatcherError: (Object e) {
-        state.transcript.warn('Diagnostics watcher error: $e');
-      },
     );
-    watcher.start();
-    // FS events arrive in bursts (branch switches, format-on-save sweeps);
-    // coalesce them so the merge/publish pass runs once per burst, matching
-    // the analysis server's own emit debounce.
-    Timer? publishDebounce;
-    watcher.onChange.listen((_) {
-      publishDebounce?.cancel();
-      publishDebounce = Timer(const Duration(milliseconds: 250), () {
-        publish(server.snapshot);
-      });
-    });
-    state.deps.diagnosticsWatcher = watcher;
+    state.deps.liveDiagnostics = coordinator;
+    diagnosticsRepository.bindLiveDiagnostics(coordinator);
+    coordinator.warnings.listen(state.transcript.warn);
+    coordinator.start();
     state.transcript.system('Live diagnostics started.');
-    unawaited(
-      scanDartTodoDiagnosticsInIsolate(root: todoRoot)
-          .then((initialTodos) {
-            todoIndex.replaceAll(initialTodos);
-            todoIndexReady = true;
-            state.deps.todoIndexReady = true;
-            for (final (path, type) in pendingTodoChanges) {
-              applyTodoChange(path, type);
-            }
-            pendingTodoChanges.clear();
-            todos = todoIndex.diagnostics;
-            publish(server.snapshot);
-          })
-          .catchError((Object e) {
-            state.transcript.warn('TODO diagnostics scan failed: $e');
-          }),
+
+    // The merged stream closes when the coordinator is disposed, so the
+    // subscription needs no explicit teardown.
+    state.deps.watchDiagnosticsUseCase!().listen(
+      (result) => result.fold(
+        (f) => state.transcript.warn('Live diagnostics error: ${f.message}'),
+        (list) => state.diagnostics = list,
+      ),
     );
   } catch (e) {
     state.transcript.warn('Live diagnostics unavailable: $e');
   }
-}
-
-bool _isWithinRoot(String root, String path) {
-  final normalizedRoot = p.normalize(p.absolute(root));
-  final normalizedPath = p.normalize(p.absolute(path));
-  return normalizedPath == normalizedRoot ||
-      p.isWithin(normalizedRoot, normalizedPath);
 }
 
 Future<void> _runBootDiagnostics(

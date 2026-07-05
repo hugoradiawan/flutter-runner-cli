@@ -15,4 +15,8 @@ abstract class DiagnosticsRepository {
   Future<Result<AnalysisFailure, List<DiagnosticEntity>>> getDiagnostics(
     DiagnosticsFilterParams params,
   );
+
+  /// Run a one-shot whole-project analysis pass (`dart analyze`) and return
+  /// its diagnostics merged with the current review-marker (TODO/FIXME) set.
+  Future<Result<AnalysisFailure, List<DiagnosticEntity>>> analyzeProject();
 }
