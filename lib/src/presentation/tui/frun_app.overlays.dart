@@ -211,35 +211,27 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
   ) {
     if (height <= 0) return;
 
-    final header = spec.header;
-    final headerClipped = header.length > width
-        ? header.substring(0, width)
-        : header;
-    canvas.paint(0, y, theme.dimStyle.render(headerClipped));
     final closeX = (width - _pickerCloseLabel.length).clamp(0, width);
-    if (closeX > headerClipped.length) {
-      canvas.paint(closeX, y, theme.buttonStopStyle.render(_pickerCloseLabel));
-      _hits.add(
-        x: closeX,
-        y: y,
-        w: _pickerCloseLabel.length,
-        h: 1,
-        msg: _pickerCloseMsg(spec.kind),
+    final titleMax = math.max(0, closeX - 1);
+    _paintPanelTitle(canvas, theme, 0, y, spec.header, maxWidth: titleMax);
+    if (closeX > titleMax || closeX > spec.header.length) {
+      _paintHeaderAction(
+        canvas,
+        theme,
+        _hits,
+        closeX,
+        y,
+        _pickerCloseLabel.trim(),
+        _pickerCloseMsg(spec.kind),
+        danger: true,
       );
     }
 
     if (height < 3 || width < 4) return;
     final topY = y + 1;
-    final bottomY = y + height - 1;
     final innerStartY = y + 2;
     final innerEndY = y + height - 2;
-    final horizontal = '─' * (width - 2);
-    canvas.paint(0, topY, theme.borderStyle.render('┌$horizontal┐'));
-    canvas.paint(0, bottomY, theme.borderStyle.render('└$horizontal┘'));
-    for (var r = innerStartY; r <= innerEndY; r++) {
-      canvas.paint(0, r, theme.borderStyle.render('│'));
-      canvas.paint(width - 1, r, theme.borderStyle.render('│'));
-    }
+    _paintPanelFrame(canvas, theme, width, topY, height - 1);
 
     final (chips, _) = _layoutPickerChips(spec, width);
     final innerH = innerEndY - innerStartY + 1;
@@ -286,10 +278,13 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     if (hidden > 0) {
       final rowY = innerStartY + visibleCount * 2;
       if (rowY <= innerEndY) {
-        final more = ' +$hidden more — ${spec.moreHintFormat} to apply ';
+        final more = ' +$hidden more - ${spec.moreHintFormat} to apply ';
         final maxLen = math.max(0, width - _pickerIndent * 2);
-        final clipped = more.length > maxLen ? more.substring(0, maxLen) : more;
-        canvas.paint(_pickerIndent, rowY, theme.dimStyle.render(clipped));
+        canvas.paint(
+          _pickerIndent,
+          rowY,
+          theme.panelSubtitleStyle.render(_clipCellText(more, maxLen)),
+        );
       }
     }
   }
@@ -387,28 +382,26 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
 
     final isVim = state.config.editorMode == FrunEditorMode.vim;
     final hint = isVim
-        ? ' Config — jk navigate · hl cycle value · enter apply · esc discard'
-        : ' Config — ↑↓ navigate · ←→ cycle value · enter apply · esc discard';
-    final hintClipped = hint.length > width ? hint.substring(0, width) : hint;
-    canvas.paint(0, y, theme.dimStyle.render(hintClipped));
+        ? 'Config  jk navigate - hl cycle - enter apply - esc discard'
+        : 'Config  arrows navigate - enter apply - esc discard';
+    _paintPanelTitle(canvas, theme, 0, y, hint, maxWidth: width);
 
     if (height < 3) return;
 
     final topY = y + 1;
     final bottomY = y + height - 1;
-    final horiz = '─' * (width - 2);
-    canvas.paint(0, topY, theme.borderStyle.render('┌$horiz┐'));
-    canvas.paint(0, bottomY, theme.borderStyle.render('└$horiz┘'));
+    _paintPanelFrame(canvas, theme, width, topY, height - 1);
 
     for (var i = 0; i < _configEditorEntries.length; i++) {
       final rowY = topY + 1 + i;
       if (rowY >= bottomY) break;
-      canvas.paint(0, rowY, theme.borderStyle.render('│'));
-      canvas.paint(width - 1, rowY, theme.borderStyle.render('│'));
 
       final entry = _configEditorEntries[i];
       final isSelected = i == _configEditorRow;
       final currentVal = _configEditorEntryValue(_configDraft!, entry.key);
+      if (isSelected) {
+        _paintSelectedRow(canvas, theme, 1, rowY, width - 2);
+      }
 
       const keyWidth = 26;
       const indicatorWidth = 2;
@@ -425,6 +418,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
           innerGap,
           rowY,
           theme.accentStyle.render(indicator + keyPadded),
+          zIndex: 1,
         );
       } else {
         canvas.paint(innerGap, rowY, indicator + keyPadded);
@@ -437,9 +431,10 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
             contentX,
             rowY,
             theme.pickerChipSelectedStyle.render(chip),
+            zIndex: 1,
           );
         } else {
-          canvas.paint(contentX, rowY, theme.dimStyle.render(currentVal));
+          canvas.paint(contentX, rowY, theme.valueStyle.render(currentVal));
         }
       }
     }
@@ -586,10 +581,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     final (e, w, i, t) = DiagnosticEntity.counts(state.diagnostics);
 
     // ── Header: title, clickable filter chips, search, close button ──
-    var hx = 0;
-    const title = ' Problems';
-    canvas.paint(hx, y, theme.dimStyle.render(title));
-    hx += title.length + 1;
+    var hx = _paintPanelTitle(canvas, theme, 0, y, 'Problems');
     hx = _paintDiagnosticsFilterChip(
       canvas,
       theme,
@@ -654,18 +646,20 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         canvas.paint(
           hx,
           y,
-          theme.searchActiveStyle.render(_clipText(searchText, maxSearch)),
+          theme.searchActiveStyle.render(_clipCellText(searchText, maxSearch)),
         );
       }
     }
     if (closeX > hx) {
-      canvas.paint(closeX, y, theme.buttonStopStyle.render(_pickerCloseLabel));
-      _hits.add(
-        x: closeX,
-        y: y,
-        w: _pickerCloseLabel.length,
-        h: 1,
-        msg: const CloseDiagnosticsOverlayMsg(),
+      _paintHeaderAction(
+        canvas,
+        theme,
+        _hits,
+        closeX,
+        y,
+        _pickerCloseLabel.trim(),
+        const CloseDiagnosticsOverlayMsg(),
+        danger: true,
       );
     }
 
@@ -673,16 +667,9 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
 
     // ── Borders ──
     final topY = y + 1;
-    final bottomY = y + height - 1;
     final innerStartY = y + 2;
     final innerEndY = y + height - 2;
-    final horizontal = '─' * (width - 2);
-    canvas.paint(0, topY, theme.borderStyle.render('┌$horizontal┐'));
-    canvas.paint(0, bottomY, theme.borderStyle.render('└$horizontal┘'));
-    for (var r = innerStartY; r <= innerEndY; r++) {
-      canvas.paint(0, r, theme.borderStyle.render('│'));
-      canvas.paint(width - 1, r, theme.borderStyle.render('│'));
-    }
+    _paintPanelFrame(canvas, theme, width, topY, height - 1, strong: true);
 
     final innerH = innerEndY - innerStartY + 1;
     if (innerH <= 0) return;
@@ -695,7 +682,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       canvas.paint(
         _pickerIndent,
         innerStartY,
-        theme.dimStyle.render(_clipText(msg, width - _pickerIndent * 2)),
+        theme.emptyStyle.render(_clipText(msg, width - _pickerIndent * 2)),
       );
       return;
     }
@@ -725,7 +712,11 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       final row = rows[idx];
       if (row.kind == _DiagRowKind.fileHeader) {
         final text = ' ${_relativeDiagPath(row.file)}  (${row.count})';
-        canvas.paint(1, rowY, theme.dimStyle.render(_clipText(text, maxText)));
+        canvas.paint(
+          1,
+          rowY,
+          theme.panelSubtitleStyle.render(_clipText(text, maxText)),
+        );
       } else {
         final d = row.diagnostic!;
         final selected = idx == _diagSelectedIndex;
@@ -734,9 +725,12 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         final text = '   $glyph Ln${d.line} Col${d.column}  ${d.message}$code';
         final clipped = _clipText(text, maxText);
         final style = selected
-            ? theme.pickerChipSelectedStyle
+            ? theme.selectedRowStyle
             : _categoryStyle(theme, d.category);
-        canvas.paint(1, rowY, style.render(clipped));
+        if (selected) {
+          _paintSelectedRow(canvas, theme, 1, rowY, width - 2);
+        }
+        canvas.paint(1, rowY, style.render(clipped), zIndex: 1);
         _hits.add(
           x: 1,
           y: rowY,
@@ -755,13 +749,15 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
           rows.length - _diagScrollOffset - visibleCount,
         );
         final keys = state.config.editorMode == FrunEditorMode.vim
-            ? 'j/k move · gg/G ends · / filter · enter open'
-            : '↑↓ move · type to filter · enter open';
-        final more = ' +$hiddenBelow more — $keys ';
+            ? 'j/k move - gg/G ends - / filter - enter open'
+            : 'arrows move - type to filter - enter open';
+        final more = ' +$hiddenBelow more - $keys ';
         canvas.paint(
           _pickerIndent,
           rowY,
-          theme.dimStyle.render(_clipText(more, width - _pickerIndent * 2)),
+          theme.panelSubtitleStyle.render(
+            _clipText(more, width - _pickerIndent * 2),
+          ),
         );
       }
     }
@@ -776,21 +772,21 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     DiagnosticCategory? level,
     bool active,
   ) {
-    final text = ' $label ';
-    // Active chip is highlighted; inactive chips wear their category colour
-    // (the `all` chip is neutral grey).
     final style = active
         ? theme.pickerChipSelectedStyle
-        : (level == null ? theme.dimStyle : _categoryStyle(theme, level));
-    canvas.paint(x, y, style.render(text));
-    _hits.add(
-      x: x,
-      y: y,
-      w: text.length,
-      h: 1,
+        : (level == null
+              ? theme.badgeNeutralStyle
+              : _badgeStyleForCategory(theme, level));
+    return _paintBadge(
+      canvas,
+      theme,
+      x,
+      y,
+      label,
+      style,
+      hits: _hits,
       msg: SetDiagnosticsFilterMsg(level),
     );
-    return x + text.length + 1; // +1 gap between chips
   }
 
   String _relativeDiagPath(String file) {
@@ -1016,17 +1012,17 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     String? id,
     bool stop = false,
   }) {
-    final text = ' $label ';
     final style = stop ? theme.buttonStopStyle : theme.buttonStyle;
-    canvas.paint(x, y, style.render(text));
-    _hits.add(
-      x: x,
-      y: y,
-      w: text.length,
-      h: 1,
+    return _paintBadge(
+      canvas,
+      theme,
+      x,
+      y,
+      label,
+      style,
+      hits: _hits,
       msg: IsolateActionMsg(action, id: id),
     );
-    return x + text.length + 1;
   }
 
   void _paintIsolatesPanel(
@@ -1041,14 +1037,17 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     final rows = manager.isolates;
     _clampIsolateSelection(rows);
 
-    var hx = 0;
-    const title = ' Isolates';
-    canvas.paint(hx, y, theme.dimStyle.render(title));
-    hx += title.length + 1;
     final active = state.runController.activeTab;
     final app = active == null ? '(no app)' : active.label;
-    canvas.paint(hx, y, theme.dimStyle.render(_clipText(app, 24)));
-    hx += math.min(app.length, 24) + 1;
+    var hx = _paintPanelTitle(
+      canvas,
+      theme,
+      0,
+      y,
+      'Isolates',
+      meta: _clipCellText(app, 24),
+      maxWidth: math.max(0, width - 32),
+    );
     if (hx + 20 < width) {
       hx = _paintIsolatePanelAction(
         canvas,
@@ -1070,28 +1069,23 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
 
     final closeX = (width - _pickerCloseLabel.length).clamp(0, width);
     if (closeX > hx) {
-      canvas.paint(closeX, y, theme.buttonStopStyle.render(_pickerCloseLabel));
-      _hits.add(
-        x: closeX,
-        y: y,
-        w: _pickerCloseLabel.length,
-        h: 1,
-        msg: const CloseIsolatesPanelMsg(),
+      _paintHeaderAction(
+        canvas,
+        theme,
+        _hits,
+        closeX,
+        y,
+        _pickerCloseLabel.trim(),
+        const CloseIsolatesPanelMsg(),
+        danger: true,
       );
     }
 
     if (height < 3 || width < 4) return;
     final topY = y + 1;
-    final bottomY = y + height - 1;
     final innerStartY = y + 2;
     final innerEndY = y + height - 2;
-    final horizontal = '─' * (width - 2);
-    canvas.paint(0, topY, theme.borderStyle.render('┌$horizontal┐'));
-    canvas.paint(0, bottomY, theme.borderStyle.render('└$horizontal┘'));
-    for (var r = innerStartY; r <= innerEndY; r++) {
-      canvas.paint(0, r, theme.borderStyle.render('│'));
-      canvas.paint(width - 1, r, theme.borderStyle.render('│'));
-    }
+    _paintPanelFrame(canvas, theme, width, topY, height - 1, strong: true);
 
     final innerH = innerEndY - innerStartY + 1;
     if (innerH <= 0) return;
@@ -1102,7 +1096,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       canvas.paint(
         _pickerIndent,
         innerStartY,
-        theme.dimStyle.render(_clipText(msg, width - _pickerIndent * 2)),
+        theme.emptyStyle.render(_clipText(msg, width - _pickerIndent * 2)),
       );
       return;
     }
@@ -1140,10 +1134,13 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       final text =
           ' [$idx] ${iso.status.name.padRight(7)} ${iso.name}  ${_shortIsolateId(iso.id)}$reason';
       final style = selected
-          ? theme.pickerChipSelectedStyle
+          ? theme.selectedRowStyle
           : _isolateStatusStyle(theme, iso.status);
       final clipped = _clipText(text, textMax);
-      canvas.paint(1, rowY, style.render(clipped));
+      if (selected) {
+        _paintSelectedRow(canvas, theme, 1, rowY, width - 2);
+      }
+      canvas.paint(1, rowY, style.render(clipped), zIndex: 1);
       _hits.add(
         x: 1,
         y: rowY,
@@ -1159,7 +1156,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         final buttonText = actionTexts[i];
         final stop = action == IsolatePanelAction.kill;
         final buttonStyle = stop ? theme.buttonStopStyle : theme.buttonStyle;
-        canvas.paint(bx, rowY, buttonStyle.render(buttonText));
+        canvas.paint(bx, rowY, buttonStyle.render(buttonText), zIndex: 1);
         _hits.add(
           x: bx,
           y: rowY,
@@ -1179,11 +1176,13 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
           rows.length - _isolateScrollOffset - visibleCount,
         );
         final more =
-            ' +$hiddenBelow more — j/k move · p pause · r resume · s step · k kill ';
+            ' +$hiddenBelow more - j/k move - p pause - r resume - s step - k kill ';
         canvas.paint(
           _pickerIndent,
           rowY,
-          theme.dimStyle.render(_clipText(more, width - _pickerIndent * 2)),
+          theme.panelSubtitleStyle.render(
+            _clipText(more, width - _pickerIndent * 2),
+          ),
         );
       }
     }
@@ -1310,8 +1309,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     final shortLabel = t.label.length > maxLabelChars
         ? '${t.label.substring(0, maxLabelChars - 3)}...'
         : t.label;
-    final marker = t.isRunning ? '' : ' x';
-    final label = ' ${tabIndex + 1}: $shortLabel$marker ';
+    final marker = t.isRunning ? '' : ' off';
+    final label = ' ${tabIndex + 1}  $shortLabel$marker ';
 
     final wantsButtons = isActive && t.isRunning;
     final allButtons = wantsButtons ? activeButtons : <_Button>[];

@@ -35,6 +35,7 @@ part 'frun_app.engine.dart';
 part 'frun_app.keys.dart';
 part 'frun_app.messages.dart';
 part 'frun_app.mouse.dart';
+part 'frun_app.chrome.dart';
 part 'frun_app.overlays.dart';
 part 'frun_app.paint.dart';
 part 'frun_app.reducer.dart';

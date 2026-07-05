@@ -416,8 +416,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     int height,
   ) {
     if (height <= 0) return;
-    final sep = '─' * width;
-    canvas.paint(0, y, theme.borderStyle.render(sep));
+    _paintDivider(canvas, theme, width, y, title: 'Status');
 
     final session = state.runController.session;
     final entry = state.runController.lastEntry;
@@ -430,14 +429,16 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     for (var i = 0; i < rows.length && i + 1 < height; i++) {
       final (label, value) = rows[i];
       canvas.paint(
-        0,
+        1,
         y + 1 + i,
-        theme.titleStyle.render('$label:'.padRight(12)),
+        theme.panelSubtitleStyle.render(label.padRight(11)),
       );
-      final clipped = value.length > width - 12
-          ? value.substring(0, width - 12)
-          : value;
-      canvas.paint(12, y + 1 + i, clipped);
+      final maxValue = math.max(0, width - 14);
+      final clipped = _clipCellText(value, maxValue);
+      final valueStyle = value == '—' || value == '(none)'
+          ? theme.emptyStyle
+          : theme.valueStyle;
+      canvas.paint(13, y + 1 + i, valueStyle.render(clipped));
     }
   }
 
@@ -481,14 +482,14 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
 
     // Borders: top at y, content at y+1..y+height, bottom at y+height+1
     final horiz = '─' * (width - 2);
-    canvas.paint(0, y, theme.borderStyle.render('┌$horiz┐'));
-    canvas.paint(0, y + height + 1, theme.borderStyle.render('└$horiz┘'));
+    canvas.paint(0, y, theme.inputBorderStyle.render('╭$horiz╮'));
+    canvas.paint(0, y + height + 1, theme.inputBorderStyle.render('╰$horiz╯'));
     final contentY = y + 1;
 
     // Ex/search prompt: single row, prefix + draft.
     if (_vimState.mode == VimMode.exCmd || _vimState.mode == VimMode.search) {
-      canvas.paint(0, contentY, theme.borderStyle.render('│'));
-      canvas.paint(width - 1, contentY, theme.borderStyle.render('│'));
+      canvas.paint(0, contentY, theme.inputBorderStyle.render('│'));
+      canvas.paint(width - 1, contentY, theme.inputBorderStyle.render('│'));
       final prefix = _promptForMode();
       canvas.paint(1, contentY, theme.accentStyle.render(prefix));
       final draft = _vimState.mode == VimMode.exCmd
@@ -515,8 +516,8 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
 
     for (var r = 0; r < rowsToPaint; r++) {
       final yRow = contentY + r;
-      canvas.paint(0, yRow, theme.borderStyle.render('│'));
-      canvas.paint(width - 1, yRow, theme.borderStyle.render('│'));
+      canvas.paint(0, yRow, theme.inputBorderStyle.render('│'));
+      canvas.paint(width - 1, yRow, theme.inputBorderStyle.render('│'));
 
       final line = lines[r];
       if (r == 0) {
@@ -539,7 +540,11 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
         // Right info shifted left to make room for button
         final rightX = btnX - rightInfo.length;
         if (rightX > 1 + prompt.length) {
-          canvas.paint(rightX, yRow, theme.dimStyle.render(rightInfo));
+          canvas.paint(
+            rightX,
+            yRow,
+            theme.panelSubtitleStyle.render(rightInfo),
+          );
         }
         // Diagnostics counters sit just left of the right info, inside the box.
         // The input text must stop before whichever of them is leftmost.
@@ -574,7 +579,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
           }
         }
       } else {
-        canvas.paint(1, yRow, theme.dimStyle.render('  '));
+        canvas.paint(1, yRow, theme.panelSubtitleStyle.render('  '));
         final usable = math.max(0, width - 4); // │ + '  ' + text + │
         var visible = line;
         var cursorOffset = (r == cur.row) ? cur.col : 0;
@@ -631,27 +636,44 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     final (e, w, i, t) = _diagCountsCache;
     final segs = <(String, Style)>[
       if (e > 0)
-        ('${_categoryIcon(DiagnosticCategory.error)} $e', theme.errorStyle),
+        (
+          '${_categoryIcon(DiagnosticCategory.error)} $e',
+          _badgeStyleForCategory(theme, DiagnosticCategory.error),
+        ),
       if (w > 0)
-        ('${_categoryIcon(DiagnosticCategory.warning)} $w', theme.warnStyle),
+        (
+          '${_categoryIcon(DiagnosticCategory.warning)} $w',
+          _badgeStyleForCategory(theme, DiagnosticCategory.warning),
+        ),
       if (i > 0)
-        ('${_categoryIcon(DiagnosticCategory.info)} $i', theme.accentStyle),
+        (
+          '${_categoryIcon(DiagnosticCategory.info)} $i',
+          _badgeStyleForCategory(theme, DiagnosticCategory.info),
+        ),
       if (t > 0)
-        ('${_categoryIcon(DiagnosticCategory.todo)} $t', theme.successStyle),
+        (
+          '${_categoryIcon(DiagnosticCategory.todo)} $t',
+          _badgeStyleForCategory(theme, DiagnosticCategory.todo),
+        ),
     ];
     if (segs.isEmpty) return rightX;
-    var totalW = 2;
+    var totalW = 0;
     for (var s = 0; s < segs.length; s++) {
-      totalW += segs[s].$1.length;
+      totalW += _badgeWidth(segs[s].$1);
       if (s > 0) totalW += 1;
     }
     final countersX = rightX - totalW;
     if (countersX <= 1 + promptLen + 4) return rightX;
-    var cx = countersX + 1;
+    var cx = countersX;
     for (var s = 0; s < segs.length; s++) {
       if (s > 0) cx += 1;
-      canvas.paint(cx, yRow, segs[s].$2.render(segs[s].$1), zIndex: 1);
-      cx += segs[s].$1.length;
+      canvas.paint(
+        cx,
+        yRow,
+        segs[s].$2.render(_badgeText(segs[s].$1)),
+        zIndex: 1,
+      );
+      cx += _badgeWidth(segs[s].$1);
     }
     _hits.add(
       x: countersX,
