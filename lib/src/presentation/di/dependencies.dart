@@ -14,8 +14,11 @@ import '../../domain/repositories/config_repository.dart';
 import '../../domain/repositories/device_repository.dart';
 import '../../domain/repositories/diagnostics_repository.dart';
 import '../../domain/repositories/emulator_repository.dart';
+import '../../domain/repositories/launch_repository.dart';
 import '../../domain/repositories/session_repository.dart';
 import '../../domain/usecases/analyze_project.dart';
+import '../../domain/usecases/create_emulator.dart';
+import '../../domain/usecases/discover_launch_entries.dart';
 import '../../domain/usecases/get_config.dart';
 import '../../domain/usecases/get_diagnostics.dart';
 import '../../domain/usecases/hot_reload.dart';
@@ -63,6 +66,7 @@ class Dependencies {
   ConfigRepository? configRepository;
   DiagnosticsRepository? diagnosticsRepository;
   SessionRepository? sessionRepository;
+  LaunchRepository? launchRepository;
 
   // ── Live diagnostics services ────────────────────────────────────────────
   DartAnalysisServer? analysisServer;
@@ -134,6 +138,19 @@ class Dependencies {
       diagnosticsRepository == null
       ? null
       : (_analyzeProject ??= AnalyzeProjectUseCase(diagnosticsRepository!));
+
+  CreateEmulatorUseCase? _createEmulator;
+  CreateEmulatorUseCase? get createEmulatorUseCase => emulatorRepository == null
+      ? null
+      : (_createEmulator ??= CreateEmulatorUseCase(emulatorRepository!));
+
+  DiscoverLaunchEntriesUseCase? _discoverLaunchEntries;
+  DiscoverLaunchEntriesUseCase? get discoverLaunchEntriesUseCase =>
+      launchRepository == null
+      ? null
+      : (_discoverLaunchEntries ??= DiscoverLaunchEntriesUseCase(
+          launchRepository!,
+        ));
 
   /// Tear down every service this container owns. Called once by the
   /// composition root after the TUI run loop exits.

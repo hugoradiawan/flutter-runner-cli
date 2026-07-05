@@ -24,10 +24,7 @@ const knownDataToPresentation = <String>{};
 
 /// presentation -> data outside the sanctioned seam (di/dependencies.dart).
 const knownPresentationToData = <String>{
-  'src/presentation/app/commands/emulators_command.dart -> src/data/datasources/emulator_manager.dart',
   'src/presentation/app/commands/isolates_command.dart -> src/data/services/isolate_manager.dart',
-  'src/presentation/app/commands/run_command.dart -> src/data/models/launch_config.dart',
-  'src/presentation/app/commands/run_command.dart -> src/data/services/main_scanner.dart',
   'src/presentation/app/daemon_event_router.dart -> src/data/datasources/app_session.dart',
   'src/presentation/app/daemon_event_router.dart -> src/data/models/daemon_messages.dart',
   'src/presentation/app/reload_watcher.dart -> src/data/services/dart_file_watcher.dart',

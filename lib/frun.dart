@@ -18,6 +18,7 @@ import 'src/data/repositories/config_repository_impl.dart';
 import 'src/data/repositories/device_repository_impl.dart';
 import 'src/data/repositories/diagnostics_repository_impl.dart';
 import 'src/data/repositories/emulator_repository_impl.dart';
+import 'src/data/repositories/launch_repository_impl.dart';
 import 'src/data/repositories/session_repository_impl.dart';
 import 'src/data/services/live_diagnostics.dart';
 import 'src/data/services/project_detector.dart';
@@ -96,7 +97,8 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   );
   final deps = Dependencies()
     ..configRepository = configRepository
-    ..diagnosticsRepository = diagnosticsRepository;
+    ..diagnosticsRepository = diagnosticsRepository
+    ..launchRepository = LaunchRepositoryImpl(project);
   final state = AppState(project: project, config: configEntity, deps: deps);
   _seedCachedDiagnostics(state, diagnosticsRepository);
 

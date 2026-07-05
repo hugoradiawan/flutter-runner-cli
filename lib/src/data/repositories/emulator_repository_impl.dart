@@ -4,6 +4,7 @@ import '../../data/models/emulator.dart';
 import '../../domain/entities/device.dart';
 import '../../domain/entities/emulator.dart';
 import '../../domain/failures/device_failure.dart';
+import '../../domain/params/emulator_create_params.dart';
 import '../../domain/params/emulator_launch_params.dart';
 import '../../domain/repositories/emulator_repository.dart';
 import '../datasources/emulator_manager.dart';
@@ -64,6 +65,20 @@ class EmulatorRepositoryImpl implements EmulatorRepository {
           emulatorId: device.emulatorId,
         ),
       );
+    } catch (e, st) {
+      return Result.failure(
+        DeviceFailure(message: e.toString(), cause: e, stackTrace: st),
+      );
+    }
+  }
+
+  @override
+  Future<Result<DeviceFailure, void>> createEmulator(
+    EmulatorCreateParams params,
+  ) async {
+    try {
+      await _manager.create(name: params.name);
+      return Result.success(null);
     } catch (e, st) {
       return Result.failure(
         DeviceFailure(message: e.toString(), cause: e, stackTrace: st),

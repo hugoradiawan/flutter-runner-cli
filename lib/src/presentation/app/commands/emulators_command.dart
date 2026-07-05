@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import '../../../data/datasources/emulator_manager.dart';
 import '../../../domain/entities/emulator.dart';
+import '../../../domain/params/emulator_create_params.dart';
 import '../../../domain/params/emulator_launch_params.dart';
 import '../../../domain/value_objects/config_values.dart';
 import '../../../domain/value_objects/notification_event.dart';
@@ -48,15 +48,8 @@ class EmulatorsCommand extends Command {
       return CommandResult.ok;
     }
     if (args.first == 'create') {
-      final daemon = state.deps.daemon;
-      if (daemon == null) {
-        state.visibleTranscript.warn(
-          'Flutter daemon is still starting. Try emulators again shortly.',
-        );
-        return CommandResult.ok;
-      }
       final name = args.length >= 2 ? args.sublist(1).join('_') : null;
-      await _create(EmulatorManager(daemon), name, state);
+      await _create(name, state);
       return CommandResult.ok;
     }
     state.visibleTranscript.warn('Usage: $usage');
@@ -179,21 +172,25 @@ class EmulatorsCommand extends Command {
     );
   }
 
-  Future<void> _create(
-    EmulatorManager manager,
-    String? name,
-    AppState state,
-  ) async {
+  Future<void> _create(String? name, AppState state) async {
+    final useCase = state.deps.createEmulatorUseCase;
+    if (useCase == null) {
+      state.visibleTranscript.warn(
+        'Flutter daemon is still starting. Try emulators again shortly.',
+      );
+      return;
+    }
     state.visibleTranscript.system(
       'Creating emulator${name == null ? "" : " $name"}…',
     );
-    try {
-      await manager.create(name: name);
-      state.visibleTranscript.success(
+    final result = await useCase.call(EmulatorCreateParams(name: name));
+    result.fold(
+      (failure) => state.visibleTranscript.error(
+        'Failed to create emulator: ${failure.message}',
+      ),
+      (_) => state.visibleTranscript.success(
         'Emulator created. Run `emulators` to see it.',
-      );
-    } catch (e) {
-      state.visibleTranscript.error('Failed to create emulator: $e');
-    }
+      ),
+    );
   }
 }

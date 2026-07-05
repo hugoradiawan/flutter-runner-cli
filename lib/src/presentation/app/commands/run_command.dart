@@ -1,7 +1,3 @@
-import 'dart:io';
-
-import '../../../data/models/launch_config.dart';
-import '../../../data/services/main_scanner.dart';
 import '../../../domain/entities/launch_entry.dart';
 import '../app_state.dart';
 import '../run_controller.dart';
@@ -29,7 +25,7 @@ class RunCommand extends Command {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    final entries = _discover(state);
+    final entries = await _discover(state);
 
     if (entries.isEmpty) {
       state.clearPickers();
@@ -56,14 +52,16 @@ class RunCommand extends Command {
     return CommandResult.ok;
   }
 
-  List<LaunchEntryEntity> _discover(AppState state) {
-    final launchJsonFile = File(state.project.launchJsonPath);
-    final launchJson = LaunchConfigParser.parseFile(
-      launchJsonFile,
-      workspaceFolder: state.project.workspaceRoot,
-    );
-    final scanned = MainScanner.scan(state.project.libDir);
-    return MainScanner.merge(launchJson, scanned);
+  Future<List<LaunchEntryEntity>> _discover(AppState state) async {
+    final useCase = state.deps.discoverLaunchEntriesUseCase;
+    if (useCase == null) return const <LaunchEntryEntity>[];
+    final result = await useCase.call();
+    return result.fold((failure) {
+      state.visibleTranscript.error(
+        'Launch discovery failed: ${failure.message}',
+      );
+      return const <LaunchEntryEntity>[];
+    }, (entries) => entries);
   }
 
   LaunchEntryEntity? _resolve(String token, List<LaunchEntryEntity> entries) {

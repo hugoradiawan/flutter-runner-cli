@@ -15,6 +15,7 @@ import 'package:frun/src/domain/entities/emulator.dart';
 import 'package:frun/src/domain/failures/config_failure.dart';
 import 'package:frun/src/domain/failures/device_failure.dart';
 import 'package:frun/src/domain/params/config_params.dart';
+import 'package:frun/src/domain/params/emulator_create_params.dart';
 import 'package:frun/src/domain/params/emulator_launch_params.dart';
 import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:mocktail/mocktail.dart';
@@ -288,6 +289,27 @@ void main() {
       ).thenThrow(Exception('avd failure'));
 
       final result = await repo.launchEmulator(params);
+      expect(result.isFailure, isTrue);
+      expect((result as Failure).error, isA<DeviceFailure>());
+    });
+
+    test('createEmulator delegates the name and returns Success', () async {
+      when(() => manager.create(name: 'pixel_9')).thenAnswer((_) async {});
+
+      final result = await repo.createEmulator(
+        const EmulatorCreateParams(name: 'pixel_9'),
+      );
+
+      expect(result.isSuccess, isTrue);
+      verify(() => manager.create(name: 'pixel_9')).called(1);
+    });
+
+    test('createEmulator returns DeviceFailure when manager throws', () async {
+      when(
+        () => manager.create(name: any(named: 'name')),
+      ).thenThrow(Exception('avdmanager missing'));
+
+      final result = await repo.createEmulator(const EmulatorCreateParams());
       expect(result.isFailure, isTrue);
       expect((result as Failure).error, isA<DeviceFailure>());
     });
