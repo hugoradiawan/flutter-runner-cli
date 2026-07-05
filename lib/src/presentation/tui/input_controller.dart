@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:dart_tui/dart_tui.dart';
 
 import '../../domain/value_objects/config_values.dart';
@@ -68,8 +70,20 @@ class InputController extends VimBuffer {
     return n + _cursor.col;
   }
 
-  /// Read-only view of the buffer's lines.
-  List<String> get lines => List<String>.unmodifiable(_lines);
+  /// Read-only live view of the buffer's lines. Rebuilt only when the backing
+  /// list is replaced (setText/clear/undo/redo); the paint path reads this
+  /// several times per frame, so a per-call copy is avoidable churn. Callers
+  /// needing a point-in-time snapshot copy it themselves (`.toList()`).
+  List<String> get lines {
+    if (!identical(_linesViewBacking, _lines)) {
+      _linesView = UnmodifiableListView(_lines);
+      _linesViewBacking = _lines;
+    }
+    return _linesView!;
+  }
+
+  UnmodifiableListView<String>? _linesView;
+  List<String>? _linesViewBacking;
 
   VimMode get mode => _mode;
   FrunEditorMode get editorMode => _editorMode;

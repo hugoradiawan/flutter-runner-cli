@@ -8,7 +8,7 @@ mixin _EngineMixin on _FrunModelBase {
     if (identical(buffer, _tc)) {
       return (top: _lastVisibleStart, height: _lastBodyHeight);
     }
-    return (top: 0, height: _input.lines.length);
+    return (top: 0, height: _input.lineCount);
   }
 
   void _runExCmd(ExCommand cmd, VimBuffer buffer) {

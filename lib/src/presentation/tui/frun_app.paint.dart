@@ -6,7 +6,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
   // ── Paint helpers ──────────────────────────────────────────────────────
 
   void _paintTranscript(
-    Canvas canvas,
+    CellCanvas canvas,
     FrunTheme theme,
     int width,
     int y,
@@ -105,7 +105,13 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       final baseStyle = line.onClick != null
           ? theme.accentStyle
           : theme.forLevel(line.level);
-      canvas.paint(0, yRow, baseStyle.render(row.rendered));
+      // Rows on the layout fast path reuse the source string and are known
+      // ANSI-free; only rows with embedded escapes pay the parse.
+      if (identical(row.rendered, row.text)) {
+        canvas.paint(0, yRow, row.text, style: baseStyle);
+      } else {
+        canvas.paintAnsi(0, yRow, row.rendered, baseStyle: baseStyle);
+      }
 
       if (focused != null && focused.transcriptLineIndex == row.lineIndex) {
         final rowStart = row.startCol;
@@ -120,7 +126,8 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
           canvas.paint(
             overlapStart - rowStart,
             yRow,
-            theme.linkHighlightStyle.render(substring),
+            substring,
+            style: theme.linkHighlightStyle,
           );
         }
       }
@@ -135,7 +142,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
               ? theme.searchActiveStyle
               : theme.searchMatchStyle;
           final text = row.text.substring(m.col, m.col + m.length);
-          canvas.paint(m.col, yRow, style.render(text), zIndex: 2);
+          canvas.paint(m.col, yRow, text, style: style, zIndex: 2);
         }
       }
 
@@ -148,7 +155,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
             : theme.selectionStyle;
         if (visualKind == VimMode.visualLine) {
           if (row.text.isNotEmpty) {
-            canvas.paint(0, yRow, selStyle.render(row.text), zIndex: 3);
+            canvas.paint(0, yRow, row.text, style: selStyle, zIndex: 3);
           }
         } else if (visualKind == VimMode.visualBlock) {
           final left = math.min(selection.col, selection.col2);
@@ -156,7 +163,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
           final effRight = math.min(right + 1, row.text.length);
           if (effRight > left && left < row.text.length) {
             final sel = row.text.substring(left, effRight);
-            canvas.paint(left, yRow, selStyle.render(sel), zIndex: 3);
+            canvas.paint(left, yRow, sel, style: selStyle, zIndex: 3);
           }
         } else {
           final lineStart = r == selection.row ? selection.col : 0;
@@ -165,7 +172,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
               : row.text.length;
           if (lineEnd > lineStart) {
             final sel = row.text.substring(lineStart, lineEnd);
-            canvas.paint(lineStart, yRow, selStyle.render(sel), zIndex: 3);
+            canvas.paint(lineStart, yRow, sel, style: selStyle, zIndex: 3);
           }
         }
       }
@@ -173,7 +180,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       // Vim cursor cell (only when in transcript cursor mode).
       if (_tc.active && r == _tc.row) {
         final cell = (_tc.col < row.text.length) ? row.text[_tc.col] : ' ';
-        canvas.paint(_tc.col, yRow, theme.cursorStyle.render(cell), zIndex: 4);
+        canvas.paint(_tc.col, yRow, cell, style: theme.cursorStyle, zIndex: 4);
       }
 
       final onClick = line.onClick;
@@ -409,7 +416,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
   }
 
   void _paintStatus(
-    Canvas canvas,
+    CellCanvas canvas,
     FrunTheme theme,
     int width,
     int y,
@@ -431,14 +438,15 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       canvas.paint(
         1,
         y + 1 + i,
-        theme.panelSubtitleStyle.render(label.padRight(11)),
+        label.padRight(11),
+        style: theme.panelSubtitleStyle,
       );
       final maxValue = math.max(0, width - 14);
       final clipped = _clipCellText(value, maxValue);
       final valueStyle = value == '—' || value == '(none)'
           ? theme.emptyStyle
           : theme.valueStyle;
-      canvas.paint(13, y + 1 + i, valueStyle.render(clipped));
+      canvas.paint(13, y + 1 + i, clipped, style: valueStyle);
     }
   }
 
@@ -472,7 +480,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
   }
 
   void _paintInput(
-    Canvas canvas,
+    CellCanvas canvas,
     FrunTheme theme,
     int width,
     int y,
@@ -482,16 +490,16 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
 
     // Borders: top at y, content at y+1..y+height, bottom at y+height+1
     final horiz = '─' * (width - 2);
-    canvas.paint(0, y, theme.inputBorderStyle.render('╭$horiz╮'));
-    canvas.paint(0, y + height + 1, theme.inputBorderStyle.render('╰$horiz╯'));
+    canvas.paint(0, y, '╭$horiz╮', style: theme.inputBorderStyle);
+    canvas.paint(0, y + height + 1, '╰$horiz╯', style: theme.inputBorderStyle);
     final contentY = y + 1;
 
     // Ex/search prompt: single row, prefix + draft.
     if (_vimState.mode == VimMode.exCmd || _vimState.mode == VimMode.search) {
-      canvas.paint(0, contentY, theme.inputBorderStyle.render('│'));
-      canvas.paint(width - 1, contentY, theme.inputBorderStyle.render('│'));
+      canvas.paint(0, contentY, '│', style: theme.inputBorderStyle);
+      canvas.paint(width - 1, contentY, '│', style: theme.inputBorderStyle);
       final prefix = _promptForMode();
-      canvas.paint(1, contentY, theme.accentStyle.render(prefix));
+      canvas.paint(1, contentY, prefix, style: theme.accentStyle);
       final draft = _vimState.mode == VimMode.exCmd
           ? _vimState.exDraft
           : _vimState.searchDraft;
@@ -503,7 +511,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       canvas.paint(1 + prefix.length, contentY, visible);
       final cx = 1 + prefix.length + visible.length;
       if (cx < width - 1) {
-        canvas.paint(cx, contentY, theme.cursorStyle.render(' '), zIndex: 2);
+        canvas.paint(cx, contentY, ' ', style: theme.cursorStyle, zIndex: 2);
       }
       return;
     }
@@ -516,18 +524,19 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
 
     for (var r = 0; r < rowsToPaint; r++) {
       final yRow = contentY + r;
-      canvas.paint(0, yRow, theme.inputBorderStyle.render('│'));
-      canvas.paint(width - 1, yRow, theme.inputBorderStyle.render('│'));
+      canvas.paint(0, yRow, '│', style: theme.inputBorderStyle);
+      canvas.paint(width - 1, yRow, '│', style: theme.inputBorderStyle);
 
       final line = lines[r];
       if (r == 0) {
-        canvas.paint(1, yRow, theme.promptStyle.render(prompt));
+        canvas.paint(1, yRow, prompt, style: theme.promptStyle);
         // Run button at far right inside border
         final btnX = width - 1 - _runButtonLabel.length;
         canvas.paint(
           btnX,
           yRow,
-          theme.buttonStyle.render(_runButtonLabel),
+          _runButtonLabel,
+          style: theme.buttonStyle,
           zIndex: 1,
         );
         _hits.add(
@@ -540,11 +549,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
         // Right info shifted left to make room for button
         final rightX = btnX - rightInfo.length;
         if (rightX > 1 + prompt.length) {
-          canvas.paint(
-            rightX,
-            yRow,
-            theme.panelSubtitleStyle.render(rightInfo),
-          );
+          canvas.paint(rightX, yRow, rightInfo, style: theme.panelSubtitleStyle);
         }
         // Diagnostics counters sit just left of the right info, inside the box.
         // The input text must stop before whichever of them is leftmost.
@@ -575,11 +580,11 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
             final ch = cursorOffset < visible.length
                 ? visible[cursorOffset]
                 : ' ';
-            canvas.paint(cx, yRow, theme.cursorStyle.render(ch), zIndex: 2);
+            canvas.paint(cx, yRow, ch, style: theme.cursorStyle, zIndex: 2);
           }
         }
       } else {
-        canvas.paint(1, yRow, theme.panelSubtitleStyle.render('  '));
+        canvas.paint(1, yRow, '  ', style: theme.panelSubtitleStyle);
         final usable = math.max(0, width - 4); // │ + '  ' + text + │
         var visible = line;
         var cursorOffset = (r == cur.row) ? cur.col : 0;
@@ -599,7 +604,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
             final ch = cursorOffset < visible.length
                 ? visible[cursorOffset]
                 : ' ';
-            canvas.paint(cx, yRow, theme.cursorStyle.render(ch), zIndex: 2);
+            canvas.paint(cx, yRow, ch, style: theme.cursorStyle, zIndex: 2);
           }
         }
       }
@@ -620,7 +625,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
   /// No background analyzer is started here; the counters only reflect the last
   /// `/diagnostics` run.
   int _paintDiagnosticsCounters(
-    Canvas canvas,
+    CellCanvas canvas,
     FrunTheme theme,
     int rightX,
     int yRow,
@@ -628,12 +633,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
   ) {
     final diags = state.diagnostics;
     if (diags.isEmpty) return rightX;
-    if (state.diagnosticsRevision != _diagCountsCacheRevision) {
-      _diagCountsCache = DiagnosticEntity.counts(diags);
-      _diagCountsCacheRevision = state.diagnosticsRevision;
-      _debugDiagCountsBuilds++;
-    }
-    final (e, w, i, t) = _diagCountsCache;
+    final (e, w, i, t) = _diagCounts();
     final segs = <(String, Style)>[
       if (e > 0)
         (
@@ -670,7 +670,8 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       canvas.paint(
         cx,
         yRow,
-        segs[s].$2.render(_badgeText(segs[s].$1)),
+        _badgeText(segs[s].$1),
+        style: segs[s].$2,
         zIndex: 1,
       );
       cx += _badgeWidth(segs[s].$1);

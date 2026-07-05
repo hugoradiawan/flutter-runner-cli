@@ -20,6 +20,7 @@ import '../app/commands/command_registry.dart';
 import '../app/link_extractor.dart';
 import '../app/run_tab.dart';
 import '../app/transcript.dart';
+import 'cell_canvas.dart';
 import 'clipboard.dart';
 import 'hit_regions.dart';
 import 'input_controller.dart';
@@ -65,6 +66,10 @@ abstract class _FrunModelBase extends TeaModel {
   final void Function() onQuit;
 
   final InputController _input;
+
+  /// Persistent frame compositor; buffers survive across frames and only
+  /// reallocate on terminal resize.
+  final CellCanvas _cellCanvas = CellCanvas();
 
   bool _configEditorActive = false;
   int _configEditorRow = 0;
@@ -185,6 +190,11 @@ abstract class _FrunModelBase extends TeaModel {
   int _diagCountsCacheRevision = -1;
   (int, int, int, int) _diagCountsCache = (0, 0, 0, 0);
   int _debugDiagCountsBuilds = 0;
+  // One-shot handoff of the tab-strip layout from _computeInfoBarHeight to
+  // _paintInfoBar within a single view() pass, so the wrap layout runs once
+  // per frame. Cleared on consume; never trusted across frames.
+  (List<List<_TabSegment>>, int)? _tabRowsFrameCache;
+  int _tabRowsFrameCacheWidth = -1;
   int _diagnosticRowsCacheRevision = -1;
   DiagnosticCategory? _diagnosticRowsCacheFilter;
   String _diagnosticRowsCacheSearch = '';
@@ -224,6 +234,20 @@ abstract class _FrunModelBase extends TeaModel {
   // here keeps the mixin `on` graph acyclic.
 
   VimBuffer get _activeBuffer => _tc.active ? _tc : _input;
+
+  /// Memoized (error, warning, info, todo) tallies for [AppState.diagnostics].
+  /// counts() walks every diagnostic (with a per-entry toLowerCase); the
+  /// tallies only change when the list is replaced, so recompute at most once
+  /// per diagnostics revision. Shared by the input-bar counters and the
+  /// diagnostics panel header.
+  (int, int, int, int) _diagCounts() {
+    if (state.diagnosticsRevision != _diagCountsCacheRevision) {
+      _diagCountsCache = DiagnosticEntity.counts(state.diagnostics);
+      _diagCountsCacheRevision = state.diagnosticsRevision;
+      _debugDiagCountsBuilds++;
+    }
+    return _diagCountsCache;
+  }
 
   int _cachedMaxScroll() {
     final visibleRowCount = _lastBodyHeight;

@@ -21,7 +21,7 @@ Style _badgeStyleForCategory(FrunTheme theme, DiagnosticCategory category) {
 }
 
 int _paintBadge(
-  Canvas canvas,
+  CellCanvas canvas,
   FrunTheme theme,
   int x,
   int y,
@@ -32,7 +32,7 @@ int _paintBadge(
   int zIndex = 0,
 }) {
   final text = _badgeText(label);
-  canvas.paint(x, y, style.render(text), zIndex: zIndex);
+  canvas.paint(x, y, text, style: style, zIndex: zIndex);
   if (hits != null && msg != null) {
     hits.add(x: x, y: y, w: text.length, h: 1, msg: msg);
   }
@@ -40,7 +40,7 @@ int _paintBadge(
 }
 
 int _paintHeaderAction(
-  Canvas canvas,
+  CellCanvas canvas,
   FrunTheme theme,
   HitRegions hits,
   int x,
@@ -62,7 +62,7 @@ int _paintHeaderAction(
 }
 
 int _paintPanelTitle(
-  Canvas canvas,
+  CellCanvas canvas,
   FrunTheme theme,
   int x,
   int y,
@@ -73,12 +73,12 @@ int _paintPanelTitle(
   final label = meta == null || meta.isEmpty ? title : '$title  $meta';
   final innerMax = maxWidth == null ? null : math.max(0, maxWidth - 2);
   final clipped = innerMax == null ? label : _clipCellText(label, innerMax);
-  canvas.paint(x, y, theme.panelTitleStyle.render(_badgeText(clipped)));
+  canvas.paint(x, y, _badgeText(clipped), style: theme.panelTitleStyle);
   return x + _badgeWidth(clipped) + 1;
 }
 
 void _paintPanelFrame(
-  Canvas canvas,
+  CellCanvas canvas,
   FrunTheme theme,
   int width,
   int y,
@@ -89,16 +89,16 @@ void _paintPanelFrame(
   final style = strong ? theme.borderStrongStyle : theme.borderStyle;
   final horizontal = '─' * (width - 2);
   final bottomY = y + height - 1;
-  canvas.paint(0, y, style.render('╭$horizontal╮'));
-  canvas.paint(0, bottomY, style.render('╰$horizontal╯'));
+  canvas.paint(0, y, '╭$horizontal╮', style: style);
+  canvas.paint(0, bottomY, '╰$horizontal╯', style: style);
   for (var row = y + 1; row < bottomY; row++) {
-    canvas.paint(0, row, style.render('│'));
-    canvas.paint(width - 1, row, style.render('│'));
+    canvas.paint(0, row, '│', style: style);
+    canvas.paint(width - 1, row, '│', style: style);
   }
 }
 
 void _paintDivider(
-  Canvas canvas,
+  CellCanvas canvas,
   FrunTheme theme,
   int width,
   int y, {
@@ -106,19 +106,19 @@ void _paintDivider(
 }) {
   if (width <= 0) return;
   final text = '─' * width;
-  canvas.paint(0, y, theme.borderStrongStyle.render(text));
+  canvas.paint(0, y, text, style: theme.borderStrongStyle);
   if (title != null && title.isNotEmpty && width > title.length + 4) {
-    canvas.paint(2, y, theme.panelTitleStyle.render(_badgeText(title)));
+    canvas.paint(2, y, _badgeText(title), style: theme.panelTitleStyle);
   }
 }
 
 void _paintSelectedRow(
-  Canvas canvas,
+  CellCanvas canvas,
   FrunTheme theme,
   int x,
   int y,
   int width,
 ) {
   if (width <= 0) return;
-  canvas.paint(x, y, theme.selectedRowStyle.render(' ' * width), zIndex: 0);
+  canvas.paint(x, y, ' ' * width, style: theme.selectedRowStyle, zIndex: 0);
 }

@@ -11,7 +11,7 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
 
     if (w < 40 || h < 10) {
       _hits.clear();
-      final canvas = Canvas(math.max(w, 40), math.max(h, 10));
+      final canvas = _cellCanvas..reset(math.max(w, 40), math.max(h, 10));
       canvas.paint(0, 0, 'frun: terminal too small (${w}x$h)');
       return View(
         content: canvas.render(),
@@ -73,7 +73,7 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
     _lastBodyHeight = bodyH;
     _lastBodyY = 0;
 
-    final canvas = Canvas(w, h);
+    final canvas = _cellCanvas..reset(w, h);
 
     _paintTranscript(canvas, theme, w, 0, bodyH);
     if (state.showStatusPanel) {
@@ -223,8 +223,7 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
     if (_vimState.mode == VimMode.exCmd || _vimState.mode == VimMode.search) {
       return 1;
     }
-    final lines = _input.lines.length;
-    return lines.clamp(1, _maxInputRows);
+    return _input.lineCount.clamp(1, _maxInputRows);
   }
 
   int _statusHeight(int totalHeight, int otherH) {

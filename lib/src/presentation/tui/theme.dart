@@ -114,7 +114,16 @@ class FrunTheme {
     }
   }
 
-  static FrunTheme dark() => FrunTheme(
+  // Built once: Style objects are immutable and fromConfig runs on every
+  // painted frame, so constructing 43 styles per frame is pure churn.
+  static final FrunTheme _dark = _buildDark();
+  static final FrunTheme _light = _buildLight();
+
+  static FrunTheme dark() => _dark;
+
+  static FrunTheme light() => _light;
+
+  static FrunTheme _buildDark() => FrunTheme(
     textStyle: const Style().foregroundColor256(252),
     valueStyle: const Style().foregroundColor256(250),
     titleStyle: const Style(isBold: true).foregroundColor256(81),
@@ -215,7 +224,7 @@ class FrunTheme {
     ).backgroundColor256(196).foregroundColor256(231),
   );
 
-  static FrunTheme light() => FrunTheme(
+  static FrunTheme _buildLight() => FrunTheme(
     textStyle: const Style().foregroundColor256(235),
     valueStyle: const Style().foregroundColor256(237),
     titleStyle: const Style(isBold: true).foregroundColor256(25),

@@ -202,7 +202,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
   }
 
   void _paintPicker(
-    Canvas canvas,
+    CellCanvas canvas,
     FrunTheme theme,
     _PickerSpec spec,
     int width,
@@ -263,7 +263,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       final rowY = innerStartY + i * 2;
       if (rowY > innerEndY) break;
       final style = chipIdx == _pickerSelectedIndex ? selectedStyle : chipStyle;
-      canvas.paint(_pickerIndent, rowY, style.render(chips[chipIdx].text));
+      canvas.paint(_pickerIndent, rowY, chips[chipIdx].text, style: style);
       _hits.add(
         x: _pickerIndent,
         y: rowY,
@@ -283,7 +283,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         canvas.paint(
           _pickerIndent,
           rowY,
-          theme.panelSubtitleStyle.render(_clipCellText(more, maxLen)),
+          _clipCellText(more, maxLen),
+          style: theme.panelSubtitleStyle,
         );
       }
     }
@@ -372,7 +373,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
   }
 
   void _paintConfigEditor(
-    Canvas canvas,
+    CellCanvas canvas,
     FrunTheme theme,
     int width,
     int y,
@@ -417,7 +418,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         canvas.paint(
           innerGap,
           rowY,
-          theme.accentStyle.render(indicator + keyPadded),
+          indicator + keyPadded,
+          style: theme.accentStyle,
           zIndex: 1,
         );
       } else {
@@ -430,11 +432,12 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
           canvas.paint(
             contentX,
             rowY,
-            theme.pickerChipSelectedStyle.render(chip),
+            chip,
+            style: theme.pickerChipSelectedStyle,
             zIndex: 1,
           );
         } else {
-          canvas.paint(contentX, rowY, theme.valueStyle.render(currentVal));
+          canvas.paint(contentX, rowY, currentVal, style: theme.valueStyle);
         }
       }
     }
@@ -571,14 +574,14 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
   }
 
   void _paintDiagnosticsPanel(
-    Canvas canvas,
+    CellCanvas canvas,
     FrunTheme theme,
     int width,
     int y,
     int height,
   ) {
     if (height <= 0) return;
-    final (e, w, i, t) = DiagnosticEntity.counts(state.diagnostics);
+    final (e, w, i, t) = _diagCounts();
 
     // ── Header: title, clickable filter chips, search, close button ──
     var hx = _paintPanelTitle(canvas, theme, 0, y, 'Problems');
@@ -646,7 +649,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         canvas.paint(
           hx,
           y,
-          theme.searchActiveStyle.render(_clipCellText(searchText, maxSearch)),
+          _clipCellText(searchText, maxSearch),
+          style: theme.searchActiveStyle,
         );
       }
     }
@@ -682,7 +686,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       canvas.paint(
         _pickerIndent,
         innerStartY,
-        theme.emptyStyle.render(_clipText(msg, width - _pickerIndent * 2)),
+        _clipText(msg, width - _pickerIndent * 2),
+        style: theme.emptyStyle,
       );
       return;
     }
@@ -715,7 +720,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         canvas.paint(
           1,
           rowY,
-          theme.panelSubtitleStyle.render(_clipText(text, maxText)),
+          _clipText(text, maxText),
+          style: theme.panelSubtitleStyle,
         );
       } else {
         final d = row.diagnostic!;
@@ -730,7 +736,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         if (selected) {
           _paintSelectedRow(canvas, theme, 1, rowY, width - 2);
         }
-        canvas.paint(1, rowY, style.render(clipped), zIndex: 1);
+        canvas.paint(1, rowY, clipped, style: style, zIndex: 1);
         _hits.add(
           x: 1,
           y: rowY,
@@ -755,16 +761,15 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         canvas.paint(
           _pickerIndent,
           rowY,
-          theme.panelSubtitleStyle.render(
-            _clipText(more, width - _pickerIndent * 2),
-          ),
+          _clipText(more, width - _pickerIndent * 2),
+          style: theme.panelSubtitleStyle,
         );
       }
     }
   }
 
   int _paintDiagnosticsFilterChip(
-    Canvas canvas,
+    CellCanvas canvas,
     FrunTheme theme,
     int x,
     int y,
@@ -1003,7 +1008,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
   }
 
   int _paintIsolatePanelAction(
-    Canvas canvas,
+    CellCanvas canvas,
     FrunTheme theme,
     int x,
     int y,
@@ -1026,7 +1031,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
   }
 
   void _paintIsolatesPanel(
-    Canvas canvas,
+    CellCanvas canvas,
     FrunTheme theme,
     int width,
     int y,
@@ -1096,7 +1101,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       canvas.paint(
         _pickerIndent,
         innerStartY,
-        theme.emptyStyle.render(_clipText(msg, width - _pickerIndent * 2)),
+        _clipText(msg, width - _pickerIndent * 2),
+        style: theme.emptyStyle,
       );
       return;
     }
@@ -1140,7 +1146,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       if (selected) {
         _paintSelectedRow(canvas, theme, 1, rowY, width - 2);
       }
-      canvas.paint(1, rowY, style.render(clipped), zIndex: 1);
+      canvas.paint(1, rowY, clipped, style: style, zIndex: 1);
       _hits.add(
         x: 1,
         y: rowY,
@@ -1156,7 +1162,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         final buttonText = actionTexts[i];
         final stop = action == IsolatePanelAction.kill;
         final buttonStyle = stop ? theme.buttonStopStyle : theme.buttonStyle;
-        canvas.paint(bx, rowY, buttonStyle.render(buttonText), zIndex: 1);
+        canvas.paint(bx, rowY, buttonText, style: buttonStyle, zIndex: 1);
         _hits.add(
           x: bx,
           y: rowY,
@@ -1180,9 +1186,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         canvas.paint(
           _pickerIndent,
           rowY,
-          theme.panelSubtitleStyle.render(
-            _clipText(more, width - _pickerIndent * 2),
-          ),
+          _clipText(more, width - _pickerIndent * 2),
+          style: theme.panelSubtitleStyle,
         );
       }
     }
@@ -1193,8 +1198,10 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
   int _computeInfoBarHeight(int width) {
     final tabs = state.runController.tabs;
     if (tabs.isEmpty) return 1;
-    final (rows, _) = _layoutTabRows(width);
-    return rows.length.clamp(1, _maxInfoBarRows);
+    final layout = _layoutTabRows(width);
+    _tabRowsFrameCache = layout;
+    _tabRowsFrameCacheWidth = width;
+    return layout.$1.length.clamp(1, _maxInfoBarRows);
   }
 
   (List<List<_TabSegment>>, int) _layoutTabRows(int width) {
@@ -1240,7 +1247,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
   }
 
   void _paintInfoBar(
-    Canvas canvas,
+    CellCanvas canvas,
     FrunTheme theme,
     int width,
     int y,
@@ -1252,7 +1259,11 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       return;
     }
 
-    final (rows, hidden) = _layoutTabRows(width);
+    final cached = _tabRowsFrameCache;
+    _tabRowsFrameCache = null;
+    final (rows, hidden) = cached != null && _tabRowsFrameCacheWidth == width
+        ? cached
+        : _layoutTabRows(width);
     final rowCount = math.min(rows.length, height);
     for (var r = 0; r < rowCount; r++) {
       final isLastRow = r == rowCount - 1;
@@ -1282,7 +1293,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         final chip = '+$hidden>';
         if (x + 1 + chip.length <= width) {
           x += 1;
-          canvas.paint(x, rowY, theme.dimStyle.render(chip));
+          canvas.paint(x, rowY, chip, style: theme.dimStyle);
           _hits.add(
             x: x,
             y: rowY,
@@ -1296,7 +1307,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
   }
 
   int _paintTab(
-    Canvas canvas,
+    CellCanvas canvas,
     FrunTheme theme,
     int x,
     int y,
@@ -1339,14 +1350,14 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         ? theme.activeTabStyle
         : (t.isRunning ? theme.inactiveTabStyle : theme.exitedTabStyle);
 
-    canvas.paint(x, y, tabStyle.render(displayLabel));
+    canvas.paint(x, y, displayLabel, style: tabStyle);
     _hits.add(x: x, y: y, w: labelWidth, h: 1, msg: SetActiveTabMsg(tabIndex));
 
     var cursor = x + labelWidth;
 
     for (final b in buttons) {
       final style = b.isStop ? theme.buttonStopStyle : theme.buttonStyle;
-      canvas.paint(cursor, y, style.render(' ${b.letter} '));
+      canvas.paint(cursor, y, ' ${b.letter} ', style: style);
       _hits.add(x: cursor, y: y, w: 3, h: 1, msg: b.message(tabIndex));
       cursor += 3;
     }
