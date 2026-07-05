@@ -149,8 +149,12 @@ mixin _MouseMixin on _FrunModelBase {
   }
 
   void _scrollBy(int lines) {
-    final next = _transcriptScroll + lines;
-    _transcriptScroll = next.clamp(0, _cachedMaxScroll());
+    final next = (_transcriptScroll + lines).clamp(0, _cachedMaxScroll());
+    // Clamped no-op (wheel spam at the top/bottom edge): leave the scroll
+    // offset and link focus untouched so the view signature stays unchanged
+    // and the frame-skip gate re-emits the cached frame instead of repainting.
+    if (next == _transcriptScroll) return;
+    _transcriptScroll = next;
     _focusedLinkIndex = -1;
   }
 

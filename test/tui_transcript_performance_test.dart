@@ -43,6 +43,123 @@ void main() {
       expect(h.model.debugVisibleLinkBuilds, builds);
     });
 
+    test('scrolling never re-extracts links from source lines', () {
+      final h = _harness();
+      for (var i = 0; i < 60; i++) {
+        h.state.transcript.info('lib/main.dart:${i + 1}:1');
+      }
+      h.model.view();
+
+      // Scroll through the whole buffer: each line pays the regex at most
+      // once, ever (cached per source line, not per window).
+      for (var i = 0; i < 20; i++) {
+        h.wheelUp();
+        h.model.view();
+      }
+      final extractions = h.model.debugLinkExtractions;
+      expect(extractions, greaterThan(0));
+      expect(extractions, lessThanOrEqualTo(60));
+
+      // Scrolling back over visited lines re-extracts nothing.
+      for (var i = 0; i < 20; i++) {
+        h.wheelDown();
+        h.model.view();
+      }
+      expect(h.model.debugLinkExtractions, extractions);
+    });
+
+    test('link extraction is lazy — only lines that become visible pay', () {
+      final h = _harness();
+      for (var i = 0; i < 200; i++) {
+        h.state.transcript.info('lib/main.dart:${i + 1}:1');
+      }
+      h.model.view();
+
+      final extractions = h.model.debugLinkExtractions;
+      expect(extractions, greaterThan(0));
+      // Only the visible window was extracted, not all 200 lines.
+      expect(extractions, lessThan(30));
+    });
+
+    test('focused link highlight survives ring trim and compaction', () {
+      // Colour before the link makes raw offsets diverge from visible
+      // columns, so this exercises the cached visStart/visEnd mapping.
+      String line(int i) => '\x1b[33mwarn\x1b[0m at lib/a.dart:${i + 1}:2';
+
+      final h = _harness(scrollbackLines: 30);
+      for (var i = 0; i < 100; i++) {
+        h.state.transcript.info(line(i));
+        h.model.view();
+      }
+      h.wheelUp();
+      h.model.view();
+      h.key(KeyCode.tab); // focus the first visible link
+      final content = h.model.view().content;
+
+      final fresh = _harness(scrollbackLines: 30);
+      for (var i = 0; i < 100; i++) {
+        fresh.state.transcript.info(line(i));
+      }
+      fresh.model.view();
+      fresh.wheelUp();
+      fresh.model.view();
+      fresh.key(KeyCode.tab);
+
+      // Full-ANSI compare: a drifted highlight column would restyle
+      // different cells even though the plain text matches.
+      expect(content, fresh.model.view().content);
+    });
+
+    test('colored rows parse style runs once, then replay across frames', () {
+      final h = _harness();
+      for (var i = 0; i < 30; i++) {
+        h.state.transcript.info('\x1b[31merr\x1b[0m line $i');
+      }
+      final first = h.model.view().content;
+      expect(h.model.debugAnsiRunParses, greaterThan(0));
+
+      // Scrolling up reveals rows that parse lazily on first visibility…
+      for (var i = 0; i < 10; i++) {
+        h.wheelUp();
+        h.model.view();
+      }
+      final parses = h.model.debugAnsiRunParses;
+      expect(parses, lessThanOrEqualTo(30));
+
+      // …but re-visiting rows on the way back re-parses nothing.
+      for (var i = 0; i < 10; i++) {
+        h.wheelDown();
+        h.model.view();
+      }
+      expect(h.model.debugAnsiRunParses, parses);
+
+      // Idle repaints (including the forced self-heal past the skip window)
+      // replay cached runs and reproduce the identical frame.
+      for (var i = 0; i < 6; i++) {
+        expect(h.model.view().content, first);
+      }
+      expect(h.model.debugAnsiRunParses, parses);
+    });
+
+    test('sustained trimming with colored lines matches a fresh layout', () {
+      String line(int i) => '\x1b[3${(i % 6) + 1}mline $i\x1b[0m tail';
+
+      final h = _harness(scrollbackLines: 30);
+      for (var i = 0; i < 100; i++) {
+        h.state.transcript.info(line(i));
+        h.model.view();
+      }
+
+      final fresh = _harness(scrollbackLines: 30);
+      for (var i = 0; i < 100; i++) {
+        fresh.state.transcript.info(line(i));
+      }
+
+      // Full-ANSI compare (not _plain): cached style runs must colour the
+      // same cells a cold layout does after the ring trimmed and compacted.
+      expect(h.model.view().content, fresh.model.view().content);
+    });
+
     test('bottom-follow mode stays at bottom when output appends', () {
       final h = _harness();
       for (var i = 0; i < 30; i++) {
@@ -103,6 +220,18 @@ void main() {
       }
 
       expect(h.model.debugTranscriptScroll, 0);
+    });
+
+    test('clamped wheel ticks reuse the cached frame via the skip gate', () {
+      final h = _harness();
+      h.state.transcript.info('only line');
+      final first = h.model.view().content;
+
+      // Already at the bottom and the transcript fits the viewport: the wheel
+      // clamps to a no-op, so no render-affecting state changes and view()
+      // re-emits the identical cached frame string.
+      h.wheelUp();
+      expect(identical(h.model.view().content, first), isTrue);
     });
 
     test('appends extend the row buffer in place without copying', () {
@@ -349,6 +478,12 @@ final class _Harness {
   void wheelUp() {
     model.update(
       MouseWheelMsg(const Mouse(x: 0, y: 0, button: MouseButton.wheelUp)),
+    );
+  }
+
+  void wheelDown() {
+    model.update(
+      MouseWheelMsg(const Mouse(x: 0, y: 0, button: MouseButton.wheelDown)),
     );
   }
 

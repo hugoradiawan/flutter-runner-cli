@@ -36,6 +36,13 @@ class _DisplayRow {
   final int startCol;
   final String text;
   final String rendered;
+
+  /// Lazily parsed style runs for [rendered], memoized so repaints replay
+  /// cached runs instead of re-scanning the ANSI every frame. Safe to cache
+  /// forever: rows are otherwise immutable and are rebuilt whenever the
+  /// layout changes. Populated only for rows whose [rendered] is not
+  /// [identical] to [text] (the plain fast path never parses).
+  List<StyleRun>? runsCache;
 }
 
 /// Read-only window over the tail of a shared backing list, starting at a
@@ -197,31 +204,37 @@ const _configEditorEntries = <_ConfigEditorEntry>[
 /// `scrollback` command can set any positive value; the editor snaps to these.
 const _scrollbackPresets = <int>[1000, 2000, 3000, 5000, 10000];
 
-/// Number of *visible* columns in [raw] before raw string index [rawEnd]
-/// (defaults to the whole string), skipping CSI escape sequences (which occupy
-/// zero columns). Maps raw offsets — e.g. link spans extracted from a coloured
-/// source line — into the visible-column space the renderer operates in.
+/// Maps each raw string offset in the *ascending* [rawOffsets] to the number
+/// of *visible* columns before it, skipping CSI escape sequences (which occupy
+/// zero columns) — e.g. link spans extracted from a coloured source line into
+/// the visible-column space the renderer operates in. One left-to-right scan
+/// serves every offset instead of restarting from zero per offset.
 ///
 /// Counts each non-escape UTF-16 code unit as one column, matching the wrapping
 /// in `_layoutDisplayRows`.
-int _visibleWidth(String raw, [int? rawEnd]) {
-  final end = (rawEnd ?? raw.length).clamp(0, raw.length);
+List<int> _visibleWidths(String raw, List<int> rawOffsets) {
+  final out = List<int>.filled(rawOffsets.length, 0);
   var i = 0;
   var vis = 0;
-  while (i < end) {
-    if (raw[i] == '\x1b' && i + 1 < raw.length && raw[i + 1] == '[') {
-      i += 2;
-      while (i < raw.length) {
-        final cu = raw.codeUnitAt(i);
-        i++;
-        if (cu >= 0x40 && cu <= 0x7E) break; // CSI final byte
+  for (var k = 0; k < rawOffsets.length; k++) {
+    final target = rawOffsets[k].clamp(0, raw.length);
+    assert(k == 0 || rawOffsets[k] >= rawOffsets[k - 1], 'offsets ascending');
+    while (i < target) {
+      if (raw[i] == '\x1b' && i + 1 < raw.length && raw[i + 1] == '[') {
+        i += 2;
+        while (i < raw.length) {
+          final cu = raw.codeUnitAt(i);
+          i++;
+          if (cu >= 0x40 && cu <= 0x7E) break; // CSI final byte
+        }
+        continue;
       }
-      continue;
+      i++;
+      vis++;
     }
-    i++;
-    vis++;
+    out[k] = vis;
   }
-  return vis;
+  return out;
 }
 
 /// Updates [active] SGR parameter list from a raw SGR parameter string

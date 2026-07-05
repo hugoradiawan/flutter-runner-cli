@@ -106,11 +106,21 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
           ? theme.accentStyle
           : theme.forLevel(line.level);
       // Rows on the layout fast path reuse the source string and are known
-      // ANSI-free; only rows with embedded escapes pay the parse.
+      // ANSI-free; other rows pay the escape parse once, then replay the
+      // cached style runs on every subsequent frame.
       if (identical(row.rendered, row.text)) {
         canvas.paint(0, yRow, row.text, style: baseStyle);
       } else {
-        canvas.paintAnsi(0, yRow, row.rendered, baseStyle: baseStyle);
+        var runs = row.runsCache;
+        if (runs == null) {
+          runs = row.runsCache = CellCanvas.parseAnsiRuns(row.rendered);
+          _debugAnsiRunParses++;
+          assert(
+            (runs.isEmpty ? 0 : runs.last.end) == row.text.length,
+            'style-run parse drifted from the row\'s visible text',
+          );
+        }
+        canvas.paintRuns(0, yRow, row.text, runs, baseStyle: baseStyle);
       }
 
       if (focused != null && focused.transcriptLineIndex == row.lineIndex) {
@@ -119,15 +129,13 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
         final overlapStart = math.max(focused.visStart, rowStart);
         final overlapEnd = math.min(focused.visEnd, rowEnd);
         if (overlapEnd > overlapStart) {
-          final substring = row.text.substring(
-            overlapStart - rowStart,
-            overlapEnd - rowStart,
-          );
           canvas.paint(
             overlapStart - rowStart,
             yRow,
-            substring,
+            row.text,
             style: theme.linkHighlightStyle,
+            start: overlapStart - rowStart,
+            end: overlapEnd - rowStart,
           );
         }
       }
@@ -141,8 +149,15 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
           final style = isActive
               ? theme.searchActiveStyle
               : theme.searchMatchStyle;
-          final text = row.text.substring(m.col, m.col + m.length);
-          canvas.paint(m.col, yRow, text, style: style, zIndex: 2);
+          canvas.paint(
+            m.col,
+            yRow,
+            row.text,
+            style: style,
+            zIndex: 2,
+            start: m.col,
+            end: m.col + m.length,
+          );
         }
       }
 
@@ -162,8 +177,15 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
           final right = math.max(selection.col, selection.col2);
           final effRight = math.min(right + 1, row.text.length);
           if (effRight > left && left < row.text.length) {
-            final sel = row.text.substring(left, effRight);
-            canvas.paint(left, yRow, sel, style: selStyle, zIndex: 3);
+            canvas.paint(
+              left,
+              yRow,
+              row.text,
+              style: selStyle,
+              zIndex: 3,
+              start: left,
+              end: effRight,
+            );
           }
         } else {
           final lineStart = r == selection.row ? selection.col : 0;
@@ -171,16 +193,34 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
               ? math.min(selection.col2 + 1, row.text.length)
               : row.text.length;
           if (lineEnd > lineStart) {
-            final sel = row.text.substring(lineStart, lineEnd);
-            canvas.paint(lineStart, yRow, sel, style: selStyle, zIndex: 3);
+            canvas.paint(
+              lineStart,
+              yRow,
+              row.text,
+              style: selStyle,
+              zIndex: 3,
+              start: lineStart,
+              end: lineEnd,
+            );
           }
         }
       }
 
       // Vim cursor cell (only when in transcript cursor mode).
       if (_tc.active && r == _tc.row) {
-        final cell = (_tc.col < row.text.length) ? row.text[_tc.col] : ' ';
-        canvas.paint(_tc.col, yRow, cell, style: theme.cursorStyle, zIndex: 4);
+        if (_tc.col < row.text.length) {
+          canvas.paint(
+            _tc.col,
+            yRow,
+            row.text,
+            style: theme.cursorStyle,
+            zIndex: 4,
+            start: _tc.col,
+            end: _tc.col + 1,
+          );
+        } else {
+          canvas.paint(_tc.col, yRow, ' ', style: theme.cursorStyle, zIndex: 4);
+        }
       }
 
       final onClick = line.onClick;
@@ -253,6 +293,24 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
           _layoutAppendedRowCount = 0;
         }
 
+        // Keep the per-line link cache aligned with the retained lines:
+        // evicted lines advance the head (compacting once the dead prefix
+        // outgrows the live region), appended lines get an unextracted slot.
+        if (removed > 0) {
+          _lineLinksHead += removed;
+          if (_lineLinksHead > _lineLinksBuffer.length - _lineLinksHead) {
+            _lineLinksBuffer.removeRange(0, _lineLinksHead);
+            _lineLinksHead = 0;
+          }
+        }
+        for (var i = survivorCount; i < lines.length; i++) {
+          _lineLinksBuffer.add(null);
+        }
+        assert(
+          _lineLinksBuffer.length - _lineLinksHead == lines.length,
+          'line-link cache drifted from the transcript',
+        );
+
         _lastLines = lines;
         _layoutCacheTranscript = transcript;
         _layoutCacheRevision = transcript.revision;
@@ -277,6 +335,10 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     _rowsHead = 0;
     _rowsBufferGeneration++;
     _debugRowBufferCopies++;
+    _lineLinksBuffer
+      ..clear()
+      ..addAll(List<List<_VisibleLink>?>.filled(lines.length, null));
+    _lineLinksHead = 0;
     _layoutCacheTranscript = transcript;
     _layoutCacheRevision = transcript.revision;
     _layoutCacheWidth = width;
@@ -457,24 +519,44 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
     int endExclusive,
     int baseIndex,
   ) {
-    final seenLines = <int>{};
-    for (var r = start; r < endExclusive && r < displayRows.length; r++) {
-      seenLines.add(displayRows[r].lineIndex);
-    }
-    final sorted = seenLines.toList()..sort();
     final out = <_VisibleLink>[];
-    for (final i in sorted) {
-      final src = lines[i - baseIndex].text;
-      for (final link in LinkExtractor.extract(src)) {
-        out.add(
-          _VisibleLink(
-            i,
-            link,
-            _visibleWidth(src, link.start),
-            _visibleWidth(src, link.end),
-          ),
-        );
-      }
+    // Rows are laid out line by line, so lineIndex is non-decreasing across
+    // the window — consecutive dedupe replaces the old Set + sort.
+    var prevLine = -1;
+    for (var r = start; r < endExclusive && r < displayRows.length; r++) {
+      final lineIndex = displayRows[r].lineIndex;
+      if (lineIndex == prevLine) continue;
+      prevLine = lineIndex;
+      final slot = _lineLinksHead + (lineIndex - baseIndex);
+      var cached = _lineLinksBuffer[slot];
+      cached ??= _lineLinksBuffer[slot] = _extractLineLinks(
+        lineIndex,
+        lines[lineIndex - baseIndex].text,
+      );
+      out.addAll(cached);
+    }
+    return out;
+  }
+
+  /// Extract links from one source line and map their raw offsets into
+  /// visible-column space. Runs at most once per retained line — results are
+  /// cached in `_lineLinksBuffer` for the line's lifetime, so scrolling never
+  /// re-runs the regex. Regex matches are ordered and non-overlapping, so one
+  /// left-to-right [_visibleWidths] scan maps every start/end offset.
+  List<_VisibleLink> _extractLineLinks(int lineIndex, String src) {
+    _debugLinkExtractions++;
+    final links = LinkExtractor.extract(src);
+    if (links.isEmpty) return const <_VisibleLink>[];
+    final offsets = <int>[];
+    for (final link in links) {
+      offsets
+        ..add(link.start)
+        ..add(link.end);
+    }
+    final cols = _visibleWidths(src, offsets);
+    final out = <_VisibleLink>[];
+    for (var i = 0; i < links.length; i++) {
+      out.add(_VisibleLink(lineIndex, links[i], cols[2 * i], cols[2 * i + 1]));
     }
     return out;
   }

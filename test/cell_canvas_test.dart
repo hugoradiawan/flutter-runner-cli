@@ -118,6 +118,59 @@ void main() {
       expect(c.debugGridReallocs, 2);
     });
 
+    test('sliced paint matches painting the substring', () {
+      const text = 'hello 你好 world';
+      final style = const Style().foregroundColor256(203);
+
+      final oracle = CellCanvas()..reset(20, 1);
+      oracle.paint(0, 0, text);
+      oracle.paint(6, 0, text.substring(6, 10), style: style, zIndex: 2);
+
+      final sliced = CellCanvas()..reset(20, 1);
+      sliced.paint(0, 0, text);
+      sliced.paint(6, 0, text, style: style, zIndex: 2, start: 6, end: 10);
+
+      expect(sliced.render(), oracle.render());
+    });
+
+    group('parseAnsiRuns + paintRuns replay paintAnsi byte-identically', () {
+      // (name, ansi text, stripped visible text) — stripped is what the
+      // layout's CSI-skipping scan would produce for the same input.
+      const cases = <(String, String, String)>[
+        ('plain text', 'abcd', 'abcd'),
+        ('bold + accumulate + reset', 'a\x1b[31mb\x1b[1mc\x1b[0md', 'abcd'),
+        ('256-colour', '\x1b[38;5;81mhi\x1b[0m there', 'hi there'),
+        ('truecolour', '\x1b[38;2;10;20;30mxy', 'xy'),
+        ('reset then restyle', '\x1b[31ma\x1b[0m\x1b[32mb', 'ab'),
+        ('bare short reset', '\x1b[1ma\x1b[mb', 'ab'),
+        ('non-SGR CSI ignored', 'a\x1b[2Kb', 'ab'),
+        ('wide CJK styled', '\x1b[31m你a\x1b[0m好', '你a好'),
+        ('emoji surrogate pairs', '😀\x1b[1m😀', '😀😀'),
+        ('dangling escape at end', 'ab\x1b[3', 'ab'),
+        ('escapes only, no text', '\x1b[31m\x1b[1m', ''),
+      ];
+      final baseStyles = <String, Style?>{
+        'no base style': null,
+        'coloured bold base': const Style(isBold: true).foregroundColor256(78),
+      };
+
+      for (final (name, ansi, stripped) in cases) {
+        for (final entry in baseStyles.entries) {
+          test('$name with ${entry.key}', () {
+            final oracle = CellCanvas()..reset(16, 2);
+            oracle.paintAnsi(1, 0, ansi, baseStyle: entry.value);
+
+            final runs = CellCanvas.parseAnsiRuns(ansi);
+            expect(runs.isEmpty ? 0 : runs.last.end, stripped.length);
+            final replay = CellCanvas()..reset(16, 2);
+            replay.paintRuns(1, 0, stripped, runs, baseStyle: entry.value);
+
+            expect(replay.render(), oracle.render());
+          });
+        }
+      }
+    });
+
     test('every theme style yields a well-formed SGR open prefix', () {
       for (final theme in [FrunTheme.dark(), FrunTheme.light()]) {
         final styles = <Style>[

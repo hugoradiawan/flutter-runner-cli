@@ -124,6 +124,15 @@ abstract class _FrunModelBase extends TeaModel {
   int _visibleLinksCacheStart = -1;
   int _visibleLinksCacheEnd = -1;
   List<_VisibleLink> _visibleLinksCache = const <_VisibleLink>[];
+  // Per-source-line link cache, aligned with the transcript's retained lines
+  // (same head-advance ring scheme as _rowsBuffer, but line-aligned: one slot
+  // per transcript line, at _lineLinksHead + (lineIndex - baseIndex)). null
+  // means not yet extracted; extraction runs lazily the first time a line
+  // becomes visible and stays valid for the line's lifetime, because
+  // transcript lines are immutable once appended. Maintained inside
+  // _syncTranscriptLayout so eviction/reset follows the row buffers exactly.
+  final List<List<_VisibleLink>?> _lineLinksBuffer = <List<_VisibleLink>?>[];
+  int _lineLinksHead = 0;
   // Master storage for the wrapped display rows. Appends go in place at the
   // tail; scrollback eviction advances _rowsHead past dropped rows instead of
   // copying the survivors, and the dead prefix is compacted away only once it
@@ -181,6 +190,8 @@ abstract class _FrunModelBase extends TeaModel {
   int _debugLayoutBuilds = 0;
   int _debugSearchBuilds = 0;
   int _debugVisibleLinkBuilds = 0;
+  int _debugLinkExtractions = 0;
+  int _debugAnsiRunParses = 0;
   int _debugRowBufferCopies = 0;
   int _debugSearchLowerBuilds = 0;
   // Diagnostic counters memo: counts() walks every diagnostic (with a
@@ -307,6 +318,8 @@ final class FrunModel extends _FrunModelBase
   int get debugLayoutBuilds => _debugLayoutBuilds;
   int get debugSearchBuilds => _debugSearchBuilds;
   int get debugVisibleLinkBuilds => _debugVisibleLinkBuilds;
+  int get debugLinkExtractions => _debugLinkExtractions;
+  int get debugAnsiRunParses => _debugAnsiRunParses;
   int get debugRowBufferCopies => _debugRowBufferCopies;
   int get debugDisplayRowsBufferIdentity => identityHashCode(_rowsBuffer);
   int get debugSearchLowerBuilds => _debugSearchLowerBuilds;

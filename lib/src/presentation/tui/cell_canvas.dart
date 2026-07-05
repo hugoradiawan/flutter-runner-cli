@@ -2,6 +2,26 @@ import 'dart:typed_data';
 
 import 'package:dart_tui/dart_tui.dart';
 
+/// One maximal run of same-styled text produced by [CellCanvas.parseAnsiRuns].
+///
+/// [start]/[end] are code-unit offsets into the *stripped* (escape-free) text
+/// of the parsed string — i.e. a display row's visible `text`, which the
+/// layout builds with the same CSI-skipping scan.
+///
+/// [seq] is the SGR open-sequence suffix accumulated since the last bare
+/// reset ('' = none). [onBase] says whether that suffix stacks on top of the
+/// paint-time base style (no bare reset seen yet) or replaces it (after a
+/// reset the run is styled by [seq] alone; '' + !onBase = plain). The split
+/// is load-bearing: the base style is chosen per line at paint time (level /
+/// theme) and must not be baked into the cached runs.
+final class StyleRun {
+  const StyleRun(this.start, this.end, this.seq, {required this.onBase});
+  final int start;
+  final int end;
+  final String seq;
+  final bool onBase;
+}
+
 /// App-side compositor replacing dart_tui's [Canvas] inside `view()`.
 ///
 /// dart_tui's pipeline ANSI-encodes every painted string through
@@ -74,11 +94,25 @@ final class CellCanvas {
   /// Paint plain [text] (no ANSI escapes) at ([x], [y]). Newlines advance to
   /// the next row starting again at [x]. When [style] is given, every painted
   /// cell carries its SGR open sequence.
-  void paint(int x, int y, String text, {Style? style, int zIndex = 0}) {
+  ///
+  /// [start]/[end] bound the painted slice of [text] (code-unit offsets), so
+  /// overlay painters can restyle part of a row without allocating a
+  /// substring per frame — identical cells to `paint(x, y,
+  /// text.substring(start, end), …)`.
+  void paint(
+    int x,
+    int y,
+    String text, {
+    Style? style,
+    int zIndex = 0,
+    int start = 0,
+    int? end,
+  }) {
     final styleId = style == null ? 0 : _styleIdOf(style);
+    final stop = end ?? text.length;
     var col = x;
     var row = y;
-    for (var i = 0; i < text.length; i++) {
+    for (var i = start; i < stop; i++) {
       final cu = text.codeUnitAt(i);
       if (cu == 0x0A) {
         row++;
@@ -86,7 +120,7 @@ final class CellCanvas {
         continue;
       }
       var rune = cu;
-      if (cu >= 0xD800 && cu <= 0xDBFF && i + 1 < text.length) {
+      if (cu >= 0xD800 && cu <= 0xDBFF && i + 1 < stop) {
         final lo = text.codeUnitAt(i + 1);
         if (lo >= 0xDC00 && lo <= 0xDFFF) {
           rune = 0x10000 + ((cu - 0xD800) << 10) + (lo - 0xDC00);
@@ -148,6 +182,98 @@ final class CellCanvas {
       }
       i++;
       col = _setCell(col, row, rune, styleId, zIndex);
+    }
+  }
+
+  /// Parse [text]'s CSI escape sequences once into style runs over the
+  /// stripped (visible) text, for repeated replay via [paintRuns] without
+  /// re-scanning. Mirrors [paintAnsi]'s state machine exactly: SGR sequences
+  /// accumulate onto the active style, a bare reset (`\x1b[0m` / `\x1b[m`)
+  /// drops back to *plain* (not the base style), and non-SGR CSI sequences
+  /// are consumed without splitting a run.
+  static List<StyleRun> parseAnsiRuns(String text) {
+    final out = <StyleRun>[];
+    var seq = ''; // SGR suffix accumulated since the last bare reset
+    var onBase = true; // no reset seen yet: suffix stacks on the base style
+    var runStart = 0; // stripped offset where the current run began
+    var vis = 0; // stripped code units emitted so far
+    var i = 0;
+    while (i < text.length) {
+      final cu = text.codeUnitAt(i);
+      if (cu == 0x1B && i + 1 < text.length && text.codeUnitAt(i + 1) == 0x5B) {
+        final seqStart = i;
+        i += 2;
+        var finalByte = 0;
+        while (i < text.length) {
+          finalByte = text.codeUnitAt(i);
+          i++;
+          if (finalByte >= 0x40 && finalByte <= 0x7E) break;
+        }
+        if (finalByte == 0x6D /* m */) {
+          if (vis > runStart) {
+            out.add(StyleRun(runStart, vis, seq, onBase: onBase));
+            runStart = vis;
+          }
+          final s = text.substring(seqStart, i);
+          if (s == '\x1b[0m' || s == '\x1b[m') {
+            seq = '';
+            onBase = false;
+          } else {
+            seq = seq + s;
+          }
+        }
+        continue;
+      }
+      vis++;
+      i++;
+    }
+    if (vis > runStart) out.add(StyleRun(runStart, vis, seq, onBase: onBase));
+    return out;
+  }
+
+  /// Replay [runs] parsed from an ANSI string over its stripped [text]:
+  /// byte-identical cells to `paintAnsi(x, y, ansiText, baseStyle: …)`, but
+  /// with zero escape parsing and zero substring allocation per call.
+  void paintRuns(
+    int x,
+    int y,
+    String text,
+    List<StyleRun> runs, {
+    Style? baseStyle,
+    int zIndex = 0,
+  }) {
+    final baseId = baseStyle == null ? 0 : _styleIdOf(baseStyle);
+    var col = x;
+    var row = y;
+    for (final run in runs) {
+      final int styleId;
+      if (run.onBase) {
+        styleId = run.seq.isEmpty
+            ? baseId
+            : _idOfOpenSeq(_openSeqs[baseId] + run.seq);
+      } else {
+        styleId = run.seq.isEmpty ? 0 : _idOfOpenSeq(run.seq);
+      }
+      var i = run.start;
+      while (i < run.end) {
+        final cu = text.codeUnitAt(i);
+        if (cu == 0x0A) {
+          row++;
+          col = x;
+          i++;
+          continue;
+        }
+        var rune = cu;
+        if (cu >= 0xD800 && cu <= 0xDBFF && i + 1 < run.end) {
+          final lo = text.codeUnitAt(i + 1);
+          if (lo >= 0xDC00 && lo <= 0xDFFF) {
+            rune = 0x10000 + ((cu - 0xD800) << 10) + (lo - 0xDC00);
+            i++;
+          }
+        }
+        i++;
+        col = _setCell(col, row, rune, styleId, zIndex);
+      }
     }
   }
 
