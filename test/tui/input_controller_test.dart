@@ -4,7 +4,7 @@ import 'package:frun/src/presentation/tui/input_controller.dart';
 import 'package:frun/src/presentation/tui/vim/vim_buffer.dart';
 import 'package:test/test.dart';
 
-import 'vim/test_support.dart';
+import '../vim/test_support.dart';
 
 void main() {
   group('InputController insert handling', () {
