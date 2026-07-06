@@ -1,4 +1,5 @@
-import 'package:frun/src/data/services/isolate_manager.dart';
+import 'package:frun/src/data/datasources/isolate_manager.dart';
+import 'package:frun/src/domain/entities/isolate_info.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -6,8 +7,16 @@ void main() {
     test('repeated reads return the same sorted list instance', () {
       final manager = IsolateManager(
         isolates: [
-          IsolateInfo(id: 'b', name: 'worker', status: IsolateStatus.running),
-          IsolateInfo(id: 'a', name: 'main', status: IsolateStatus.running),
+          IsolateInfoEntity(
+            id: 'b',
+            name: 'worker',
+            status: IsolateStatus.running,
+          ),
+          IsolateInfoEntity(
+            id: 'a',
+            name: 'main',
+            status: IsolateStatus.running,
+          ),
         ],
       );
 
@@ -24,7 +33,11 @@ void main() {
     test('changes invalidate the cache and bump the revision', () async {
       final manager = IsolateManager(
         isolates: [
-          IsolateInfo(id: 'a', name: 'main', status: IsolateStatus.running),
+          IsolateInfoEntity(
+            id: 'a',
+            name: 'main',
+            status: IsolateStatus.running,
+          ),
         ],
       );
 

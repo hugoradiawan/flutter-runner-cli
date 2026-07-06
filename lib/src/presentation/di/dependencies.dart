@@ -1,15 +1,17 @@
 import '../../data/datasources/analysis_server.dart';
 import '../../data/datasources/device_manager.dart';
 import '../../data/datasources/flutter_daemon.dart';
+import '../../data/datasources/inspector_bridge.dart';
+import '../../data/datasources/isolate_manager.dart';
 import '../../data/repositories/session_repository_impl.dart';
+import '../../data/services/dart_file_watcher.dart';
 import '../../data/services/desktop_notifier.dart';
 import '../../data/services/ide_launcher.dart';
-import '../../data/services/inspector_bridge.dart';
-import '../../data/services/isolate_manager.dart';
 import '../../data/services/live_diagnostics.dart';
 import '../../data/services/package_config_uri_resolver.dart';
 import '../../domain/ports/ide_launcher.dart';
 import '../../domain/ports/notifier.dart';
+import '../../domain/ports/source_change_watcher.dart';
 import '../../domain/ports/vm_uri_resolver.dart';
 import '../../domain/repositories/config_repository.dart';
 import '../../domain/repositories/device_repository.dart';
@@ -57,6 +59,21 @@ class Dependencies {
   );
   final Notifier notifier;
   final VmUriResolver vmUriResolver = const PackageConfigUriResolver();
+
+  /// Builds a debounced source-tree watcher (hot-reload-on-save). A factory
+  /// because watchers are created lazily per run session and torn down when
+  /// the controller goes idle.
+  SourceChangeWatcher Function({
+    required String root,
+    void Function(String path)? onFileChanged,
+    void Function(Object error)? onError,
+  })
+  get sourceWatcherFactory =>
+      ({required root, onFileChanged, onError}) => DartFileWatcher(
+        root: root,
+        onFileChanged: onFileChanged,
+        onWatcherError: onError,
+      );
 
   // ── Services populated as the daemon comes up ─────────────────────────────
   FlutterDaemon? daemon;

@@ -5,7 +5,7 @@ import 'package:vm_service/vm_service.dart' as vm;
 
 import '../../domain/ports/vm_uri_resolver.dart';
 import '../../domain/value_objects/source_location.dart';
-import 'package_config_uri_resolver.dart';
+import '../services/package_config_uri_resolver.dart';
 
 /// Calls a service extension on the currently-running app. Returns the
 /// decoded response. The bridge asks for a fresh caller before every poll so

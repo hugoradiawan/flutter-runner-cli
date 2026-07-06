@@ -2,10 +2,11 @@ import 'dart:io';
 
 import 'package:frun/src/data/datasources/config_datasource.dart';
 import 'package:frun/src/data/datasources/config_store.dart';
+import 'package:frun/src/data/datasources/isolate_manager.dart';
 import 'package:frun/src/data/repositories/config_repository_impl.dart';
-import 'package:frun/src/data/services/isolate_manager.dart';
 import 'package:frun/src/domain/entities/app_config.dart';
 import 'package:frun/src/domain/entities/flutter_project.dart';
+import 'package:frun/src/domain/entities/isolate_info.dart';
 import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:frun/src/presentation/app/app_state.dart';
 import 'package:frun/src/presentation/app/commands/clear_command.dart';
@@ -132,8 +133,8 @@ void main() {
 
   test('/isolates list still prints isolate rows', () async {
     final manager = IsolateManager(
-      isolates: <IsolateInfo>[
-        IsolateInfo(
+      isolates: <IsolateInfoEntity>[
+        IsolateInfoEntity(
           id: 'isolates/1234567890',
           name: 'main',
           status: IsolateStatus.running,

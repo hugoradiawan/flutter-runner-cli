@@ -1,6 +1,4 @@
-import 'package:vm_service/vm_service.dart' as vm;
-
-import '../../../data/services/isolate_manager.dart';
+import '../../../domain/ports/isolate_control.dart';
 import '../app_state.dart';
 import '../ide_opener.dart';
 import 'command.dart';
@@ -17,7 +15,7 @@ import 'command.dart';
 class IsolatesCommand extends Command {
   IsolatesCommand(this.manager);
 
-  final IsolateManager manager;
+  final IsolateControl manager;
 
   @override
   String get name => 'isolates';
@@ -101,11 +99,11 @@ class IsolatesCommand extends Command {
   }
 
   Future<bool> _ensureServiceForCommand(AppState state) async {
-    if (manager.service != null) return true;
+    if (manager.isConnected) return true;
     if (state.runController.hasTabs) {
       await state.runController.ensureIsolatesForActiveTab();
     }
-    if (manager.service != null) return true;
+    if (manager.isConnected) return true;
     state.visibleTranscript.warn(
       'No VM service yet. Start the app with /run, then try /isolates.',
     );
@@ -129,12 +127,11 @@ class IsolatesCommand extends Command {
 
   Future<void> _printStack(AppState state, String id) async {
     try {
-      final stack = await manager.getStack(id);
-      if (stack == null) {
+      final frames = await manager.stack(id);
+      if (frames == null) {
         state.visibleTranscript.warn('No stack available.');
         return;
       }
-      final frames = stack.frames ?? const <vm.Frame>[];
       if (frames.isEmpty) {
         state.visibleTranscript.info('Stack empty for $id.');
         return;
@@ -142,14 +139,11 @@ class IsolatesCommand extends Command {
       state.visibleTranscript.system('Stack for $id:');
       for (var i = 0; i < frames.length && i < 30; i++) {
         final f = frames[i];
-        final fn = f.function?.name ?? '<anon>';
-        final loc = f.location;
-        final script = loc?.script?.uri ?? '';
-        state.visibleTranscript.info('  #$i  $fn  $script');
+        final script = f.scriptUri ?? '';
+        state.visibleTranscript.info('  #$i  ${f.functionName}  $script');
       }
       // Auto-open the top frame in the user's IDE if it has a script.
-      final top = frames.first;
-      final scriptUri = top.location?.script?.uri;
+      final scriptUri = frames.first.scriptUri;
       if (scriptUri != null) {
         final loc = state.deps.vmUriResolver.resolve(scriptUri);
         if (loc != null) await openInIde(loc, state);
@@ -172,15 +166,15 @@ class IsolatesCommand extends Command {
     return id;
   }
 
-  String _stepFromMode(String mode) {
+  IsolateStepMode _stepFromMode(String mode) {
     switch (mode) {
       case 'in':
-        return vm.StepOption.kInto;
+        return IsolateStepMode.into;
       case 'out':
-        return vm.StepOption.kOut;
+        return IsolateStepMode.out;
       case 'over':
       default:
-        return vm.StepOption.kOver;
+        return IsolateStepMode.over;
     }
   }
 }

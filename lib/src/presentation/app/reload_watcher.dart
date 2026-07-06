@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../../data/services/dart_file_watcher.dart';
+import '../../domain/ports/source_change_watcher.dart';
 import 'app_state.dart';
 
 /// Shared `.dart` file watcher. When any watched file is saved and at least one
@@ -23,7 +23,7 @@ class ReloadWatcher {
   /// Invoked (fire-and-forget) when a save should trigger a reload.
   final Future<void> Function() onReload;
 
-  DartFileWatcher? _watcher;
+  SourceChangeWatcher? _watcher;
 
   void ensure() {
     if (!_state.config.hotReloadOnSave) return;
@@ -31,12 +31,12 @@ class ReloadWatcher {
     // Watch the repo/workspace root so monorepo feature packages are included.
     final root = _state.project.watchRoot;
     _state.visibleTranscript.system('File watcher started on $root');
-    final watcher = DartFileWatcher(
+    final watcher = _state.deps.sourceWatcherFactory(
       root: root,
       onFileChanged: (path) {
         _state.visibleTranscript.system('[watcher] changed: $path');
       },
-      onWatcherError: (e) {
+      onError: (e) {
         _state.visibleTranscript.warn('[watcher] error: $e');
       },
     );

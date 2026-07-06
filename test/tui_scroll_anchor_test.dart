@@ -1,5 +1,5 @@
 import 'package:dart_tui/dart_tui.dart';
-import 'package:frun/src/data/services/isolate_manager.dart';
+import 'package:frun/src/data/datasources/isolate_manager.dart';
 import 'package:frun/src/domain/entities/app_config.dart';
 import 'package:frun/src/domain/entities/flutter_project.dart';
 import 'package:frun/src/domain/value_objects/config_values.dart';

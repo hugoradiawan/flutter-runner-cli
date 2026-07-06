@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:frun/src/data/services/inspector_bridge.dart';
+import 'package:frun/src/data/datasources/inspector_bridge.dart';
 import 'package:frun/src/domain/value_objects/source_location.dart';
 import 'package:test/test.dart';
 import 'package:vm_service/vm_service.dart' as vm;

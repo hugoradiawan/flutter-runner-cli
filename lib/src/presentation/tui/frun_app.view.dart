@@ -198,7 +198,7 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
     sig[i++] = rc.tabs.length;
     sig[i++] = tabsHash;
     sig[i++] = state.deps.isolateManager.revision;
-    sig[i++] = state.deps.isolateManager.service == null ? 0 : 1;
+    sig[i++] = state.deps.isolateManager.isConnected ? 1 : 0;
     assert(i == _FrunModelBase._sigLength);
 
     if (!_sigValid) return false;

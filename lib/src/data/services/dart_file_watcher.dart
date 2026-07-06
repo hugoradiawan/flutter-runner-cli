@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
+import '../../domain/ports/source_change_watcher.dart';
+
 enum DartFileChangeType { add, modify, remove, other }
 
 /// Watches a directory tree for `.dart` file changes and emits a debounced
@@ -13,7 +15,7 @@ enum DartFileChangeType { add, modify, remove, other }
 /// CPU stays at ~zero regardless of project size. Non-dart files and excluded
 /// directories (.dart_tool, build, .fvm, .git) are filtered out so they never
 /// trigger work.
-class DartFileWatcher {
+class DartFileWatcher implements SourceChangeWatcher {
   DartFileWatcher({
     required this.root,
     this.debounce = const Duration(milliseconds: 250),
@@ -47,8 +49,11 @@ class DartFileWatcher {
   Timer? _debounceTimer;
 
   final StreamController<void> _onChange = StreamController<void>.broadcast();
+
+  @override
   Stream<void> get onChange => _onChange.stream;
 
+  @override
   void start() {
     try {
       _sub = DirectoryWatcher(
@@ -96,6 +101,7 @@ class DartFileWatcher {
     });
   }
 
+  @override
   Future<void> dispose() async {
     _debounceTimer?.cancel();
     await _sub?.cancel();

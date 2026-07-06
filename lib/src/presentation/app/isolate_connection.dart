@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:vm_service/vm_service.dart' as vm;
-
 import 'app_state.dart';
 import 'flutter_error_renderer.dart';
 import 'run_tab.dart';
@@ -21,7 +19,7 @@ class IsolateConnection {
   /// Reads the controller's currently-active tab on demand.
   final RunTab? Function() activeTab;
 
-  StreamSubscription<vm.Event>? _extensionSub;
+  StreamSubscription<Map<String, Object?>>? _errorsSub;
 
   /// VM-service ws URI currently connected to. Guards against redundant
   /// reconnects when re-pointing to the active tab.
@@ -39,11 +37,11 @@ class IsolateConnection {
       await disconnect();
       return false;
     }
-    if (_connectedVmUri == ws && _state.deps.isolateManager.service != null) {
+    if (_connectedVmUri == ws && _state.deps.isolateManager.isConnected) {
       return true;
     }
     await connect(ws);
-    return _state.deps.isolateManager.service != null;
+    return _state.deps.isolateManager.isConnected;
   }
 
   Future<void> connect(String wsUri) async {
@@ -53,9 +51,9 @@ class IsolateConnection {
       _state.transcript.system(
         'VM service connected (${_state.deps.isolateManager.isolates.length} isolates).',
       );
-      await _extensionSub?.cancel();
-      _extensionSub = _state.deps.isolateManager.extensionEvents.listen(
-        _onExtensionEvent,
+      await _errorsSub?.cancel();
+      _errorsSub = _state.deps.isolateManager.flutterErrors.listen(
+        _onFlutterError,
       );
     } catch (e) {
       _connectedVmUri = null;
@@ -64,17 +62,15 @@ class IsolateConnection {
   }
 
   Future<void> disconnect() async {
-    await _extensionSub?.cancel();
-    _extensionSub = null;
+    await _errorsSub?.cancel();
+    _errorsSub = null;
     _connectedVmUri = null;
     await _state.deps.isolateManager.disconnect();
   }
 
-  void _onExtensionEvent(vm.Event event) {
-    if (event.extensionKind != 'Flutter.Error') return;
+  void _onFlutterError(Map<String, Object?> data) {
     final tab = activeTab();
     if (tab == null) return;
-    final data = event.extensionData?.data ?? const <String, dynamic>{};
     tab.transcript.error(
       renderFlutterError(
         data,

@@ -1,8 +1,9 @@
 import 'package:dart_tui/dart_tui.dart';
-import 'package:frun/src/data/services/isolate_manager.dart';
+import 'package:frun/src/data/datasources/isolate_manager.dart';
 import 'package:frun/src/domain/entities/app_config.dart';
 import 'package:frun/src/domain/entities/diagnostic.dart';
 import 'package:frun/src/domain/entities/flutter_project.dart';
+import 'package:frun/src/domain/entities/isolate_info.dart';
 import 'package:frun/src/domain/value_objects/config_values.dart';
 import 'package:frun/src/presentation/app/app_state.dart';
 import 'package:frun/src/presentation/app/commands/command_registry.dart';
@@ -388,13 +389,13 @@ void main() {
       final h = _harness(
         width: 120,
         height: 24,
-        isolates: <IsolateInfo>[
-          IsolateInfo(
+        isolates: <IsolateInfoEntity>[
+          IsolateInfoEntity(
             id: 'isolates/12345678901234567890',
             name: 'main',
             status: IsolateStatus.running,
           ),
-          IsolateInfo(
+          IsolateInfoEntity(
             id: 'isolates/22222222222222222222',
             name: 'worker',
             status: IsolateStatus.paused,
@@ -417,9 +418,17 @@ void main() {
 
     test('isolate panel keyboard navigation and close', () {
       final h = _harness(
-        isolates: <IsolateInfo>[
-          IsolateInfo(id: 'a', name: 'main', status: IsolateStatus.running),
-          IsolateInfo(id: 'b', name: 'worker', status: IsolateStatus.paused),
+        isolates: <IsolateInfoEntity>[
+          IsolateInfoEntity(
+            id: 'a',
+            name: 'main',
+            status: IsolateStatus.running,
+          ),
+          IsolateInfoEntity(
+            id: 'b',
+            name: 'worker',
+            status: IsolateStatus.paused,
+          ),
         ],
       );
       h.state.showIsolatesPanel = true;
@@ -440,7 +449,7 @@ _Harness _harness({
   int width = 80,
   int height = 20,
   int? scrollbackLines,
-  List<IsolateInfo> isolates = const <IsolateInfo>[],
+  List<IsolateInfoEntity> isolates = const <IsolateInfoEntity>[],
   FrunEditorMode? editorMode,
 }) {
   final state = AppState(

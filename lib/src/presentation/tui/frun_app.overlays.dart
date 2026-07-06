@@ -834,7 +834,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     _isolatePendingG = false;
   }
 
-  void _clampIsolateSelection(List<IsolateInfo> rows) {
+  void _clampIsolateSelection(List<IsolateInfoEntity> rows) {
     if (rows.isEmpty) {
       _isolateSelectedIndex = 0;
       _isolateScrollOffset = 0;
@@ -858,7 +858,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     _isolatePendingG = false;
   }
 
-  IsolateInfo? _selectedIsolate() {
+  IsolateInfoEntity? _selectedIsolate() {
     final rows = state.deps.isolateManager.isolates;
     if (rows.isEmpty) return null;
     _clampIsolateSelection(rows);
@@ -873,11 +873,11 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
 
   Future<bool> _ensureIsolateService() async {
     final manager = state.deps.isolateManager;
-    if (manager.service != null) return true;
+    if (manager.isConnected) return true;
     if (state.runController.hasTabs) {
       await state.runController.ensureIsolatesForActiveTab();
     }
-    if (manager.service != null) return true;
+    if (manager.isConnected) return true;
     state.visibleTranscript.warn(
       'No VM service yet. Start the app with /run, then try /isolates.',
     );
@@ -919,7 +919,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
           await manager.resume(target);
           await manager.refresh();
         case IsolatePanelAction.step:
-          await manager.resume(target, step: vm.StepOption.kOver);
+          await manager.resume(target, step: IsolateStepMode.over);
           await manager.refresh();
         case IsolatePanelAction.kill:
           await manager.kill(target);
@@ -937,12 +937,11 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
 
   Future<void> _printIsolateStack(String id) async {
     try {
-      final stack = await state.deps.isolateManager.getStack(id);
-      if (stack == null) {
+      final frames = await state.deps.isolateManager.stack(id);
+      if (frames == null) {
         state.visibleTranscript.warn('No stack available.');
         return;
       }
-      final frames = stack.frames ?? const <vm.Frame>[];
       if (frames.isEmpty) {
         state.visibleTranscript.info('Stack empty for $id.');
         return;
@@ -950,11 +949,10 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       state.visibleTranscript.system('Stack for $id:');
       for (var i = 0; i < frames.length && i < 30; i++) {
         final frame = frames[i];
-        final fn = frame.function?.name ?? '<anon>';
-        final script = frame.location?.script?.uri ?? '';
-        state.visibleTranscript.info('  #$i  $fn  $script');
+        final script = frame.scriptUri ?? '';
+        state.visibleTranscript.info('  #$i  ${frame.functionName}  $script');
       }
-      final scriptUri = frames.first.location?.script?.uri;
+      final scriptUri = frames.first.scriptUri;
       if (scriptUri != null) {
         final loc = state.deps.vmUriResolver.resolve(scriptUri);
         if (loc != null) await openInIde(loc, state);
@@ -964,7 +962,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     }
   }
 
-  IsolatePanelAction _defaultIsolateAction(IsolateInfo iso) {
+  IsolatePanelAction _defaultIsolateAction(IsolateInfoEntity iso) {
     return switch (iso.status) {
       IsolateStatus.paused => IsolatePanelAction.resume,
       IsolateStatus.running => IsolatePanelAction.pause,
@@ -972,7 +970,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     };
   }
 
-  List<(String, IsolatePanelAction)> _isolateActionsFor(IsolateInfo iso) {
+  List<(String, IsolatePanelAction)> _isolateActionsFor(IsolateInfoEntity iso) {
     return switch (iso.status) {
       IsolateStatus.paused => <(String, IsolatePanelAction)>[
         ('resume', IsolatePanelAction.resume),

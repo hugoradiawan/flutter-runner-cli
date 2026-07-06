@@ -23,13 +23,7 @@ import 'package:test/test.dart';
 const knownDataToPresentation = <String>{};
 
 /// presentation -> data outside the sanctioned seam (di/dependencies.dart).
-const knownPresentationToData = <String>{
-  'src/presentation/app/commands/isolates_command.dart -> src/data/services/isolate_manager.dart',
-  'src/presentation/app/reload_watcher.dart -> src/data/services/dart_file_watcher.dart',
-  'src/presentation/tui/clipboard.dart -> src/data/services/windows_clipboard.dart',
-  'src/presentation/tui/frun_app.dart -> src/data/services/history_store.dart',
-  'src/presentation/tui/frun_app.dart -> src/data/services/isolate_manager.dart',
-};
+const knownPresentationToData = <String>{};
 
 /// domain purity violations (should stay empty).
 const knownDomainViolations = <String>{};

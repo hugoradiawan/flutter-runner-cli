@@ -21,7 +21,6 @@ import 'src/data/repositories/emulator_repository_impl.dart';
 import 'src/data/repositories/launch_repository_impl.dart';
 import 'src/data/services/live_diagnostics.dart';
 import 'src/data/services/project_detector.dart';
-import 'src/data/services/windows_console.dart';
 import 'src/domain/entities/app_config.dart';
 import 'src/presentation/app/app_state.dart';
 import 'src/presentation/app/commands/clear_command.dart';
@@ -48,6 +47,7 @@ import 'src/presentation/app/commands/stop_command.dart';
 import 'src/presentation/app/ide_opener.dart';
 import 'src/presentation/app/transcript.dart';
 import 'src/presentation/di/dependencies.dart';
+import 'src/presentation/platform/windows_console.dart';
 import 'src/presentation/tui/clipboard.dart';
 import 'src/presentation/tui/frun_app.dart';
 

@@ -5,12 +5,11 @@ import 'dart:math' as math;
 
 import 'package:dart_tui/dart_tui.dart';
 import 'package:path/path.dart' as p;
-import 'package:vm_service/vm_service.dart' as vm;
 
-import '../../data/services/history_store.dart';
-import '../../data/services/isolate_manager.dart';
 import '../../domain/entities/app_config.dart';
 import '../../domain/entities/diagnostic.dart';
+import '../../domain/entities/isolate_info.dart';
+import '../../domain/ports/isolate_control.dart';
 import '../../domain/value_objects/config_values.dart';
 import '../../domain/value_objects/source_location.dart';
 import '../../version.dart';
@@ -21,6 +20,7 @@ import '../app/ide_opener.dart';
 import '../app/link_extractor.dart';
 import '../app/run_tab.dart';
 import '../app/transcript.dart';
+import '../platform/history_store.dart';
 import 'cell_canvas.dart';
 import 'clipboard.dart';
 import 'hit_regions.dart';
