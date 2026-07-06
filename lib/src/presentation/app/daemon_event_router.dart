@@ -1,15 +1,13 @@
 import 'dart:async';
 
-import '../../data/datasources/app_session.dart';
-import '../../data/models/daemon_messages.dart';
+import '../../domain/entities/session_event.dart';
 import '../../domain/value_objects/notification_event.dart';
 import 'app_state.dart';
 import 'isolate_connection.dart';
 import 'run_tab.dart';
 
-/// Routes `flutter run` daemon events for a tab into its transcript, notifies
-/// the [FrunNotifier], and drives the shared [IsolateConnection] for the active
-/// tab.
+/// Routes a tab's [SessionEvent]s into its transcript, notifies the desktop
+/// notifier, and drives the shared [IsolateConnection] for the active tab.
 class DaemonEventRouter {
   DaemonEventRouter(this._state, this._isolates, this.activeTab);
 
@@ -19,107 +17,73 @@ class DaemonEventRouter {
   /// Reads the controller's currently-active tab on demand.
   final RunTab? Function() activeTab;
 
-  void onEvent(RunTab tab, DaemonEvent event) {
-    switch (event.name) {
-      case 'app.start':
-        tab.transcript.success('App started (appId=${event.params['appId']}).');
+  void onEvent(RunTab tab, SessionEvent event) {
+    switch (event) {
+      case SessionStarted(:final appId):
+        tab.transcript.success('App started (appId=$appId).');
         _state.deps.notifier.notify(
           FrunNotifEvent.appStarted,
           label: tab.notificationLabel,
         );
-      case 'app.debugPort':
-        final ws = event.params['wsUri']?.toString();
-        if (ws != null) {
-          tab.transcript.info('VM service: $ws');
+      case SessionDebugPort(:final vmServiceUri):
+        if (vmServiceUri != null) {
+          tab.transcript.info('VM service: $vmServiceUri');
           // Isolate connection is shared across the process — only the active
           // tab drives it to keep the UX coherent.
-          if (tab == activeTab()) _isolates.connect(ws);
+          if (tab == activeTab()) _isolates.connect(vmServiceUri);
         }
-      case 'app.devTools':
-        final uri = event.params['wsUri'] ?? event.params['uri'];
-        if (uri != null) tab.transcript.info('DevTools: $uri');
-      case 'app.log':
-        final raw = _stripLogcatPrefix(event.params['log']?.toString() ?? '');
-        final stack = event.params['stackTrace']?.toString() ?? '';
-        if (raw.isEmpty && stack.isEmpty) return;
-        final isError = event.params['error'] == true;
-        if (raw.isNotEmpty) {
+      case SessionDevTools(:final uri):
+        if (uri != null) {
+          tab.transcript.info('DevTools: $uri');
+          tab.devToolsUri = uri;
+        }
+      case SessionLogLine(:final message, :final stackTrace, :final isError):
+        if (message.isEmpty && stackTrace.isEmpty) return;
+        if (message.isNotEmpty) {
           if (isError) {
-            tab.transcript.error(raw);
+            tab.transcript.error(message);
           } else {
-            tab.transcript.info(raw);
+            tab.transcript.info(message);
           }
         }
-        if (stack.isNotEmpty) {
+        if (stackTrace.isNotEmpty) {
           if (isError) {
-            tab.transcript.error(stack);
+            tab.transcript.error(stackTrace);
           } else {
-            tab.transcript.info(stack);
+            tab.transcript.info(stackTrace);
           }
         }
-      case 'app.progress':
-        final msg = event.params['message']?.toString() ?? '';
-        if (msg.isNotEmpty) tab.transcript.system(msg);
-      case 'app.stop':
-        final err = event.params['error']?.toString() ?? '';
-        final trace = event.params['trace']?.toString() ?? '';
-        if (err.isNotEmpty) tab.transcript.error(err);
+      case SessionProgress(:final message):
+        if (message.isNotEmpty) tab.transcript.system(message);
+      case SessionStopped(:final error, :final trace):
+        if (error.isNotEmpty) tab.transcript.error(error);
         if (trace.isNotEmpty) tab.transcript.error(trace);
         tab.transcript.system('App stopped.');
         if (tab == activeTab()) {
           unawaited(_isolates.disconnect());
         }
-      case 'daemon.logMessage':
-        final msg = event.params['message']?.toString() ?? '';
-        if (msg.isEmpty) return;
-        final level = event.params['level']?.toString() ?? 'info';
+      case SessionDaemonLog(:final message, :final level):
+        if (message.isEmpty) return;
         switch (level) {
-          case 'error':
-            tab.transcript.error(msg);
-          case 'warning':
-            tab.transcript.warn(msg);
-          case 'status':
-            tab.transcript.system(msg);
-          default:
-            tab.transcript.info(msg);
+          case SessionLogLevel.error:
+            tab.transcript.error(message);
+          case SessionLogLevel.warning:
+            tab.transcript.warn(message);
+          case SessionLogLevel.status:
+            tab.transcript.system(message);
+          case SessionLogLevel.info:
+            tab.transcript.info(message);
         }
-      default:
-        tab.transcript.debug('${event.name}: ${event.params}');
+      case SessionExited(:final exitCode):
+        // Deliberate stops cancel the tab's event subscription before the
+        // exit event lands, so this only fires for natural process deaths.
+        tab.transcript.system('flutter run exited (code $exitCode).');
+        tab.session = null;
+        if (tab == activeTab()) {
+          unawaited(_isolates.disconnect());
+        }
+      case SessionUnknown(:final name, :final params):
+        tab.transcript.debug('$name: $params');
     }
-  }
-
-  void onProcessExit(RunTab tab, AppRunSession exitedSession, int code) {
-    if (tab.session != exitedSession) {
-      // A newer session has taken over this tab — ignore the older exit.
-      return;
-    }
-    tab.transcript.system('flutter run exited (code $code).');
-    tab.session = null;
-    if (tab == activeTab()) {
-      unawaited(_isolates.disconnect());
-    }
-  }
-
-  /// Android logcat tags each line with e.g. `I/flutter ( 7225): `. Strip it
-  /// so the transcript shows only the app's own log text.
-  static final _logcatPrefix = RegExp(
-    r'^[VDIWEF]/[^(]*\(\s*\d+\):\s?',
-    multiLine: true,
-  );
-
-  /// Cheap reject before the regex: this runs for every `app.log` event, and
-  /// most payloads are single untagged lines. Only reach [_logcatPrefix] when
-  /// the first line looks tagged (`X/` with X in VDIWEF) or the payload is
-  /// multi-line (later lines may be tagged).
-  static String _stripLogcatPrefix(String log) {
-    if (log.length < 4) return log;
-    final tagged =
-        log.codeUnitAt(1) == 0x2F /* '/' */ &&
-        switch (log.codeUnitAt(0)) {
-          0x56 || 0x44 || 0x49 || 0x57 || 0x45 || 0x46 => true, // VDIWEF
-          _ => false,
-        };
-    if (!tagged && !log.contains('\n')) return log;
-    return log.replaceAll(_logcatPrefix, '');
   }
 }

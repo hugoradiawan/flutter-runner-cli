@@ -1,10 +1,10 @@
-import 'package:frun/src/data/datasources/app_session.dart';
 import 'package:frun/src/domain/entities/launch_entry.dart';
+import 'package:frun/src/domain/entities/run_session.dart';
 import 'package:frun/src/presentation/app/run_tab.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
-class MockAppRunSession extends Mock implements AppRunSession {}
+class MockRunSession extends Mock implements RunSession {}
 
 void main() {
   LaunchEntryEntity entry() =>
@@ -18,8 +18,8 @@ void main() {
     });
 
     test('cannot hot reload before Flutter reports app.start', () {
-      final session = MockAppRunSession();
-      when(() => session.appId).thenReturn(null);
+      final session = MockRunSession();
+      when(() => session.canHotReload).thenReturn(false);
 
       final tab = RunTab(id: 1, entry: entry(), deviceId: 'device')
         ..session = session;
@@ -28,8 +28,8 @@ void main() {
     });
 
     test('can hot reload after Flutter reports app.start', () {
-      final session = MockAppRunSession();
-      when(() => session.appId).thenReturn('app-1');
+      final session = MockRunSession();
+      when(() => session.canHotReload).thenReturn(true);
 
       final tab = RunTab(id: 1, entry: entry(), deviceId: 'device')
         ..session = session;

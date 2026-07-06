@@ -20,16 +20,13 @@ class RestartCommand extends Command {
       state.transcript.warn('No app running. Use /run first.');
       return CommandResult.ok;
     }
-    final useCase = state.deps.hotRestartUseCase;
-    if (useCase == null) {
-      state.transcript.warn('No app running. Use /run first.');
-      return CommandResult.ok;
-    }
     state.deps.notifier.notify(
       FrunNotifEvent.restarting,
       label: tab.notificationLabel,
     );
-    final result = await useCase.call(ReloadParams(tabId: tab.id));
+    final result = await state.deps.hotRestartUseCase.call(
+      ReloadParams(tabId: tab.id),
+    );
     result.fold(
       (failure) =>
           tab.transcript.error('Hot restart failed: ${failure.message}'),

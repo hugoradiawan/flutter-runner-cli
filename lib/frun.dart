@@ -19,7 +19,6 @@ import 'src/data/repositories/device_repository_impl.dart';
 import 'src/data/repositories/diagnostics_repository_impl.dart';
 import 'src/data/repositories/emulator_repository_impl.dart';
 import 'src/data/repositories/launch_repository_impl.dart';
-import 'src/data/repositories/session_repository_impl.dart';
 import 'src/data/services/live_diagnostics.dart';
 import 'src/data/services/project_detector.dart';
 import 'src/data/services/windows_console.dart';
@@ -101,15 +100,6 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     ..launchRepository = LaunchRepositoryImpl(project);
   final state = AppState(project: project, config: configEntity, deps: deps);
   _seedCachedDiagnostics(state, diagnosticsRepository);
-
-  deps.sessionRepository = SessionRepositoryImpl(
-    sessionLookup: (tabId) {
-      for (final tab in state.runController.tabs) {
-        if (tab.id == tabId) return tab.session;
-      }
-      return null;
-    },
-  );
 
   final diagnosticsCommand = DiagnosticsCommand();
   final registry = CommandRegistry()

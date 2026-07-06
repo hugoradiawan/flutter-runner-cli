@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:path/path.dart' as p;
 
-import '../../data/datasources/app_session.dart';
-import '../../data/models/daemon_messages.dart';
 import '../../domain/entities/launch_entry.dart';
+import '../../domain/entities/run_session.dart';
+import '../../domain/entities/session_event.dart';
 import 'transcript.dart';
 
 /// One concurrent `flutter run` session and the UI state that belongs to it
@@ -23,8 +23,13 @@ class RunTab {
   /// Per-tab transcript so logs from different devices don't interleave.
   final Transcript transcript;
 
-  AppRunSession? session;
-  StreamSubscription<DaemonEvent>? eventsSub;
+  RunSession? session;
+  StreamSubscription<SessionEvent>? eventsSub;
+
+  /// DevTools URL for this tab's app — set from [SessionDevTools] events and
+  /// by `/devtools` (which appends the VM-service query). UI state, so it
+  /// lives here rather than on the session handle.
+  String? devToolsUri;
 
   /// Per-tab widget-inspector "select" mode state. Each device remembers its
   /// own on/off so switching tabs doesn't desync the toggle.
@@ -35,7 +40,7 @@ class RunTab {
   /// True after Flutter has emitted `app.start` for this session. Auto-reload
   /// must wait for this because startup/build file events can arrive before the
   /// daemon has an app id to reload.
-  bool get canHotReload => session?.appId != null;
+  bool get canHotReload => session?.canHotReload ?? false;
 
   /// Title scope for desktop notifications. Unlike [label] there is no
   /// basename fallback — preserves the exact pre-existing toast title.

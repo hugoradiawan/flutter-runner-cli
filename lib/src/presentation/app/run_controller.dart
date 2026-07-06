@@ -1,11 +1,12 @@
 import 'dart:async';
 
-import '../../data/datasources/app_session.dart';
 import '../../domain/entities/device.dart';
 import '../../domain/entities/emulator.dart';
 import '../../domain/entities/launch_entry.dart';
+import '../../domain/entities/run_session.dart';
 import '../../domain/params/emulator_launch_params.dart';
 import '../../domain/params/reload_params.dart';
+import '../../domain/params/session_params.dart';
 import '../../domain/value_objects/config_values.dart';
 import '../../domain/value_objects/notification_event.dart';
 import 'app_state.dart';
@@ -18,11 +19,12 @@ import 'run_tab.dart';
 /// added on `run`, removed on `stop`, and one is "active" — that's the tab
 /// the TUI renders and the one `reload`, `restart`, `stop` operate on.
 ///
-/// The controller keeps the live [AppRunSession] objects (it needs them for
-/// per-tab event/log wiring) but drives every reload / restart / stop through
-/// the domain use cases on [AppState.deps], so the domain is the single control
-/// surface shared with the slash-command handlers. Device and emulator
-/// discovery for the run picker likewise go through use cases.
+/// Live sessions are owned by the data layer's session repository; each tab
+/// holds only the domain [RunSession] handle for event/log wiring. Every
+/// start / reload / restart / stop / detach goes through the domain use cases
+/// on [AppState.deps], so the domain is the single control surface shared with
+/// the slash-command handlers. Device and emulator discovery for the run
+/// picker likewise go through use cases.
 ///
 /// Three collaborators handle the cross-cutting concerns: [IsolateConnection]
 /// (the shared VM service that follows the active tab), [DaemonEventRouter]
@@ -57,7 +59,7 @@ class RunController {
   bool get hasTabs => tabs.isNotEmpty;
 
   /// Legacy single-session getter, kept for the status panel.
-  AppRunSession? get session => activeTab?.session;
+  RunSession? get session => activeTab?.session;
 
   /// Legacy "last entry" getter, kept for the status panel.
   LaunchEntryEntity? get lastEntry => activeTab?.entry;
@@ -179,32 +181,30 @@ class RunController {
       FrunNotifEvent.appLaunching,
       label: tab.notificationLabel,
     );
-    try {
-      final session = await AppRunSession.start(
+    final result = await state.deps.startSessionUseCase.call(
+      SessionStartParams(
+        sessionId: tab.id,
         projectRoot: state.project.root,
         entry: entry,
         deviceId: deviceId,
-      );
-      final diag = AppRunSession.lastSpawnDiagnostic;
-      if (diag != null) tab.transcript.system(diag);
-      tab.session = session;
-      tab.eventsSub = session.events.listen((e) => _events.onEvent(tab, e));
-      // Capture the session in the callback so a late exit from an older
-      // process can't clobber a newer session (happens when an app dies
-      // after we already wired a new one up).
-      unawaited(
-        session.exitCode.then(
-          (code) => _events.onProcessExit(tab, session, code),
-        ),
-      );
-      _watcher.ensure();
-      return tab;
-    } catch (e) {
-      tab.transcript.error('Failed to launch: $e');
-      tabs.remove(tab);
-      if (_activeIndex >= tabs.length) _activeIndex = tabs.length - 1;
-      return null;
-    }
+      ),
+    );
+    return result.fold(
+      (failure) {
+        tab.transcript.error('Failed to launch: ${failure.message}');
+        tabs.remove(tab);
+        if (_activeIndex >= tabs.length) _activeIndex = tabs.length - 1;
+        return null;
+      },
+      (session) {
+        final diag = session.spawnDiagnostic;
+        if (diag != null) tab.transcript.system(diag);
+        tab.session = session;
+        tab.eventsSub = session.events.listen((e) => _events.onEvent(tab, e));
+        _watcher.ensure();
+        return tab;
+      },
+    );
   }
 
   Future<void> _disposeWatcherIfIdle() =>
@@ -234,13 +234,13 @@ class RunController {
   /// Drive a hot reload for [tab] through the domain use case. Assumes the tab
   /// has a live session (callers guard).
   Future<void> _reload(RunTab tab) async {
-    final useCase = state.deps.hotReloadUseCase;
-    if (useCase == null) return;
     state.deps.notifier.notify(
       FrunNotifEvent.hotReloading,
       label: tab.notificationLabel,
     );
-    final result = await useCase.call(ReloadParams(tabId: tab.id));
+    final result = await state.deps.hotReloadUseCase.call(
+      ReloadParams(tabId: tab.id),
+    );
     result.fold(
       (f) => tab.transcript.error('Hot reload failed: ${f.message}'),
       (_) {
@@ -258,13 +258,13 @@ class RunController {
       state.transcript.warn('No app running. Use /run first.');
       return;
     }
-    final useCase = state.deps.hotRestartUseCase;
-    if (useCase == null) return;
     state.deps.notifier.notify(
       FrunNotifEvent.restarting,
       label: tab.notificationLabel,
     );
-    final result = await useCase.call(ReloadParams(tabId: tab.id));
+    final result = await state.deps.hotRestartUseCase.call(
+      ReloadParams(tabId: tab.id),
+    );
     result.fold(
       (f) => tab.transcript.error('Hot restart failed: ${f.message}'),
       (_) {
@@ -349,14 +349,15 @@ class RunController {
   }
 
   Future<void> _detachTab(RunTab tab) async {
-    final s = tab.session;
-    if (s != null) {
+    if (tab.session != null) {
       tab.transcript.system('Detaching from app…');
-      try {
-        await s.detach();
-      } catch (e) {
-        tab.transcript.warn('Detach reported error: $e');
-      }
+      final result = await state.deps.detachSessionUseCase.call(
+        ReloadParams(tabId: tab.id),
+      );
+      result.fold(
+        (f) => tab.transcript.warn('Detach reported error: ${f.message}'),
+        (_) {},
+      );
     }
     await tab.eventsSub?.cancel();
     tab.eventsSub = null;
@@ -378,14 +379,13 @@ class RunController {
   Future<void> _stopTab(RunTab tab) async {
     if (tab.session != null) {
       tab.transcript.system('Stopping app…');
-      final useCase = state.deps.stopSessionUseCase;
-      if (useCase != null) {
-        final result = await useCase.call(ReloadParams(tabId: tab.id));
-        result.fold(
-          (f) => tab.transcript.warn('Stop reported error: ${f.message}'),
-          (_) {},
-        );
-      }
+      final result = await state.deps.stopSessionUseCase.call(
+        ReloadParams(tabId: tab.id),
+      );
+      result.fold(
+        (f) => tab.transcript.warn('Stop reported error: ${f.message}'),
+        (_) {},
+      );
     }
     await tab.eventsSub?.cancel();
     tab.eventsSub = null;

@@ -1,6 +1,7 @@
 import '../../data/datasources/analysis_server.dart';
 import '../../data/datasources/device_manager.dart';
 import '../../data/datasources/flutter_daemon.dart';
+import '../../data/repositories/session_repository_impl.dart';
 import '../../data/services/desktop_notifier.dart';
 import '../../data/services/ide_launcher.dart';
 import '../../data/services/inspector_bridge.dart';
@@ -18,6 +19,7 @@ import '../../domain/repositories/launch_repository.dart';
 import '../../domain/repositories/session_repository.dart';
 import '../../domain/usecases/analyze_project.dart';
 import '../../domain/usecases/create_emulator.dart';
+import '../../domain/usecases/detach_session.dart';
 import '../../domain/usecases/discover_launch_entries.dart';
 import '../../domain/usecases/get_config.dart';
 import '../../domain/usecases/get_diagnostics.dart';
@@ -28,6 +30,7 @@ import '../../domain/usecases/list_devices.dart';
 import '../../domain/usecases/list_emulators.dart';
 import '../../domain/usecases/save_config.dart';
 import '../../domain/usecases/set_config.dart';
+import '../../domain/usecases/start_session.dart';
 import '../../domain/usecases/stop_session.dart';
 import '../../domain/usecases/watch_diagnostics.dart';
 
@@ -42,8 +45,9 @@ import '../../domain/usecases/watch_diagnostics.dart';
 /// This is the only seam where the presentation layer reaches concrete data
 /// types; everything else depends on domain abstractions handed out here.
 class Dependencies {
-  Dependencies({IsolateManager? isolateManager})
-    : isolateManager = isolateManager ?? IsolateManager();
+  Dependencies({IsolateManager? isolateManager, Notifier? notifier})
+    : isolateManager = isolateManager ?? IsolateManager(),
+      notifier = notifier ?? const DesktopNotifier();
 
   // ── Eager infrastructure services ─────────────────────────────────────────
   final IsolateManager isolateManager;
@@ -51,7 +55,7 @@ class Dependencies {
   late final InspectorBridge inspectorBridge = InspectorBridge(
     extensionEvents: isolateManager.extensionEvents,
   );
-  final Notifier notifier = const DesktopNotifier();
+  final Notifier notifier;
   final VmUriResolver vmUriResolver = const PackageConfigUriResolver();
 
   // ── Services populated as the daemon comes up ─────────────────────────────
@@ -65,8 +69,12 @@ class Dependencies {
   EmulatorRepository? emulatorRepository;
   ConfigRepository? configRepository;
   DiagnosticsRepository? diagnosticsRepository;
-  SessionRepository? sessionRepository;
   LaunchRepository? launchRepository;
+
+  /// Owns every live `flutter run` session. Unlike the daemon-backed repos it
+  /// needs no async boot, so it is non-nullable — as are its use cases.
+  /// Overridable for tests.
+  SessionRepository sessionRepository = SessionRepositoryImpl();
 
   // ── Live diagnostics services ────────────────────────────────────────────
   DartAnalysisServer? analysisServer;
@@ -106,20 +114,25 @@ class Dependencies {
       ? null
       : (_saveConfig ??= SaveConfigUseCase(configRepository!));
 
+  StartSessionUseCase? _startSession;
+  StartSessionUseCase get startSessionUseCase =>
+      _startSession ??= StartSessionUseCase(sessionRepository);
+
   HotReloadUseCase? _hotReload;
-  HotReloadUseCase? get hotReloadUseCase => sessionRepository == null
-      ? null
-      : (_hotReload ??= HotReloadUseCase(sessionRepository!));
+  HotReloadUseCase get hotReloadUseCase =>
+      _hotReload ??= HotReloadUseCase(sessionRepository);
 
   HotRestartUseCase? _hotRestart;
-  HotRestartUseCase? get hotRestartUseCase => sessionRepository == null
-      ? null
-      : (_hotRestart ??= HotRestartUseCase(sessionRepository!));
+  HotRestartUseCase get hotRestartUseCase =>
+      _hotRestart ??= HotRestartUseCase(sessionRepository);
 
   StopSessionUseCase? _stopSession;
-  StopSessionUseCase? get stopSessionUseCase => sessionRepository == null
-      ? null
-      : (_stopSession ??= StopSessionUseCase(sessionRepository!));
+  StopSessionUseCase get stopSessionUseCase =>
+      _stopSession ??= StopSessionUseCase(sessionRepository);
+
+  DetachSessionUseCase? _detachSession;
+  DetachSessionUseCase get detachSessionUseCase =>
+      _detachSession ??= DetachSessionUseCase(sessionRepository);
 
   GetDiagnosticsUseCase? _getDiagnostics;
   GetDiagnosticsUseCase? get getDiagnosticsUseCase =>

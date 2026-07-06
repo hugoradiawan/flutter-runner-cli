@@ -493,7 +493,7 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       ('Device', state.runController.activeTab?.deviceId ?? '(none)'),
       ('Launch', entry?.name ?? '—'),
       ('VM service', session?.vmServiceUri ?? '—'),
-      ('DevTools', session?.devToolsUri ?? '—'),
+      ('DevTools', state.runController.activeTab?.devToolsUri ?? '—'),
     ];
     for (var i = 0; i < rows.length && i + 1 < height; i++) {
       final (label, value) = rows[i];

@@ -46,7 +46,7 @@ class DevToolsCommand extends Command {
     final full = vmUri == null
         ? base
         : '$base?uri=${Uri.encodeComponent(vmUri)}&page=inspector';
-    state.runController.session?.devToolsUri = full;
+    state.runController.activeTab?.devToolsUri = full;
     state.visibleTranscript.success('DevTools: $full');
 
     // Re-point the shared VM connection at this tab's device so DevTools widget
