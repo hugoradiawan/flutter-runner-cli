@@ -1,4 +1,4 @@
-import '../../../domain/entities/diagnostic.dart';
+import '../../../domain/domain.dart';
 import '../app_state.dart';
 import 'command.dart';
 

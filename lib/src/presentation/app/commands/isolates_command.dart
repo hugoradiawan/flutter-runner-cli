@@ -1,4 +1,4 @@
-import '../../../domain/ports/isolate_control.dart';
+import '../../../domain/domain.dart';
 import '../app_state.dart';
 import '../ide_opener.dart';
 import 'command.dart';

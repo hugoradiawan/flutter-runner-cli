@@ -112,6 +112,31 @@ void main() {
     );
     expect(actual, isEmpty);
   });
+
+  test('presentation (except di) reaches lower layers only via barrels', () {
+    final actual = <String>{};
+    imports.forEach((importer, targets) {
+      if (!inLayer(importer, 'presentation')) return;
+      if (importer == 'src/presentation/di/dependencies.dart') return;
+      for (final t in targets) {
+        final ok =
+            t.startsWith('dart:') ||
+            (t.startsWith('package:') && !t.startsWith('package:frun/')) ||
+            t == 'src/domain/domain.dart' ||
+            t == 'src/core/core.dart' ||
+            t == 'src/version.dart' ||
+            inLayer(t, 'presentation');
+        if (!ok) actual.add('$importer -> $t');
+      }
+    });
+    expect(
+      actual,
+      isEmpty,
+      reason:
+          'Presentation must import lower layers through domain.dart / '
+          'core.dart only:\n${(actual.toList()..sort()).join('\n')}',
+    );
+  });
 }
 
 /// Resolves an import URI to a lib-relative posix path when it points inside

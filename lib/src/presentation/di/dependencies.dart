@@ -1,40 +1,5 @@
-import '../../data/datasources/analysis_server.dart';
-import '../../data/datasources/device_manager.dart';
-import '../../data/datasources/flutter_daemon.dart';
-import '../../data/datasources/inspector_bridge.dart';
-import '../../data/datasources/isolate_manager.dart';
-import '../../data/repositories/session_repository_impl.dart';
-import '../../data/services/dart_file_watcher.dart';
-import '../../data/services/desktop_notifier.dart';
-import '../../data/services/ide_launcher.dart';
-import '../../data/services/live_diagnostics.dart';
-import '../../data/services/package_config_uri_resolver.dart';
-import '../../domain/ports/ide_launcher.dart';
-import '../../domain/ports/notifier.dart';
-import '../../domain/ports/source_change_watcher.dart';
-import '../../domain/ports/vm_uri_resolver.dart';
-import '../../domain/repositories/config_repository.dart';
-import '../../domain/repositories/device_repository.dart';
-import '../../domain/repositories/diagnostics_repository.dart';
-import '../../domain/repositories/emulator_repository.dart';
-import '../../domain/repositories/launch_repository.dart';
-import '../../domain/repositories/session_repository.dart';
-import '../../domain/usecases/analyze_project.dart';
-import '../../domain/usecases/create_emulator.dart';
-import '../../domain/usecases/detach_session.dart';
-import '../../domain/usecases/discover_launch_entries.dart';
-import '../../domain/usecases/get_config.dart';
-import '../../domain/usecases/get_diagnostics.dart';
-import '../../domain/usecases/hot_reload.dart';
-import '../../domain/usecases/hot_restart.dart';
-import '../../domain/usecases/launch_emulator.dart';
-import '../../domain/usecases/list_devices.dart';
-import '../../domain/usecases/list_emulators.dart';
-import '../../domain/usecases/save_config.dart';
-import '../../domain/usecases/set_config.dart';
-import '../../domain/usecases/start_session.dart';
-import '../../domain/usecases/stop_session.dart';
-import '../../domain/usecases/watch_diagnostics.dart';
+import '../../data/data.dart';
+import '../../domain/domain.dart';
 
 /// Dependency container assembled at the composition root ([runFrun]).
 ///

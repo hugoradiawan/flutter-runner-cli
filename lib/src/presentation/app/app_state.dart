@@ -1,8 +1,4 @@
-import '../../domain/entities/app_config.dart';
-import '../../domain/entities/diagnostic.dart';
-import '../../domain/entities/emulator.dart';
-import '../../domain/entities/flutter_project.dart';
-import '../../domain/entities/launch_entry.dart';
+import '../../domain/domain.dart';
 import '../di/dependencies.dart';
 import 'run_controller.dart';
 import 'run_target.dart';

@@ -1,4 +1,4 @@
-import '../../../domain/entities/launch_entry.dart';
+import '../../../domain/domain.dart';
 import '../app_state.dart';
 import '../run_controller.dart';
 import 'command.dart';

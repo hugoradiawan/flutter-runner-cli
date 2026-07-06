@@ -1,4 +1,4 @@
-import '../../domain/value_objects/source_location.dart';
+import '../../domain/domain.dart';
 import 'app_state.dart';
 
 /// Open [loc] in the user's configured IDE, reporting progress and failures

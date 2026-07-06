@@ -1,7 +1,6 @@
 import 'dart:async';
 
-import '../../domain/entities/session_event.dart';
-import '../../domain/value_objects/notification_event.dart';
+import '../../domain/domain.dart';
 import 'app_state.dart';
 import 'isolate_connection.dart';
 import 'run_tab.dart';

@@ -1,8 +1,7 @@
 import 'dart:convert';
 
 import 'package:path/path.dart' as p;
-
-import '../../domain/value_objects/source_location.dart';
+import '../../domain/domain.dart';
 
 /// Renders a `Flutter.Error` event payload into a compact, useful log.
 ///

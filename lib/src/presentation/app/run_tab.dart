@@ -2,9 +2,7 @@ import 'dart:async';
 
 import 'package:path/path.dart' as p;
 
-import '../../domain/entities/launch_entry.dart';
-import '../../domain/entities/run_session.dart';
-import '../../domain/entities/session_event.dart';
+import '../../domain/domain.dart';
 import 'transcript.dart';
 
 /// One concurrent `flutter run` session and the UI state that belongs to it

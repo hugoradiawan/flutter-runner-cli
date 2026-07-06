@@ -1,5 +1,4 @@
-import '../../domain/entities/device.dart';
-import '../../domain/entities/emulator.dart';
+import '../../domain/domain.dart';
 
 /// A target the user can pick from the run picker: a connected device, or an
 /// offline emulator that must be booted first ([needsBoot] = true).

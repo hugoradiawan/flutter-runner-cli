@@ -6,22 +6,8 @@ import 'dart:io';
 
 import 'package:dart_tui/dart_tui.dart';
 
-import 'src/data/datasources/analysis_server.dart';
-import 'src/data/datasources/config_datasource.dart';
-import 'src/data/datasources/config_store.dart';
-import 'src/data/datasources/dart_analyze_runner.dart';
-import 'src/data/datasources/device_manager.dart';
-import 'src/data/datasources/diagnostics_store.dart';
-import 'src/data/datasources/emulator_manager.dart';
-import 'src/data/datasources/flutter_daemon.dart';
-import 'src/data/repositories/config_repository_impl.dart';
-import 'src/data/repositories/device_repository_impl.dart';
-import 'src/data/repositories/diagnostics_repository_impl.dart';
-import 'src/data/repositories/emulator_repository_impl.dart';
-import 'src/data/repositories/launch_repository_impl.dart';
-import 'src/data/services/live_diagnostics.dart';
-import 'src/data/services/project_detector.dart';
-import 'src/domain/entities/app_config.dart';
+import 'src/data/data.dart';
+import 'src/domain/domain.dart';
 import 'src/presentation/app/app_state.dart';
 import 'src/presentation/app/commands/clear_command.dart';
 import 'src/presentation/app/commands/command_registry.dart';
