@@ -22,6 +22,31 @@ class TranscriptLink {
       '$uri:$line${column == null ? "" : ":$column"} [$start..$end]';
 }
 
+/// Converts a transcript path — absolute or relative, either separator — to a
+/// `file://` URI, resolving relative paths against [projectRoot].
+///
+/// Windows-ness is inferred from the shape of the path/root (drive-letter
+/// prefix) rather than the host platform, so the conversion stays pure and
+/// testable everywhere. Building the URI through [Uri.file] keeps drive
+/// letters out of the URI authority; naive `'file://$root/$path'` string
+/// concatenation turns `C:\Users\…` into a UNC host (`\\c\Users\…`) when
+/// parsed back.
+String pathToFileUri(String pathLike, String projectRoot) {
+  final windowsAbs = RegExp(r'^[A-Za-z]:[\\/]');
+  if (windowsAbs.hasMatch(pathLike)) {
+    return Uri.file(pathLike, windows: true).toString();
+  }
+  if (pathLike.startsWith('/')) {
+    return Uri.file(pathLike, windows: false).toString();
+  }
+  final rootIsWindows = windowsAbs.hasMatch(projectRoot);
+  final sep = rootIsWindows ? r'\' : '/';
+  final root = projectRoot.endsWith('/') || projectRoot.endsWith(r'\')
+      ? projectRoot
+      : '$projectRoot$sep';
+  return Uri.file('$root$pathLike', windows: rootIsWindows).toString();
+}
+
 /// Extracts `file.dart:LINE[:COL]` and `package:foo/bar.dart:LINE:COL`
 /// references from a single transcript line.
 class LinkExtractor {
@@ -29,13 +54,14 @@ class LinkExtractor {
   //   package:foo/bar/baz.dart:12:34
   //   C:/Users/me/app/lib/x.dart:12:34   (Windows absolute, drive letter)
   //   lib/src/whatever.dart:12
+  //   lib\src\whatever.dart:12           (Windows relative, backslashes)
   //   ./some/relative/path.dart:5:7
   //   /abs/path.dart:42
   // We deliberately stay narrow: only ".dart" files. The Windows-drive
   // alternative comes before the generic one so the `C:` drive prefix is kept
   // rather than the match starting after the colon.
   static final RegExp _re = RegExp(
-    r'(package:[a-zA-Z_][\w.]*\/[\w\-./]+\.dart|[A-Za-z]:[\w\-./\\]+\.dart|[\w./\-]+\.dart):(\d+)(?::(\d+))?',
+    r'(package:[a-zA-Z_][\w.]*\/[\w\-./]+\.dart|[A-Za-z]:[\w\-./\\]+\.dart|[\w\-./\\]+\.dart):(\d+)(?::(\d+))?',
   );
 
   static List<TranscriptLink> extract(String line) {

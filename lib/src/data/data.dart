@@ -18,6 +18,7 @@ export 'datasources/emulator_manager.dart';
 export 'datasources/flutter_daemon.dart';
 export 'datasources/inspector_bridge.dart';
 export 'datasources/isolate_manager.dart';
+export 'datasources/self_vm_inspector.dart';
 export 'models/daemon_messages.dart';
 export 'models/device.dart';
 export 'models/diagnostic.dart';

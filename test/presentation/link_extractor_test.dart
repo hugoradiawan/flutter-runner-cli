@@ -48,4 +48,51 @@ void main() {
     final links = LinkExtractor.extract('see README.md:10 for details');
     expect(links, isEmpty);
   });
+
+  test('extracts Windows relative paths with backslashes', () {
+    final links = LinkExtractor.extract(
+      r'test\presentation\foo_test.dart:12:3: some failure',
+    );
+    expect(links, hasLength(1));
+    expect(links.single.uri, r'test\presentation\foo_test.dart');
+    expect(links.single.line, 12);
+    expect(links.single.column, 3);
+  });
+
+  group('pathToFileUri', () {
+    test('keeps Windows drive letters out of the URI authority', () {
+      expect(
+        pathToFileUri(r'C:\Users\me\app\lib\main.dart', r'C:\Users\me\app'),
+        'file:///C:/Users/me/app/lib/main.dart',
+      );
+    });
+
+    test('resolves relative paths against a Windows project root', () {
+      final uri = pathToFileUri('lib/main.dart', r'C:\Users\me\app');
+      expect(uri, 'file:///C:/Users/me/app/lib/main.dart');
+      // Round-trips back to a drive-letter path, not a UNC `\\c\…` host.
+      expect(
+        Uri.parse(uri).toFilePath(windows: true),
+        r'C:\Users\me\app\lib\main.dart',
+      );
+    });
+
+    test('resolves backslash relative paths against a Windows root', () {
+      expect(
+        pathToFileUri(r'test\foo_test.dart', r'C:\Users\me\app'),
+        'file:///C:/Users/me/app/test/foo_test.dart',
+      );
+    });
+
+    test('keeps posix behaviour for absolute and relative paths', () {
+      expect(
+        pathToFileUri('/abs/lib/main.dart', '/home/me/app'),
+        'file:///abs/lib/main.dart',
+      );
+      expect(
+        pathToFileUri('lib/main.dart', '/home/me/app'),
+        'file:///home/me/app/lib/main.dart',
+      );
+    });
+  });
 }

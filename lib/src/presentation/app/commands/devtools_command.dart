@@ -73,7 +73,7 @@ class DevToolsCommand extends Command {
       args = [url];
     } else if (Platform.isWindows) {
       exe = 'cmd';
-      args = ['c', 'start', '', url];
+      args = ['/c', 'start', '', url];
     } else {
       exe = 'xdg-open';
       args = [url];

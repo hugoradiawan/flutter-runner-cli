@@ -12,12 +12,20 @@ import '../../domain/domain.dart';
 /// This is the only seam where the presentation layer reaches concrete data
 /// types; everything else depends on domain abstractions handed out here.
 class Dependencies {
-  Dependencies({IsolateManager? isolateManager, Notifier? notifier})
-    : isolateManager = isolateManager ?? IsolateManager(),
-      notifier = notifier ?? const DesktopNotifier();
+  Dependencies({
+    IsolateManager? isolateManager,
+    Notifier? notifier,
+    SelfMemoryInspector? selfMemoryInspector,
+  }) : isolateManager = isolateManager ?? IsolateManager(),
+       notifier = notifier ?? const DesktopNotifier(),
+       selfMemoryInspector = selfMemoryInspector ?? SelfVmInspector();
 
   // ── Eager infrastructure services ─────────────────────────────────────────
   final IsolateManager isolateManager;
+
+  /// Introspects frun's own VM for `/mem` (heap breakdown, GC, diff).
+  /// Port-typed so tests can inject a fake.
+  final SelfMemoryInspector selfMemoryInspector;
   final IdeLauncher ideLauncher = const DesktopIdeLauncher();
   late final InspectorBridge inspectorBridge = InspectorBridge(
     extensionEvents: isolateManager.extensionEvents,
@@ -150,6 +158,7 @@ class Dependencies {
   /// Tear down every service this container owns. Called once by the
   /// composition root after the TUI run loop exits.
   Future<void> dispose() async {
+    await selfMemoryInspector.dispose();
     await isolateManager.disconnect();
     await liveDiagnostics?.dispose();
     await analysisServer?.shutdown();

@@ -211,13 +211,6 @@ mixin _MouseMixin on _FrunModelBase {
     await openInIde(loc, state);
   }
 
-  String _toFileUri(String pathLike) {
-    // Windows absolute path (`C:\…` or `C:/…`) — encode as a proper file URI so
-    // the drive letter survives. `/abs` and relative paths keep old behaviour.
-    if (RegExp(r'^[A-Za-z]:[\\/]').hasMatch(pathLike)) {
-      return Uri.file(pathLike, windows: true).toString();
-    }
-    if (pathLike.startsWith('/')) return 'file://$pathLike';
-    return 'file://${state.project.root}/$pathLike';
-  }
+  String _toFileUri(String pathLike) =>
+      pathToFileUri(pathLike, state.project.root);
 }

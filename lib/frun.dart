@@ -105,7 +105,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     ..register(IsolatesCommand(state.deps.isolateManager))
     ..register(InspectCommand())
     ..register(StatusCommand())
-    ..register(MemCommand())
+    ..register(MemCommand(state.deps.selfMemoryInspector))
     ..register(ScrollbackCommand())
     ..register(diagnosticsCommand);
   registry.register(HelpCommand(registry));
