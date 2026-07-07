@@ -35,9 +35,10 @@ class RunTab {
 
   bool get isRunning => session != null;
 
-  /// True after Flutter has emitted `app.start` for this session. Auto-reload
-  /// must wait for this because startup/build file events can arrive before the
-  /// daemon has an app id to reload.
+  /// True after Flutter has emitted `app.started` for this session. Auto-reload
+  /// must wait for this because startup/build file events (e.g. OneDrive
+  /// hydration while Gradle reads sources) arrive while the app is still
+  /// building — `app.start` alone would let those trigger a reload mid-build.
   bool get canHotReload => session?.canHotReload ?? false;
 
   /// Title scope for desktop notifications. Unlike [label] there is no

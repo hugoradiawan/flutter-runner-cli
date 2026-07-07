@@ -61,6 +61,68 @@ void main() {
       ];
       expect(framer.addBytes(bytes), hasLength(2));
     });
+
+    test('reassembles messages fed one byte at a time', () {
+      final framer = LspMessageFramer();
+      final bytes = <int>[
+        ..._frame(_publish('file:///C:/a.dart', [])),
+        ..._frame(_publish('file:///C:/b.dart', [])),
+      ];
+      final out = <Map<String, Object?>>[];
+      for (final byte in bytes) {
+        out.addAll(framer.addBytes(<int>[byte]));
+      }
+      expect(out, hasLength(2));
+      expect(
+        (out.last['params'] as Map?)?['uri'],
+        'file:///C:/b.dart',
+      );
+    });
+
+    test('resyncs past a header without a Content-Length', () {
+      final framer = LspMessageFramer();
+      final bytes = <int>[
+        ...latin1.encode('X-Garbage: 1\r\n\r\n'),
+        ..._frame(_publish('file:///C:/x.dart', [])),
+      ];
+      final msgs = framer.addBytes(bytes);
+      expect(msgs, hasLength(1));
+      expect(msgs.first['method'], 'textDocument/publishDiagnostics');
+    });
+
+    test('handles a frame larger than the initial buffer in split chunks', () {
+      final framer = LspMessageFramer();
+      final big = _publish('file:///C:/big.dart', <Map<String, Object?>>[
+        for (var i = 0; i < 5000; i++) _diag(2, i, 0, 'warning number $i'),
+      ]);
+      final bytes = _frame(big);
+      expect(bytes.length, greaterThan(64 * 1024));
+      const chunkSize = 4096;
+      final out = <Map<String, Object?>>[];
+      for (var i = 0; i < bytes.length; i += chunkSize) {
+        final end = (i + chunkSize).clamp(0, bytes.length);
+        out.addAll(framer.addBytes(bytes.sublist(i, end)));
+      }
+      expect(out, hasLength(1));
+      final diags = (out.first['params'] as Map?)?['diagnostics'] as List?;
+      expect(diags, hasLength(5000));
+      // Drained framer keeps accepting new frames (burst buffer released).
+      expect(
+        framer.addBytes(_frame(_publish('file:///C:/y.dart', []))),
+        hasLength(1),
+      );
+    });
+
+    test('decodes a message whose terminator straddles a chunk boundary', () {
+      final framer = LspMessageFramer();
+      final bytes = _frame(_publish('file:///C:/x.dart', []));
+      final terminator = latin1.decode(bytes).indexOf('\r\n\r\n');
+      // Split in the middle of the \r\n\r\n so the resume-scan must re-check
+      // bytes near the previous chunk's tail.
+      final cut = terminator + 2;
+      expect(framer.addBytes(bytes.sublist(0, cut)), isEmpty);
+      expect(framer.addBytes(bytes.sublist(cut)), hasLength(1));
+    });
   });
 
   group('parsePublishDiagnostics', () {

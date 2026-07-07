@@ -34,6 +34,9 @@ class ReloadWatcher {
     final watcher = _state.deps.sourceWatcherFactory(
       root: root,
       onFileChanged: (path) {
+        // Startup/build churn (e.g. OneDrive hydrating files as the build
+        // reads them) fires before any app is reloadable — stay quiet then.
+        if (!anyRunning()) return;
         _state.visibleTranscript.system('[watcher] changed: $path');
       },
       onError: (e) {

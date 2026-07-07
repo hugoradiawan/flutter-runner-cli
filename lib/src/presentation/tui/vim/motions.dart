@@ -14,7 +14,17 @@ class MotionResult {
   final bool exclusive;
 }
 
-bool _isWordCh(String c) => RegExp(r'[A-Za-z0-9_]').hasMatch(c);
+/// `[A-Za-z0-9_]` membership without constructing a RegExp per character —
+/// word motions call this for every character they walk past, per keystroke.
+bool _isWordCh(String c) {
+  if (c.isEmpty) return false;
+  final u = c.codeUnitAt(0);
+  return (u >= 0x61 && u <= 0x7a) || // a-z
+      (u >= 0x41 && u <= 0x5a) || // A-Z
+      (u >= 0x30 && u <= 0x39) || // 0-9
+      u == 0x5f; // _
+}
+
 bool _isWORDCh(String c) => c.isNotEmpty && c != ' ' && c != '\t';
 bool _isSpace(String c) => c == ' ' || c == '\t';
 

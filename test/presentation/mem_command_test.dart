@@ -15,6 +15,7 @@ class FakeSelfMemoryInspector implements SelfMemoryInspector {
   SelfMemoryReportEntity? nextReport;
   ProcessMemoryNodeEntity? tree;
   final List<bool> recordedForceGc = <bool>[];
+  int disposeCalls = 0;
 
   @override
   Future<bool> isAvailable() async => available;
@@ -33,7 +34,9 @@ class FakeSelfMemoryInspector implements SelfMemoryInspector {
   String? get lastError => null;
 
   @override
-  Future<void> dispose() async {}
+  Future<void> dispose() async {
+    disposeCalls++;
+  }
 }
 
 SelfMemoryReportEntity report({
@@ -102,6 +105,32 @@ void main() {
     expect(text, contains('instances'));
     expect(text, contains('internal buffers'));
     expect(text, contains('system transcript'));
+    expect(text, contains('uncollected garbage'));
+  });
+
+  test('/mem labels the run mode from the script uri', () async {
+    for (final (uri, expected) in <(String, String)>[
+      ('file:///C:/dev/frun/bin/frun.dart', 'JIT (dart run)'),
+      ('file:///C:/bin/frun.dart-3.12.2.snapshot', 'JIT (kernel snapshot)'),
+      ('file:///C:/Pub/Cache/bin/frun.exe', 'AOT (compiled exe)'),
+    ]) {
+      state.transcript.clear();
+      final modeCommand = MemCommand(
+        fake,
+        currentRss: () => rssValue,
+        peakRss: () => 91 << 20,
+        scriptUri: () => uri,
+      );
+      await modeCommand.run(const [], state);
+      expect(allText(), contains('mode        $expected'), reason: uri);
+    }
+  });
+
+  test('/mem releases the self VM-service connection when done', () async {
+    await command.run(const [], state);
+    expect(fake.disposeCalls, 1);
+    await command.run(const ['gc'], state);
+    expect(fake.disposeCalls, 2);
   });
 
   test('/mem without a self VM service still shows rss and hints', () async {

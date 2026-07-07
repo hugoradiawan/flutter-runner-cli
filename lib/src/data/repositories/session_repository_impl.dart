@@ -159,7 +159,7 @@ class _RunSessionHandle implements RunSession {
   String? get vmServiceUri => _inner.vmServiceUri;
 
   @override
-  bool get canHotReload => _inner.appId != null;
+  bool get canHotReload => _inner.appId != null && _inner.started;
 
   @override
   Stream<SessionEvent> get events => _events.stream;

@@ -1,7 +1,23 @@
 import 'vim_buffer.dart';
 
-bool _isWordCh(String c) => RegExp(r'[A-Za-z0-9_]').hasMatch(c);
+/// `[A-Za-z0-9_]` membership without constructing a RegExp per character —
+/// text objects call this for every character they walk past.
+bool _isWordCh(String c) {
+  if (c.isEmpty) return false;
+  final u = c.codeUnitAt(0);
+  return (u >= 0x61 && u <= 0x7a) || // a-z
+      (u >= 0x41 && u <= 0x5a) || // A-Z
+      (u >= 0x30 && u <= 0x39) || // 0-9
+      u == 0x5f; // _
+}
+
 bool _isWORDCh(String c) => c.isNotEmpty && c != ' ' && c != '\t';
+
+/// `[A-Za-z0-9]` on a single code unit (tag-name characters).
+bool _isTagNameCh(int u) =>
+    (u >= 0x61 && u <= 0x7a) ||
+    (u >= 0x41 && u <= 0x5a) ||
+    (u >= 0x30 && u <= 0x39);
 
 /// Catalog of vim text objects. Each method returns a [Range] anchored at the
 /// current cursor, or null if no object exists.
@@ -196,7 +212,7 @@ class TextObjects {
           // parse tag name
           var j = c + 1;
           final nameStart = j;
-          while (j < line.length && RegExp(r'[A-Za-z0-9]').hasMatch(line[j])) {
+          while (j < line.length && _isTagNameCh(line.codeUnitAt(j))) {
             j++;
           }
           if (j > nameStart) {

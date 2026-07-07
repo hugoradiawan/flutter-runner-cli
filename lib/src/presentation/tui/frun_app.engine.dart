@@ -1,5 +1,8 @@
 part of 'frun_app.dart';
 
+/// Argument separator for command lines — compiled once, used per submission.
+final RegExp _argWhitespaceRe = RegExp(r'\s+');
+
 /// Vim-engine callbacks, transcript-cursor navigation, and command submission.
 mixin _EngineMixin on _FrunModelBase {
   // ── Engine callbacks ───────────────────────────────────────────────────
@@ -50,7 +53,7 @@ mixin _EngineMixin on _FrunModelBase {
     }
     final args = cmd.args.isEmpty
         ? const <String>[]
-        : cmd.args.split(RegExp(r'\s+'));
+        : cmd.args.split(_argWhitespaceRe);
     state.visibleTranscript.system(
       ':${cmd.name}${cmd.args.isEmpty ? '' : ' ${cmd.args}'}',
     );
@@ -280,7 +283,7 @@ mixin _EngineMixin on _FrunModelBase {
       return;
     }
 
-    final parts = line.split(RegExp(r'\s+'));
+    final parts = line.split(_argWhitespaceRe);
     // Accept an optional leading slash: help/usage display commands as `/name`
     // (Command.usage), so `/mem` and `mem` should both dispatch.
     final rawName = parts.first.startsWith('/')

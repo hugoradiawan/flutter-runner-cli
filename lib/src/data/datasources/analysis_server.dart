@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 
@@ -16,45 +17,103 @@ import '../models/diagnostic.dart';
 /// have arrived. Headers are ASCII; the body is UTF-8 (Content-Length counts
 /// bytes, so framing must be done on bytes, not characters). Kept separate from
 /// [DartAnalysisServer] so it can be unit-tested without spawning a process.
+///
+/// Accumulation is a [Uint8List] ring with a consumed-prefix offset, not a
+/// growable `List<int>`: boxed ints cost 8 bytes per stream byte, and a large
+/// `publishDiagnostics` burst can span multi-MB frames. The header-terminator
+/// scan resumes where the previous scan stopped instead of re-walking the
+/// buffer from the start on every chunk.
 class LspMessageFramer {
-  final List<int> _buffer = <int>[];
+  Uint8List _buffer = Uint8List(0);
+  int _length = 0; // valid bytes in [_buffer]
+  int _head = 0; // first unconsumed byte
+  int _scanned = 0; // no `\r\n\r\n` starts before this offset (>= _head)
+
+  /// Once the buffer is fully drained, allocations above this size are
+  /// released rather than kept for reuse — bursts shouldn't pin their
+  /// high-water mark for the rest of the session.
+  static const int _retainCapacity = 64 * 1024;
 
   List<Map<String, Object?>> addBytes(List<int> chunk) {
-    _buffer.addAll(chunk);
+    _append(chunk);
     final out = <Map<String, Object?>>[];
     while (true) {
       final headerEnd = _indexOfHeaderEnd();
       if (headerEnd < 0) break;
-      final header = latin1.decode(_buffer.sublist(0, headerEnd));
+      final header = latin1.decode(
+        Uint8List.sublistView(_buffer, _head, headerEnd),
+      );
       final contentLength = _parseContentLength(header);
       if (contentLength == null) {
         // Malformed header — drop it and resync past the blank line.
-        _buffer.removeRange(0, headerEnd + 4);
+        _consume(headerEnd + 4);
         continue;
       }
       final bodyStart = headerEnd + 4; // past the \r\n\r\n
-      if (_buffer.length < bodyStart + contentLength) break; // need more bytes
-      final bodyBytes = _buffer.sublist(bodyStart, bodyStart + contentLength);
-      _buffer.removeRange(0, bodyStart + contentLength);
+      if (_length < bodyStart + contentLength) break; // need more bytes
+      final bodyBytes = Uint8List.sublistView(
+        _buffer,
+        bodyStart,
+        bodyStart + contentLength,
+      );
       try {
         final decoded = json.decode(utf8.decode(bodyBytes));
         if (decoded is Map) out.add(decoded.cast<String, Object?>());
       } catch (_) {
         // Skip undecodable frames.
       }
+      // After the decode: [bodyBytes] is a view into [_buffer], and a future
+      // _append may compact or replace the backing store.
+      _consume(bodyStart + contentLength);
+    }
+    if (_head == _length) {
+      _head = 0;
+      _length = 0;
+      _scanned = 0;
+      if (_buffer.length > _retainCapacity) _buffer = Uint8List(0);
     }
     return out;
   }
 
+  /// Copy [chunk] to the tail, compacting the consumed prefix away (and
+  /// growing or shrinking the backing store) when it doesn't fit as-is.
+  void _append(List<int> chunk) {
+    final live = _length - _head;
+    if (_length + chunk.length > _buffer.length) {
+      var capacity = 1024;
+      while (capacity < live + chunk.length) {
+        capacity *= 2;
+      }
+      final next = capacity == _buffer.length ? _buffer : Uint8List(capacity);
+      // Typed-data setRange has memmove semantics, so in-place compaction of
+      // an overlapping live region is safe.
+      next.setRange(0, live, _buffer, _head);
+      _buffer = next;
+      _scanned -= _head;
+      _length = live;
+      _head = 0;
+    }
+    _buffer.setRange(_length, _length + chunk.length, chunk);
+    _length += chunk.length;
+  }
+
+  void _consume(int end) {
+    _head = end;
+    if (_scanned < _head) _scanned = _head;
+  }
+
   int _indexOfHeaderEnd() {
-    for (var i = 0; i + 3 < _buffer.length; i++) {
+    var i = _scanned < _head ? _head : _scanned;
+    for (; i + 3 < _length; i++) {
       if (_buffer[i] == 0x0d &&
           _buffer[i + 1] == 0x0a &&
           _buffer[i + 2] == 0x0d &&
           _buffer[i + 3] == 0x0a) {
+        _scanned = i;
         return i;
       }
     }
+    _scanned = i;
     return -1;
   }
 

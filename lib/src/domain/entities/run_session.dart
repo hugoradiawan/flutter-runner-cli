@@ -14,7 +14,9 @@ abstract class RunSession {
   /// WebSocket URI of the app's VM service, once reported.
   String? get vmServiceUri;
 
-  /// True after `app.start` (an app id is in hand).
+  /// True after `app.started` — the app is actually running on the device.
+  /// `app.start` alone is not enough: it fires before the build/install
+  /// finishes, and reloading then would react to startup file churn.
   bool get canHotReload;
 
   /// Diagnostic line describing the spawn (cwd + argv), for surfacing when a

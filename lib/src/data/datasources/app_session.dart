@@ -33,6 +33,11 @@ class AppRunSession {
   String? deviceId;
   String? launchMode;
 
+  /// True once Flutter reports `app.started` — the app is actually running.
+  /// `app.start` only means an app id exists; it fires before the build and
+  /// install finish, so it must not be used to gate auto-reload.
+  bool started = false;
+
   Stream<DaemonEvent> get events => _events.stream;
 
   Future<int> get exitCode => _process.exitCode;
@@ -169,6 +174,8 @@ class AppRunSession {
         appId = params['appId'] as String? ?? appId;
         deviceId = params['deviceId'] as String? ?? deviceId;
         launchMode = params['launchMode'] as String? ?? launchMode;
+      case 'app.started':
+        started = true;
       case 'app.debugPort':
         vmServiceUri = params['wsUri'] as String? ?? vmServiceUri;
       case 'app.devTools':

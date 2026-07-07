@@ -24,6 +24,10 @@ typedef SearchRunner =
 typedef SubmitHandler = void Function();
 typedef TabSwitcher = void Function(int? tabNumber, {required bool forward});
 
+/// `\d` on a single-char key without constructing a RegExp per keystroke.
+bool _isDigit(String ch) =>
+    ch.length == 1 && ch.codeUnitAt(0) >= 0x30 && ch.codeUnitAt(0) <= 0x39;
+
 /// The single source of vim truth. Handles normal, visual (all three),
 /// op-pending, replace, ex, search. Insert-mode typing flows through to the
 /// buffer; the engine intercepts only special keys (Esc, Ctrl-{h,w,r,o},
@@ -383,7 +387,7 @@ class VimEngine {
     }
 
     // Count digits (but not when an op-pending text-object would expect a count).
-    if (RegExp(r'\d').hasMatch(ch) &&
+    if (_isDigit(ch) &&
         !(ch == '0' &&
             _state.pendingCount == 0 &&
             _state.pendingOperator.isEmpty)) {

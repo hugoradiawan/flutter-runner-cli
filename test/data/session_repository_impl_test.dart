@@ -69,14 +69,20 @@ void main() {
     },
   );
 
-  test('canHotReload mirrors the inner session appId', () async {
+  test('canHotReload requires both an appId and app.started', () async {
     when(() => inner.appId).thenReturn(null);
+    when(() => inner.started).thenReturn(false);
     final session = (await repo.start(
       _params(),
     )).fold((f) => fail(f.message), (s) => s);
     expect(session.canHotReload, isFalse);
 
+    // app.start arrived (appId in hand) but the build/install is still
+    // running — auto-reload must stay gated.
     when(() => inner.appId).thenReturn('a-1');
+    expect(session.canHotReload, isFalse);
+
+    when(() => inner.started).thenReturn(true);
     expect(session.canHotReload, isTrue);
   });
 

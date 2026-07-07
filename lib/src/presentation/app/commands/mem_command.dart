@@ -17,12 +17,15 @@ class MemCommand extends Command {
     this.inspector, {
     int Function()? currentRss,
     int Function()? peakRss,
+    String Function()? scriptUri,
   }) : _currentRss = currentRss ?? (() => ProcessInfo.currentRss),
-       _peakRss = peakRss ?? (() => ProcessInfo.maxRss);
+       _peakRss = peakRss ?? (() => ProcessInfo.maxRss),
+       _scriptUri = scriptUri ?? (() => Platform.script.toString());
 
   final SelfMemoryInspector inspector;
   final int Function() _currentRss;
   final int Function() _peakRss;
+  final String Function() _scriptUri;
 
   /// Rolling baseline for `mem diff`. Lives on the command instance — the
   /// registry keeps one instance for the app lifetime.
@@ -39,15 +42,21 @@ class MemCommand extends Command {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
-    if (args.isEmpty) return _overview(state);
-    switch (args.first) {
-      case 'gc':
-        return _gc(state);
-      case 'diff':
-        return _diff(state);
-      default:
-        state.transcript.warn('Usage: $usage');
-        return CommandResult.ok;
+    try {
+      if (args.isEmpty) return await _overview(state);
+      switch (args.first) {
+        case 'gc':
+          return await _gc(state);
+        case 'diff':
+          return await _diff(state);
+        default:
+          state.transcript.warn('Usage: $usage');
+          return CommandResult.ok;
+      }
+    } finally {
+      // Don't keep the self VM-service websocket (plus its stream buffers)
+      // alive between rare /mem invocations — reconnecting is cheap.
+      await inspector.dispose();
     }
   }
 
@@ -57,14 +66,19 @@ class MemCommand extends Command {
     final peak = _peakRss();
     final report = await inspector.report();
 
-    final out = StringBuffer('mem: process rss ${_mb(rss)} · peak ${_mb(peak)}');
+    final out = StringBuffer('mem: process rss ${_mb(rss)} · peak ${_mb(peak)}')
+      ..write(_runModeLine());
     if (report != null) {
       final heap = report.heap;
       final nonHeap = rss - heap.heapCapacity - heap.externalUsage;
       out
         ..write('\n  dart heap   used ${_mb(heap.heapUsed)}')
         ..write(' / capacity ${_mb(heap.heapCapacity)}')
-        ..write(' · external ${_mb(heap.externalUsage)}');
+        ..write(' · external ${_mb(heap.externalUsage)}')
+        ..write(
+          '\n              (used includes uncollected garbage —'
+          ' /mem gc shows live-only)',
+        );
       if (nonHeap > 0) {
         out.write(
           '\n  non-heap    ~${_mb(nonHeap)}'
@@ -205,13 +219,30 @@ class MemCommand extends Command {
         '   ~${_mb(bytes, digits: 2)}';
   }
 
+  /// Names the VM mode the process runs under, because it dominates the
+  /// numbers: a JIT run (`dart run` / kernel snapshot) carries the kernel,
+  /// front-end, and JIT-compiled code in-process — RSS and heap read far
+  /// higher than the installed AOT exe running the same session.
+  String _runModeLine() {
+    final script = _scriptUri();
+    final mode = script.endsWith('.dart')
+        ? 'JIT (dart run) — VM/code overhead inflated vs installed frun exe'
+        : script.endsWith('.snapshot')
+        ? 'JIT (kernel snapshot) — VM/code overhead inflated vs installed frun exe'
+        : 'AOT (compiled exe)';
+    return '\n  mode        $mode';
+  }
+
   void _hint(AppState state) {
     final error = inspector.lastError;
     state.transcript.warn(
-      '  heap detail unavailable — relaunch frun with the VM service enabled:\n'
+      '  heap detail unavailable — it needs the VM service, which the compiled'
+      ' exe cannot enable\n'
+      '  (DART_VM_OPTIONS rejects --enable-vm-service on AOT builds).'
+      ' Run from source instead:\n'
       '    dart run --enable-vm-service=0 bin/frun.dart\n'
-      '    (compiled exe: set DART_VM_OPTIONS=--enable-vm-service=0 first;'
-      ' AOT builds may require running from source)'
+      '    (JIT runs carry ~200 MB of VM/kernel overhead the exe does not —'
+      ' compare like with like)'
       '${error == null ? '' : '\n    last error: $error'}',
     );
   }

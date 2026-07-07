@@ -66,6 +66,15 @@ class ExParser {
   /// if no alias exists.
   static String? toSlash(String exName) => _slashAliases[exName];
 
+  // Compiled once — parse() runs on every ex/`:` submission.
+  static final RegExp _rangePrefixRe = RegExp(
+    r'''^([%]|(?:\.|\$|\d+|'[a-zA-Z<>])(?:\s*,\s*(?:\.|\$|\d+|'[a-zA-Z<>]))?)''',
+  );
+  static final RegExp _commandRe = RegExp(
+    r'^([A-Za-z][A-Za-z0-9_]*)(!)?\s*(.*)$',
+  );
+  static final RegExp _substituteDelimRe = RegExp(r'[\/\|,;:!@#]');
+
   /// Parse a command line *without* the leading `:`.
   static ExCommand? parse(String raw) {
     var input = raw.trim();
@@ -73,9 +82,7 @@ class ExParser {
 
     // Range prefix.
     String? rangeSpec;
-    final rangeMatch = RegExp(
-      r'''^([%]|(?:\.|\$|\d+|'[a-zA-Z<>])(?:\s*,\s*(?:\.|\$|\d+|'[a-zA-Z<>]))?)''',
-    ).firstMatch(input);
+    final rangeMatch = _rangePrefixRe.firstMatch(input);
     if (rangeMatch != null) {
       rangeSpec = rangeMatch.group(1);
       input = input.substring(rangeMatch.end).trimLeft();
@@ -94,9 +101,7 @@ class ExParser {
     }
 
     // Command name + bang + args.
-    final cmdMatch = RegExp(
-      r'^([A-Za-z][A-Za-z0-9_]*)(!)?\s*(.*)$',
-    ).firstMatch(input);
+    final cmdMatch = _commandRe.firstMatch(input);
     if (cmdMatch == null) return null;
     final name = cmdMatch.group(1)!;
     final bang = cmdMatch.group(2) == '!';
@@ -108,7 +113,7 @@ class ExParser {
   static SubstituteSpec? _parseSubstitute(String body) {
     if (body.isEmpty) return null;
     final delim = body[0];
-    if (!RegExp(r'[\/\|,;:!@#]').hasMatch(delim)) return null;
+    if (!_substituteDelimRe.hasMatch(delim)) return null;
 
     final parts = <String>[];
     var buf = StringBuffer();
