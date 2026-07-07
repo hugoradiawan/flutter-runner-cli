@@ -38,8 +38,6 @@ export 'services/ide_launcher.dart';
 export 'services/live_diagnostics.dart';
 export 'services/main_scanner.dart';
 export 'services/package_config_uri_resolver.dart';
-export 'services/package_locator.dart';
 export 'services/project_detector.dart';
 export 'services/session_event_mapper.dart';
 export 'services/todo_diagnostics.dart';
-export 'services/working_set.dart';

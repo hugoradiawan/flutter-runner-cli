@@ -13,13 +13,11 @@ executables:
 dependencies:
   args: ^2.5.0
   equatable: ^2.0.5
-  logging: ^1.2.0
   path: ^1.9.0
   dart_tui: ^1.2.0
   vm_service: ^15.2.0
   watcher: ^1.2.0
   yaml: ^3.1.2
-  yaml_edit: ^2.2.0
   ffi: ^2.1.0
 
 dev_dependencies:

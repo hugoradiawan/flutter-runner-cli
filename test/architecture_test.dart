@@ -123,7 +123,6 @@ void main() {
             t.startsWith('dart:') ||
             (t.startsWith('package:') && !t.startsWith('package:frun/')) ||
             t == 'src/domain/domain.dart' ||
-            t == 'src/core/core.dart' ||
             t == 'src/version.dart' ||
             inLayer(t, 'presentation');
         if (!ok) actual.add('$importer -> $t');
@@ -133,8 +132,8 @@ void main() {
       actual,
       isEmpty,
       reason:
-          'Presentation must import lower layers through domain.dart / '
-          'core.dart only:\n${(actual.toList()..sort()).join('\n')}',
+          'Presentation must import lower layers through domain.dart '
+          'only:\n${(actual.toList()..sort()).join('\n')}',
     );
   });
 }

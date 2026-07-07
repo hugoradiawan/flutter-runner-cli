@@ -18,7 +18,6 @@ export 'entities/self_memory.dart';
 export 'entities/session_event.dart';
 export 'failures/analysis_failure.dart';
 export 'failures/config_failure.dart';
-export 'failures/daemon_failure.dart';
 export 'failures/device_failure.dart';
 export 'failures/ide_failure.dart';
 export 'failures/launch_failure.dart';
