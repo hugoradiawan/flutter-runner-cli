@@ -18,6 +18,11 @@ class HelpCommand extends Command {
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
+    // `help vim` / `:h vim` → the vim cheatsheet.
+    if (args.isNotEmpty && args.first == 'vim') {
+      final vim = registry.lookup('vim');
+      if (vim != null) return vim.run(const [], state);
+    }
     state.visibleTranscript.system('Available commands:');
     for (final cmd in registry.all) {
       final aliasPart = cmd.aliases.isEmpty

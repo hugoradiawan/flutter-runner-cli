@@ -17,7 +17,17 @@ mixin _EngineMixin on _FrunModelBase {
   void _runExCmd(ExCommand cmd, VimBuffer buffer) {
     // Substitute applies to input buffer regardless of where typed.
     if (cmd.name == 's' && cmd.substitute != null) {
-      _applySubstitute(cmd.substitute!);
+      final range = ExParser.resolveRange(
+        cmd.rangeSpec,
+        lineCount: _input.lineCount,
+        cursorRow: _input.cursor.row,
+        markLookup: (m) => _vimState.marks.get(m, _input.surfaceId)?.pos,
+      );
+      if (range == null) {
+        state.visibleTranscript.warn('Invalid range: ${cmd.rangeSpec}');
+        return;
+      }
+      _applySubstitute(cmd.substitute!, startRow: range.$1, endRow: range.$2);
       return;
     }
     if (cmd.name == 'noh') {
@@ -62,21 +72,71 @@ mixin _EngineMixin on _FrunModelBase {
     });
   }
 
-  void _applySubstitute(SubstituteSpec sub) {
+  void _applySubstitute(
+    SubstituteSpec sub, {
+    required int startRow,
+    required int endRow,
+  }) {
     final lines = _input.lines.toList();
     if (lines.isEmpty) return;
-    final pattern = RegExp(sub.pattern, caseSensitive: !sub.caseInsensitive);
-    final newLines = <String>[];
-    for (final line in lines) {
-      newLines.add(
-        sub.global
-            ? line.replaceAll(pattern, sub.replacement)
-            : line.replaceFirst(pattern, sub.replacement),
-      );
+    final RegExp pattern;
+    try {
+      pattern = RegExp(sub.pattern, caseSensitive: !sub.caseInsensitive);
+    } on FormatException {
+      state.visibleTranscript.error('Invalid pattern: ${sub.pattern}');
+      return;
     }
-    _input.setText(newLines.join('\n'));
+    _input.pushUndo();
+    for (var r = startRow; r <= endRow && r < lines.length; r++) {
+      lines[r] = sub.global
+          ? lines[r].replaceAll(pattern, sub.replacement)
+          : lines[r].replaceFirst(pattern, sub.replacement);
+    }
+    _input.setText(lines.join('\n'));
     _vimState.lastSubstitutePattern = sub.pattern;
     _vimState.lastSubstituteReplacement = sub.replacement;
+  }
+
+  /// Compile a search pattern as a regex with smartcase (any uppercase char
+  /// makes it case-sensitive); invalid regexes fall back to a literal match.
+  RegExp _compileSearch(String pattern) {
+    final sensitive = pattern.contains(RegExp('[A-Z]'));
+    try {
+      return RegExp(pattern, caseSensitive: sensitive);
+    } on FormatException {
+      return RegExp(RegExp.escape(pattern), caseSensitive: sensitive);
+    }
+  }
+
+  /// zz/zt/zb and Ctrl-E/Ctrl-Y from the vim engine. Only the transcript has
+  /// a movable viewport; requests for the input buffer are ignored.
+  void _handleVimScroll(VimScrollRequest req, VimBuffer buffer) {
+    if (!identical(buffer, _tc)) return;
+    final total = _lastDisplayRows.length;
+    final height = _lastBodyHeight;
+    if (total == 0 || height <= 0) return;
+    if (req.kind == VimScrollKind.lines) {
+      // Positive = view down (Ctrl-E); _transcriptScroll counts up-from-bottom.
+      _transcriptScroll = (_transcriptScroll - req.lines).clamp(
+        0,
+        _maxScroll(),
+      );
+      return;
+    }
+    // Visible range is [total - scroll - height, total - scroll); solve the
+    // scroll that puts the cursor row at the requested viewport position.
+    final int topRow;
+    switch (req.kind) {
+      case VimScrollKind.center:
+        topRow = _tc.row - height ~/ 2;
+      case VimScrollKind.top:
+        topRow = _tc.row;
+      case VimScrollKind.bottom:
+        topRow = _tc.row - height + 1;
+      case VimScrollKind.lines:
+        return; // handled above
+    }
+    _transcriptScroll = (total - height - topRow).clamp(0, _maxScroll());
   }
 
   void _runSearch(String pattern, bool forward, VimBuffer buffer) {
@@ -104,20 +164,27 @@ mixin _EngineMixin on _FrunModelBase {
       return;
     }
     // Search inside the input buffer — move cursor to first match.
-    final needle = pattern.toLowerCase();
+    final re = _compileSearch(pattern);
     final lines = _input.lines;
     final startRow = _input.cursor.row;
     final startCol = _input.cursor.col;
     for (var off = 0; off <= lines.length; off++) {
       final r = (forward ? startRow + off : startRow - off);
       if (r < 0 || r >= lines.length) continue;
-      final hay = lines[r].toLowerCase();
-      final from = (r == startRow) ? (forward ? startCol + 1 : 0) : 0;
-      final idx = forward
-          ? hay.indexOf(needle, from)
-          : hay.lastIndexOf(needle, from);
-      if (idx >= 0) {
-        _input.cursor = Pos(r, idx);
+      int? hit;
+      for (final m in re.allMatches(lines[r])) {
+        if (m.end == m.start) continue;
+        if (forward) {
+          if (r == startRow && off == 0 && m.start <= startCol) continue;
+          hit = m.start;
+          break;
+        }
+        // Backward: keep the last match before the cursor (any on other rows).
+        if (r == startRow && off == 0 && m.start >= startCol) break;
+        hit = m.start;
+      }
+      if (hit != null) {
+        _input.cursor = Pos(r, hit);
         return;
       }
     }
@@ -159,8 +226,6 @@ mixin _EngineMixin on _FrunModelBase {
       _searchCacheMatches = const <SearchMatch>[];
       _searchCacheMatchIndexesByRow = const <int, List<int>>{};
       _searchMatchIndexesByRow = const <int, List<int>>{};
-      _lowerRowTexts.clear();
-      _lowerCacheGeneration = -1;
       return;
     }
 
@@ -181,30 +246,17 @@ mixin _EngineMixin on _FrunModelBase {
     }
 
     final previousActive = _tc.activeMatchIndex;
-    final needle = query.toLowerCase();
+    final re = _compileSearch(query);
     final out = <SearchMatch>[];
     final byRow = <int, List<int>>{};
     _debugSearchBuilds++;
-    // Reuse one lowercased mirror of the row texts across keystrokes; only
-    // rows appended since the last search frame pay a toLowerCase.
-    if (_lowerCacheGeneration != _rowsBufferGeneration) {
-      _lowerRowTexts.clear();
-      _lowerCacheGeneration = _rowsBufferGeneration;
-      _debugSearchLowerBuilds++;
-    }
-    while (_lowerRowTexts.length < _rowTextsBuffer.length) {
-      _lowerRowTexts.add(_rowTextsBuffer[_lowerRowTexts.length].toLowerCase());
-    }
     for (var i = 0; i < _lastDisplayRows.length; i++) {
-      final hay = _lowerRowTexts[_rowsHead + i];
-      var from = 0;
-      while (from <= hay.length - needle.length) {
-        final idx = hay.indexOf(needle, from);
-        if (idx < 0) break;
+      final hay = _rowTextsBuffer[_rowsHead + i];
+      for (final m in re.allMatches(hay)) {
+        if (m.end == m.start) continue; // ignore zero-width matches
         final matchIndex = out.length;
-        out.add(SearchMatch(row: i, col: idx, length: needle.length));
+        out.add(SearchMatch(row: i, col: m.start, length: m.end - m.start));
         (byRow[i] ??= <int>[]).add(matchIndex);
-        from = idx + needle.length;
       }
     }
     _searchCacheTranscript = transcript;

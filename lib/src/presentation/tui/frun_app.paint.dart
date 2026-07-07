@@ -333,7 +333,6 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       _rowTextsBuffer.add(r.text);
     }
     _rowsHead = 0;
-    _rowsBufferGeneration++;
     _debugRowBufferCopies++;
     _lineLinksBuffer
       ..clear()
@@ -354,7 +353,6 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
       _rowsBuffer.removeRange(0, _rowsHead);
       _rowTextsBuffer.removeRange(0, _rowsHead);
       _rowsHead = 0;
-      _rowsBufferGeneration++;
       _debugRowBufferCopies++;
     }
   }
@@ -648,6 +646,16 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
           yRow,
           prompt.length,
         );
+        // Vim mode chip (NORMAL/INSERT/…, rec @a, showcmd) left of the
+        // counters — the fastest glance for "which mode am I in".
+        final chip = _vimStatusChip();
+        if (chip != null) {
+          final chipX = leftEdge - chip.length - 1;
+          if (chipX > 1 + prompt.length) {
+            canvas.paint(chipX, yRow, chip, style: theme.statusBarStyle);
+            leftEdge = chipX;
+          }
+        }
         final usable = math.max(0, leftEdge - 1 - prompt.length);
         var visible = line;
         var cursorOffset = cur.col;
@@ -696,6 +704,48 @@ mixin _PaintMixin on _FrunModelBase, _EngineMixin {
         }
       }
     }
+  }
+
+  /// ` NORMAL `-style vim mode chip, with a recording flag and vim's
+  /// showcmd (pending count/operator) when present. Null outside vim mode.
+  String? _vimStatusChip() {
+    if (state.config.editorMode != FrunEditorMode.vim) return null;
+    final s = _vimState;
+    final label = switch (s.mode) {
+      VimMode.insert => 'INSERT',
+      VimMode.normal => _tc.active ? 'NORMAL·SCROLL' : 'NORMAL',
+      VimMode.visualChar => 'VISUAL',
+      VimMode.visualLine => 'V-LINE',
+      VimMode.visualBlock => 'V-BLOCK',
+      VimMode.replace => 'REPLACE',
+      VimMode.exCmd => 'EX',
+      VimMode.search => 'SEARCH',
+      VimMode.opPending => 'O-PENDING',
+    };
+    final parts = <String>[label];
+    final rec = s.macros.recording;
+    if (rec != null) parts.add('rec @$rec');
+    final showCmd = _showCmd();
+    if (showCmd.isNotEmpty) parts.add(showCmd);
+    return ' ${parts.join(' · ')} ';
+  }
+
+  /// Vim's showcmd: the partial command typed so far (`2d3`, `"a`, `f`…).
+  String _showCmd() {
+    final s = _vimState;
+    final b = StringBuffer();
+    if (s.pendingRegister.isNotEmpty) b.write('"${s.pendingRegister}');
+    if (s.pendingOpCount > 0) b.write(s.pendingOpCount);
+    b.write(s.pendingOperator);
+    if (s.pendingCount > 0) b.write(s.pendingCount);
+    if (s.pendingG) b.write('g');
+    if (s.pendingZ) b.write('z');
+    if (s.pendingFind.isNotEmpty) b.write(s.pendingFind);
+    if (s.pendingMarkOp.isNotEmpty && s.pendingMarkOp != 'ctrl-r') {
+      b.write(s.pendingMarkOp);
+    }
+    if (s.pendingReplaceChar) b.write('r');
+    return b.toString();
   }
 
   String _rightInputInfo() {

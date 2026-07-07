@@ -30,6 +30,7 @@ import 'src/presentation/app/commands/run_command.dart';
 import 'src/presentation/app/commands/scrollback_command.dart';
 import 'src/presentation/app/commands/status_command.dart';
 import 'src/presentation/app/commands/stop_command.dart';
+import 'src/presentation/app/commands/vim_help_command.dart';
 import 'src/presentation/app/ide_opener.dart';
 import 'src/presentation/app/transcript.dart';
 import 'src/presentation/di/dependencies.dart';
@@ -107,6 +108,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     ..register(StatusCommand())
     ..register(MemCommand(state.deps.selfMemoryInspector))
     ..register(ScrollbackCommand())
+    ..register(VimHelpCommand())
     ..register(diagnosticsCommand);
   registry.register(HelpCommand(registry));
 

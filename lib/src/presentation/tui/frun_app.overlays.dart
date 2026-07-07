@@ -514,20 +514,22 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     }
   }
 
-  /// Move the selection to the next/previous issue row, skipping file headers.
+  /// Move the selection |delta| issue rows forward/backward (`5j` moves 5),
+  /// skipping file headers.
   void _moveDiagSelection(int delta) {
     final rows = _diagnosticRows();
     if (rows.isEmpty) return;
     _clampDiagSelection(rows);
     final step = delta >= 0 ? 1 : -1;
+    var remaining = delta.abs().clamp(1, rows.length);
     var i = _diagSelectedIndex;
-    for (var n = 0; n < rows.length; n++) {
+    for (var n = 0; n < rows.length && remaining > 0; n++) {
       i += step;
       if (i < 0) i = rows.length - 1;
       if (i >= rows.length) i = 0;
       if (rows[i].kind == _DiagRowKind.issue) {
         _diagSelectedIndex = i;
-        return;
+        remaining--;
       }
     }
   }
@@ -831,7 +833,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
 
   void _closeIsolatesPanel() {
     state.showIsolatesPanel = false;
-    _isolatePendingG = false;
+    _isolateNav.reset();
   }
 
   void _clampIsolateSelection(List<IsolateInfoEntity> rows) {
@@ -847,15 +849,14 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     final rows = state.deps.isolateManager.isolates;
     if (rows.isEmpty) return;
     _isolateSelectedIndex =
-        (_isolateSelectedIndex + delta + rows.length) % rows.length;
-    _isolatePendingG = false;
+        ((_isolateSelectedIndex + delta) % rows.length + rows.length) %
+        rows.length;
   }
 
   void _isolateSelectEdge({required bool first}) {
     final rows = state.deps.isolateManager.isolates;
     if (rows.isEmpty) return;
     _isolateSelectedIndex = first ? 0 : rows.length - 1;
-    _isolatePendingG = false;
   }
 
   IsolateInfoEntity? _selectedIsolate() {

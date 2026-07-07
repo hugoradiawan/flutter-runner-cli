@@ -126,13 +126,19 @@ class Operators {
     }
   }
 
-  /// `p` / `P` — paste from register.
-  static void paste(VimBuffer b, RegisterEntry entry, {required bool before}) {
+  /// `{count}p` / `{count}P` — paste from register [count] times.
+  static void paste(
+    VimBuffer b,
+    RegisterEntry entry, {
+    required bool before,
+    int count = 1,
+  }) {
     if (!b.isEditable || entry.isEmpty) return;
     final p = b.cursor;
     if (entry.kind == RangeKind.linewise) {
       final insertRow = before ? p.row : p.row + 1;
-      final text = entry.text.endsWith('\n') ? entry.text : '${entry.text}\n';
+      final once = entry.text.endsWith('\n') ? entry.text : '${entry.text}\n';
+      final text = once * count;
       // Implemented as: split current line at row boundary, insert new lines.
       b.insertAt(Pos(insertRow, 0), text);
       b.cursor = Pos(insertRow, b.firstNonBlankCol(insertRow));
@@ -156,11 +162,12 @@ class Operators {
       return;
     }
     final at = before ? p : Pos(p.row, p.col + 1);
-    b.insertAt(at, entry.text);
+    final text = entry.text * count;
+    b.insertAt(at, text);
     // Vim leaves the cursor on the last char of the pasted text.
-    final lines = entry.text.split('\n');
+    final lines = text.split('\n');
     if (lines.length == 1) {
-      b.cursor = Pos(at.row, at.col + entry.text.length - 1);
+      b.cursor = Pos(at.row, at.col + text.length - 1);
     } else {
       b.cursor = Pos(at.row + lines.length - 1, lines.last.length - 1);
     }

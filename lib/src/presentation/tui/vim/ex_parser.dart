@@ -1,3 +1,5 @@
+import 'vim_buffer.dart';
+
 /// Parsed ex command.
 ///
 ///   - [name] is the canonical command (`q`, `qa`, `s`, `noh`, …).
@@ -159,6 +161,44 @@ class ExParser {
     }
     // Only pattern, no terminator.
     return SubstituteSpec(pattern: buf.toString(), replacement: '', flags: '');
+  }
+
+  /// Resolve a raw [spec] (`%`, `.`, `$`, `3`, `'a`, `'<,'>`, `1,5`, …) to an
+  /// inclusive 0-based (startRow, endRow) pair. A null/empty spec targets the
+  /// cursor line only, matching vim's bare `:s`. Returns null when the spec
+  /// references a missing mark or is malformed.
+  static (int, int)? resolveRange(
+    String? spec, {
+    required int lineCount,
+    required int cursorRow,
+    Pos? Function(String mark)? markLookup,
+  }) {
+    if (lineCount <= 0) return null;
+    int clampRow(int r) => r.clamp(0, lineCount - 1);
+    if (spec == null || spec.isEmpty) {
+      final r = clampRow(cursorRow);
+      return (r, r);
+    }
+    if (spec == '%') return (0, lineCount - 1);
+
+    int? resolveOne(String s) {
+      s = s.trim();
+      if (s == '.') return cursorRow;
+      if (s == r'$') return lineCount - 1;
+      if (s.length == 2 && s.startsWith("'")) {
+        return markLookup?.call(s[1])?.row;
+      }
+      final n = int.tryParse(s);
+      return n == null ? null : n - 1;
+    }
+
+    final parts = spec.split(',');
+    if (parts.length > 2) return null;
+    final a = resolveOne(parts[0]);
+    if (a == null) return null;
+    final b = parts.length == 2 ? resolveOne(parts[1]) : a;
+    if (b == null) return null;
+    return a <= b ? (clampRow(a), clampRow(b)) : (clampRow(b), clampRow(a));
   }
 
   static int _findUnescaped(String s, String delim) {

@@ -199,6 +199,21 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
     sig[i++] = tabsHash;
     sig[i++] = state.deps.isolateManager.revision;
     sig[i++] = state.deps.isolateManager.isConnected ? 1 : 0;
+    // Vim mode-chip inputs: showcmd pendings and the macro-recording flag
+    // (engine-internal state with no other host mirror — without these slots
+    // the chip lags up to _maxSkippedFrames ticks).
+    sig[i++] = Object.hash(
+      _vimState.pendingOpCount,
+      _vimState.pendingCount,
+      _vimState.pendingOperator,
+      _vimState.pendingG,
+      _vimState.pendingZ,
+      _vimState.pendingFind,
+      _vimState.pendingRegister,
+      _vimState.pendingMarkOp,
+      _vimState.pendingReplaceChar,
+    );
+    sig[i++] = _vimState.macros.recording?.codeUnitAt(0) ?? 0;
     assert(i == _FrunModelBase._sigLength);
 
     if (!_sigValid) return false;

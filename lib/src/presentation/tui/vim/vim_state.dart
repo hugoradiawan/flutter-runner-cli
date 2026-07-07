@@ -1,4 +1,5 @@
 import 'jumplist.dart';
+import 'macro_recorder.dart';
 import 'marks.dart';
 import 'registers.dart';
 import 'vim_buffer.dart';
@@ -13,11 +14,12 @@ class LastSearch {
 /// What kind of change `.` should replay.
 enum LastActionKind {
   none,
-  operatorMotion, // [count][op]{motion}
-  operatorDouble, // dd / yy / cc
+  operatorMotion, // [count][op]{motion} (motion may be 2-char: gg ge gE g_)
+  operatorDouble, // dd / yy / cc / guu …
+  operatorTextObject, // d/c/y + iw/a(/… text object
   singleEdit, // x X D C J p P s S Y ~ (no operand)
   replaceChar, // r{ch}
-  insertSession, // i/I/a/A/o/O/s/S/cc/C + typed text
+  insertSession, // i/I/a/A/o/O/s/S + typed text
 }
 
 /// Captured payload of the last mutating action. Replayed by `.`.
@@ -28,6 +30,13 @@ class LastAction {
   String operator = '';
   int motionCount = 1;
   String motion = '';
+
+  /// Target char of an f/F/t/T motion (`dfx` stores 'x').
+  String findCh = '';
+
+  /// Text-object key + inner/around flag (`diw` stores 'w', inner=true).
+  String textObject = '';
+  bool textObjectInner = false;
   String singleEdit = '';
   String replaceCharCh = '';
   String insertEntry = '';
@@ -40,6 +49,9 @@ class LastAction {
     operator = '';
     motionCount = 1;
     motion = '';
+    findCh = '';
+    textObject = '';
+    textObjectInner = false;
     singleEdit = '';
     replaceCharCh = '';
     insertEntry = '';
@@ -55,6 +67,11 @@ class VimState {
 
   /// Pending count (e.g. "3" in `3dw`). 0 means "no count typed".
   int pendingCount = 0;
+
+  /// Count typed *before* an operator (`2` in `2d3w`). Moved out of
+  /// [pendingCount] when the operator registers so the motion's own count
+  /// accumulates separately; effective count is the product.
+  int pendingOpCount = 0;
 
   /// Pending register selector (e.g. `"a` → 'a'). Empty when none.
   String pendingRegister = '';
@@ -80,6 +97,10 @@ class VimState {
   /// Visual anchor (set when entering visual mode).
   Pos? visualAnchor;
 
+  /// Vim's curswant: the column j/k keep aiming for while passing through
+  /// shorter lines. Null when the last motion wasn't vertical.
+  int? desiredCol;
+
   /// Search prompt draft (during VimMode.search).
   String searchDraft = '';
 
@@ -96,6 +117,7 @@ class VimState {
   final RegisterBank registers;
   final MarkBank marks = MarkBank();
   final JumpList jumps = JumpList();
+  final MacroRecorder macros = MacroRecorder();
 
   /// Used by `:s/old/new/` substitute history.
   String lastSubstitutePattern = '';
@@ -110,11 +132,23 @@ class VimState {
   String? insertEntry;
   StringBuffer? insertCapture;
 
+  /// Active visual-block I/A insert: the block to replicate the captured
+  /// text over when the session ends. Null outside block-insert sessions.
+  ({int startRow, int endRow, int col, bool append})? pendingBlockInsert;
+
+  /// Replace-mode (`R`) session state: overwritten chars for backspace
+  /// restore (null entry = char was appended past EOL), the typed capture
+  /// for count replay + dot-repeat, and the `{count}R` multiplier.
+  final List<(Pos, String?)> replaceStack = [];
+  StringBuffer? replaceCapture;
+  int replaceSessionCount = 1;
+
   /// Tab width / shift width for `>` `<`.
   int shiftWidth = 2;
 
   void clearPending() {
     pendingCount = 0;
+    pendingOpCount = 0;
     pendingRegister = '';
     pendingOperator = '';
     pendingG = false;

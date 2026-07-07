@@ -3,6 +3,33 @@ part of 'frun_app.dart';
 /// Keyboard handling: the main key router, the config-editor key handler,
 /// insert dispatch, dot-repeat capture, and viewport scroll shortcuts.
 mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
+  // ── Macro playback ─────────────────────────────────────────────────────
+
+  /// Reentrancy guards for `@` playback: a macro can invoke another macro
+  /// (or itself), so cap both nesting depth and total replayed keys.
+  static const int _macroDepthCap = 16;
+  static const int _macroTotalKeyCap = 10000;
+  int _macroDepth = 0;
+  int _macroReplayedKeys = 0;
+
+  /// Replay a recorded tape through the full key router, so replayed keys
+  /// behave exactly like typed ones (insert capture, submit, overlays).
+  void _playMacro(List<TeaKey> keys) {
+    if (_macroDepth >= _macroDepthCap) return;
+    if (_macroDepth == 0) _macroReplayedKeys = 0;
+    _macroDepth++;
+    _vimState.macros.replayDepth++;
+    try {
+      for (final k in keys) {
+        if (++_macroReplayedKeys > _macroTotalKeyCap) break;
+        _onKey(KeyPressMsg(k));
+      }
+    } finally {
+      _vimState.macros.replayDepth--;
+      _macroDepth--;
+    }
+  }
+
   // ── Key handling ───────────────────────────────────────────────────────
 
   void _onKey(KeyMsg event) {
@@ -264,27 +291,34 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
     }
 
     final count = _configEditorEntries.length;
+    switch (_configNav.interpret(ke, vim: isVim)) {
+      case OverlayNavMove(:final delta):
+        _configEditorRow = ((_configEditorRow + delta) % count + count) % count;
+        return;
+      case OverlayNavEdge(:final first):
+        _configEditorRow = first ? 0 : count - 1;
+        return;
+      case OverlayNavClose():
+        _configEditorActive = false;
+        _configDraft = null;
+        return;
+      case OverlayNavHalfPage():
+      case OverlayNavStartSearch():
+      case OverlayNavConsumed():
+        return;
+      case null:
+        break;
+    }
+
     final plain =
         ke.code == KeyCode.rune &&
         !ke.modifiers.contains(KeyMod.ctrl) &&
         !ke.modifiers.contains(KeyMod.alt);
-
-    final isUp = ke.code == KeyCode.up || (plain && isVim && ke.text == 'k');
-    final isDown =
-        ke.code == KeyCode.down || (plain && isVim && ke.text == 'j');
     final isLeft =
         ke.code == KeyCode.left || (plain && isVim && ke.text == 'h');
     final isRight =
         ke.code == KeyCode.right || (plain && isVim && ke.text == 'l');
 
-    if (isUp) {
-      _configEditorRow = (_configEditorRow - 1 + count) % count;
-      return;
-    }
-    if (isDown) {
-      _configEditorRow = (_configEditorRow + 1) % count;
-      return;
-    }
     if ((isLeft || isRight) && _configDraft != null) {
       final entry = _configEditorEntries[_configEditorRow];
       if (entry.values.isNotEmpty) {
@@ -322,16 +356,6 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
       _closeDiagnosticsPanel();
       return;
     }
-    if (ke.code == KeyCode.up) {
-      _moveDiagSelection(-1);
-      _diagPendingG = false;
-      return;
-    }
-    if (ke.code == KeyCode.down) {
-      _moveDiagSelection(1);
-      _diagPendingG = false;
-      return;
-    }
     if (ke.code == KeyCode.enter) {
       if (vim && _diagSearching) {
         _diagSearching = false; // confirm search
@@ -358,56 +382,43 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
       return;
     }
 
-    // Vim navigation mode (not while typing a `/` search).
+    // Shared vim list navigation (arrows always; j/k/gg/G/counts/Ctrl-d/u
+    // only outside `/` search-typing).
+    switch (_diagNav.interpret(ke, vim: vim && !_diagSearching)) {
+      case OverlayNavMove(:final delta):
+        _moveDiagSelection(delta);
+        return;
+      case OverlayNavEdge(:final first):
+        _diagSelectEdge(first: first);
+        return;
+      case OverlayNavHalfPage(:final down):
+        final half = (_lastBodyHeight ~/ 2).clamp(1, 200);
+        _moveDiagSelection(down ? half : -half);
+        return;
+      case OverlayNavClose():
+        _closeDiagnosticsPanel();
+        return;
+      case OverlayNavStartSearch():
+        _diagSearching = true;
+        state.diagnosticsSearch = '';
+        _diagSelectedIndex = 0;
+        return;
+      case OverlayNavConsumed():
+        return;
+      case null:
+        break;
+    }
+
+    // Vim navigation mode: h/l step the category filter chips.
     if (vim && !_diagSearching) {
-      if (ke.code == KeyCode.rune && ke.modifiers.contains(KeyMod.ctrl)) {
-        final t = ke.text.toLowerCase();
-        if (t == 'd') {
-          for (var n = 0; n < 5; n++) {
-            _moveDiagSelection(1);
-          }
-          return;
-        }
-        if (t == 'u') {
-          for (var n = 0; n < 5; n++) {
-            _moveDiagSelection(-1);
-          }
-          return;
-        }
-      }
       if (plain) {
         switch (ke.text) {
-          case 'j':
-            _moveDiagSelection(1);
-            _diagPendingG = false;
-          case 'k':
-            _moveDiagSelection(-1);
-            _diagPendingG = false;
           case 'l':
             _stepDiagnosticsFilter(1); // next category chip
-            _diagPendingG = false;
           case 'h':
             _stepDiagnosticsFilter(-1); // previous category chip
-            _diagPendingG = false;
-          case 'G':
-            _diagSelectEdge(first: false);
-            _diagPendingG = false;
-          case 'g':
-            if (_diagPendingG) {
-              _diagSelectEdge(first: true);
-              _diagPendingG = false;
-            } else {
-              _diagPendingG = true;
-            }
-          case 'q':
-            _closeDiagnosticsPanel();
-          case '/':
-            _diagSearching = true;
-            state.diagnosticsSearch = '';
-            _diagSelectedIndex = 0;
-            _diagPendingG = false;
           default:
-            _diagPendingG = false; // swallow other keys
+            break; // swallow other keys
         }
       }
       return;
@@ -429,7 +440,7 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
 
   void _closeDiagnosticsPanel() {
     state.showDiagnosticsPanel = false;
-    _diagPendingG = false;
+    _diagNav.reset();
     _diagSearching = false;
   }
 
@@ -445,14 +456,6 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
       _closeIsolatesPanel();
       return;
     }
-    if (ke.code == KeyCode.up) {
-      _moveIsolateSelection(-1);
-      return;
-    }
-    if (ke.code == KeyCode.down) {
-      _moveIsolateSelection(1);
-      return;
-    }
     if (ke.code == KeyCode.enter || ke.code == KeyCode.space) {
       final iso = _selectedIsolate();
       if (iso != null) {
@@ -460,28 +463,32 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
       }
       return;
     }
+
+    // Shared vim list navigation (this panel always accepts vim keys).
+    switch (_isolateNav.interpret(ke, vim: true)) {
+      case OverlayNavMove(:final delta):
+        _moveIsolateSelection(delta);
+        return;
+      case OverlayNavEdge(:final first):
+        _isolateSelectEdge(first: first);
+        return;
+      case OverlayNavHalfPage(:final down):
+        final half = (_lastBodyHeight ~/ 2).clamp(1, 200);
+        _moveIsolateSelection(down ? half : -half);
+        return;
+      case OverlayNavClose():
+        _closeIsolatesPanel();
+        return;
+      case OverlayNavStartSearch():
+      case OverlayNavConsumed():
+        return;
+      case null:
+        break;
+    }
+
     if (!plain) return;
 
     switch (ke.text) {
-      case 'j':
-        _moveIsolateSelection(1);
-        return;
-      case 'k':
-        _moveIsolateSelection(-1);
-        return;
-      case 'g':
-        if (_isolatePendingG) {
-          _isolateSelectEdge(first: true);
-        } else {
-          _isolatePendingG = true;
-        }
-        return;
-      case 'G':
-        _isolateSelectEdge(first: false);
-        return;
-      case 'q':
-        _closeIsolatesPanel();
-        return;
       case 'R':
         unawaited(_runIsolateAction(IsolatePanelAction.start));
         return;
@@ -502,7 +509,6 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
         unawaited(_runIsolateAction(IsolatePanelAction.kill));
         return;
       default:
-        _isolatePendingG = false;
         return;
     }
   }

@@ -20,6 +20,7 @@ import 'cell_canvas.dart';
 import 'clipboard.dart';
 import 'hit_regions.dart';
 import 'input_controller.dart';
+import 'overlay_list_nav.dart';
 import 'theme.dart';
 import 'transcript_cursor.dart';
 import 'vim/ex_parser.dart';
@@ -87,15 +88,19 @@ abstract class _FrunModelBase extends TeaModel {
   // issue row list) and its scroll offset.
   int _diagSelectedIndex = 0;
   int _diagScrollOffset = 0;
-  // Vim-mode panel state: `gg` pending-g latch, and whether `/` search-typing
-  // is active (so bare letters feed the filter instead of acting as motions).
-  bool _diagPendingG = false;
+  // Whether `/` search-typing is active (so bare letters feed the filter
+  // instead of acting as motions).
   bool _diagSearching = false;
 
   // Isolate lifecycle panel selection and scroll offset.
   int _isolateSelectedIndex = 0;
   int _isolateScrollOffset = 0;
-  bool _isolatePendingG = false;
+
+  // Shared vim-style list navigation interpreters, one per modal overlay
+  // (each keeps its own pending count / gg latch).
+  final OverlayListNav _diagNav = OverlayListNav();
+  final OverlayListNav _isolateNav = OverlayListNav();
+  final OverlayListNav _configNav = OverlayListNav();
 
   // Mouse-drag selection state. `_mouseAnchor` is captured on left-click
   // inside the transcript body when no hit-region intercepts; the selection
@@ -139,10 +144,6 @@ abstract class _FrunModelBase extends TeaModel {
   final List<_DisplayRow> _rowsBuffer = <_DisplayRow>[];
   final List<String> _rowTextsBuffer = <String>[];
   int _rowsHead = 0;
-  // Bumped whenever existing buffer indices shift (full rebuild, compaction);
-  // stable across pure appends and head advances. Dependent caches that store
-  // buffer-index-aligned data (the search lowercase mirror) key off it.
-  int _rowsBufferGeneration = 0;
   late final List<_DisplayRow> _lastDisplayRows = _ListSliceView(
     () => _rowsBuffer,
     () => _rowsHead,
@@ -170,12 +171,6 @@ abstract class _FrunModelBase extends TeaModel {
   // trim). Row-index-anchored state (transcript cursor, selection, drag
   // anchor) shifts up by this much so it keeps pointing at the same content.
   int _layoutDroppedRowCount = 0;
-  // Lowercased mirror of _rowTextsBuffer (aligned to raw buffer indices, dead
-  // prefix included) so successive search keystrokes share one lowercase pass
-  // instead of re-allocating a lowercased copy of every row per keystroke.
-  // Populated only while a search query is active; emptied when search exits.
-  final List<String> _lowerRowTexts = <String>[];
-  int _lowerCacheGeneration = -1;
   Transcript? _searchCacheTranscript;
   int _searchCacheRevision = -1;
   int _searchCacheWidth = -1;
@@ -189,7 +184,6 @@ abstract class _FrunModelBase extends TeaModel {
   int _debugLinkExtractions = 0;
   int _debugAnsiRunParses = 0;
   int _debugRowBufferCopies = 0;
-  int _debugSearchLowerBuilds = 0;
   // Diagnostic counters memo: counts() walks every diagnostic (with a
   // per-entry toLowerCase in `category`); the tallies only change when the
   // diagnostics list is replaced, so recompute at most once per revision
@@ -227,7 +221,7 @@ abstract class _FrunModelBase extends TeaModel {
   static const int _maxSkippedFrames = 4; // ~1s at the 250ms tick interval
   // Preallocated signature slots, filled by index and compared element-wise
   // each frame — the skip path allocates nothing.
-  static const int _sigLength = 42;
+  static const int _sigLength = 44;
   final List<int> _sigCurrent = List<int>.filled(_sigLength, 0);
   final List<int> _sigPrevious = List<int>.filled(_sigLength, 0);
   bool _sigValid = false;
@@ -308,6 +302,8 @@ final class FrunModel extends _FrunModelBase
       runSearch: _runSearch,
       onSubmit: _submit,
       onTabSwitch: _switchTabFromVim,
+      onScroll: _handleVimScroll,
+      onPlayMacro: _playMacro,
     );
   }
 
@@ -318,8 +314,9 @@ final class FrunModel extends _FrunModelBase
   int get debugAnsiRunParses => _debugAnsiRunParses;
   int get debugRowBufferCopies => _debugRowBufferCopies;
   int get debugDisplayRowsBufferIdentity => identityHashCode(_rowsBuffer);
-  int get debugSearchLowerBuilds => _debugSearchLowerBuilds;
   int get debugDiagCountsBuilds => _debugDiagCountsBuilds;
   int get debugTranscriptScroll => _transcriptScroll;
   int get debugIsolateSelectedIndex => _isolateSelectedIndex;
+  int get debugDiagSelectedIndex => _diagSelectedIndex;
+  String get debugInputText => _input.text;
 }

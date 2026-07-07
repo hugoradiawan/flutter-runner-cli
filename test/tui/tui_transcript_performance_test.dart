@@ -316,7 +316,7 @@ void main() {
       );
     });
 
-    test('repeated searches reuse the lowercase row mirror', () {
+    test('search matches are cached per (transcript, revision, query)', () {
       final h = _harness(editorMode: FrunEditorMode.vim);
       for (var i = 0; i < 40; i++) {
         h.state.transcript.info('line $i');
@@ -329,23 +329,18 @@ void main() {
       h.model.view();
       h.search('line');
       h.model.view();
-
-      final builds = h.model.debugSearchLowerBuilds;
-      expect(builds, greaterThan(0));
       expect(h.model.debugSearchBuilds, greaterThan(0));
 
-      // A different query re-matches but reuses the lowercase mirror.
-      final matchBuilds = h.model.debugSearchBuilds;
+      // Repeating the same query with an unchanged transcript hits the cache.
+      final builds = h.model.debugSearchBuilds;
+      h.search('line');
+      h.model.view();
+      expect(h.model.debugSearchBuilds, builds);
+
+      // A different query recomputes.
       h.search('9');
       h.model.view();
-      expect(h.model.debugSearchBuilds, greaterThan(matchBuilds));
-      expect(h.model.debugSearchLowerBuilds, builds);
-
-      // Appended rows only extend the mirror's tail — no full rebuild.
-      h.state.transcript.info('line 40');
-      h.search('40');
-      h.model.view();
-      expect(h.model.debugSearchLowerBuilds, builds);
+      expect(h.model.debugSearchBuilds, greaterThan(builds));
     });
 
     test('diagnostic counters recompute once per diagnostics revision', () {

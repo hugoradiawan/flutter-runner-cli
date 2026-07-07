@@ -44,22 +44,24 @@ class Motions {
     return MotionResult(Pos(c.row, nc));
   }
 
-  static MotionResult down(VimBuffer b, int n) {
+  /// [wantCol] is vim's curswant: the column j/k aim for even when passing
+  /// through shorter lines.
+  static MotionResult down(VimBuffer b, int n, {int? wantCol}) {
     final c = b.cursor;
     final nr = (c.row + n).clamp(0, (b.lineCount - 1).clamp(0, 1 << 30));
     final len = b.rowLength(nr);
     return MotionResult(
-      Pos(nr, c.col.clamp(0, (len - 1).clamp(0, 1 << 30))),
+      Pos(nr, (wantCol ?? c.col).clamp(0, (len - 1).clamp(0, 1 << 30))),
       kind: RangeKind.linewise,
     );
   }
 
-  static MotionResult up(VimBuffer b, int n) {
+  static MotionResult up(VimBuffer b, int n, {int? wantCol}) {
     final c = b.cursor;
     final nr = (c.row - n).clamp(0, (b.lineCount - 1).clamp(0, 1 << 30));
     final len = b.rowLength(nr);
     return MotionResult(
-      Pos(nr, c.col.clamp(0, (len - 1).clamp(0, 1 << 30))),
+      Pos(nr, (wantCol ?? c.col).clamp(0, (len - 1).clamp(0, 1 << 30))),
       kind: RangeKind.linewise,
     );
   }
@@ -333,7 +335,9 @@ class Motions {
         i--;
       }
     }
-    return MotionResult(Pos(r, col), exclusive: false);
+    // f/t are inclusive motions; F/T are exclusive (dFx must not delete the
+    // char under the cursor).
+    return MotionResult(Pos(r, col), exclusive: !forward);
   }
 
   /// `%` — jump to matching bracket.
@@ -392,11 +396,34 @@ class Motions {
     return MotionResult(Pos(row, 0), kind: RangeKind.linewise);
   }
 
+  /// The `[A-Za-z0-9_]` word under the cursor (scanning forward when the
+  /// cursor sits on whitespace/punctuation, like vim's `*`).
+  static String? wordUnderCursor(VimBuffer b) {
+    final line = b.lineAt(b.cursor.row);
+    if (line.isEmpty) return null;
+    var col = b.cursor.col.clamp(0, line.length - 1);
+    while (col < line.length && !_isWordCh(line[col])) {
+      col++;
+    }
+    if (col >= line.length) return null;
+    var start = col;
+    while (start > 0 && _isWordCh(line[start - 1])) {
+      start--;
+    }
+    var end = col;
+    while (end + 1 < line.length && _isWordCh(line[end + 1])) {
+      end++;
+    }
+    return line.substring(start, end + 1);
+  }
+
   /// `H` / `M` / `L` — screen-relative positions. Caller provides viewport.
-  static MotionResult viewportTop(VimBuffer b, int viewportTop) => MotionResult(
-    Pos(viewportTop.clamp(0, b.lineCount - 1), 0),
-    kind: RangeKind.linewise,
-  );
+  /// `{count}H` lands count-1 lines below the top; `{count}L` above bottom.
+  static MotionResult viewportTop(VimBuffer b, int viewportTop, [int count = 1]) =>
+      MotionResult(
+        Pos((viewportTop + count - 1).clamp(0, b.lineCount - 1), 0),
+        kind: RangeKind.linewise,
+      );
 
   static MotionResult viewportMiddle(
     VimBuffer b,
@@ -410,9 +437,13 @@ class Motions {
   static MotionResult viewportBottom(
     VimBuffer b,
     int viewportTop,
-    int viewportHeight,
-  ) {
-    final bot = (viewportTop + viewportHeight - 1).clamp(0, b.lineCount - 1);
+    int viewportHeight, [
+    int count = 1,
+  ]) {
+    final bot = (viewportTop + viewportHeight - count).clamp(
+      0,
+      b.lineCount - 1,
+    );
     return MotionResult(Pos(bot, 0), kind: RangeKind.linewise);
   }
 }

@@ -153,7 +153,7 @@ mixin _ReducerMixin
       final rows = state.deps.isolateManager.isolates;
       if (msg.index >= 0 && msg.index < rows.length) {
         _isolateSelectedIndex = msg.index;
-        _isolatePendingG = false;
+        _isolateNav.reset();
       }
     } else if (msg is IsolateActionMsg) {
       unawaited(_runIsolateAction(msg.action, id: msg.id));
@@ -200,7 +200,7 @@ mixin _ReducerMixin
         _resetViewForNewTab();
       }
     } else if (msg is ToggleDiagnosticsOverlayMsg) {
-      _diagPendingG = false;
+      _diagNav.reset();
       _diagSearching = false;
       if (state.diagnostics.isEmpty) {
         state.showDiagnosticsPanel = false;
@@ -215,7 +215,7 @@ mixin _ReducerMixin
       }
     } else if (msg is CloseDiagnosticsOverlayMsg) {
       state.showDiagnosticsPanel = false;
-      _diagPendingG = false;
+      _diagNav.reset();
       _diagSearching = false;
     } else if (msg is SetDiagnosticsFilterMsg) {
       state.diagnosticsFilter = msg.level;
