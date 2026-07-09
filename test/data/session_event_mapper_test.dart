@@ -76,6 +76,46 @@ void main() {
       expect(event.isError, isFalse);
     });
 
+    test('app.log strips flutter: prefix and de-carets ANSI (iOS/macOS)', () {
+      // iOS delivers ESC as `\^[` (backslash + caret-notation ESC), so a
+      // colored line arrives as `flutter: \^[[38;5;208m{\^[[0m`. Expect: prefix
+      // gone, escaping backslash consumed, real ESC restored.
+      final event =
+          mapDaemonEvent(
+                _e('app.log', {'log': 'flutter: \\^[[38;5;208m{\\^[[0m'}),
+              )
+              as SessionLogLine;
+      expect(event.message, '\x1b[38;5;208m{\x1b[0m');
+    });
+
+    test('app.log de-carets ANSI without a leading backslash too', () {
+      final event =
+          mapDaemonEvent(_e('app.log', {'log': 'flutter: ^[[32mhi^[[0m'}))
+              as SessionLogLine;
+      expect(event.message, '\x1b[32mhi\x1b[0m');
+    });
+
+    test('app.log strips flutter: prefix on every line of a multiline log', () {
+      final event =
+          mapDaemonEvent(
+                _e('app.log', {
+                  'log': 'flutter: \\^[[32mfirst\nflutter: second',
+                }),
+              )
+              as SessionLogLine;
+      expect(event.message, '\x1b[32mfirst\nsecond');
+    });
+
+    test('app.log leaves real-ESC lines (Android) untouched', () {
+      final event =
+          mapDaemonEvent(
+                _e('app.log', {'log': 'I/flutter ( 7225): \x1b[32mhi\x1b[0m'}),
+              )
+              as SessionLogLine;
+      // Logcat tag stripped; real ESC preserved; no spurious de-caret.
+      expect(event.message, '\x1b[32mhi\x1b[0m');
+    });
+
     test('app.progress maps the message', () {
       final event =
           mapDaemonEvent(_e('app.progress', {'message': 'Compiling…'}))
