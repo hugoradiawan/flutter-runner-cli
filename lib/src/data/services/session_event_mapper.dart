@@ -20,7 +20,7 @@ SessionEvent mapDaemonEvent(DaemonEvent event) {
       );
     case 'app.log':
       return SessionLogLine(
-        message: stripLogcatPrefix(params['log']?.toString() ?? ''),
+        message: normalizeAppLog(params['log']?.toString() ?? ''),
         stackTrace: params['stackTrace']?.toString() ?? '',
         isError: params['error'] == true,
       );
@@ -45,6 +45,35 @@ SessionEvent mapDaemonEvent(DaemonEvent event) {
       return SessionUnknown(name: event.name, params: params);
   }
 }
+
+/// iOS/macOS `print()` output is delivered as `flutter: <text>` with the ESC
+/// control byte rendered in caret notation by Apple's unified logging, so ANSI
+/// color codes arrive as the literal characters `\^[[38;5;208m` (an escaping
+/// backslash, the caret-notation ESC `^[`, then the `[` CSI intro) instead of a
+/// real `\x1b[…m`. Undo both — rebuild the CSI introducer so the transcript's
+/// ANSI pipeline colors it, and drop the `flutter: ` prefix — so iOS/macOS logs
+/// render like Android's (which already carry real ESC bytes).
+///
+/// De-caret is scoped to the `^[[` CSI introducer (plus its optional escaping
+/// backslash) so it only touches escape sequences, and the leading-`flutter: `
+/// strip is per line. Android lines (real ESC, logcat-tagged) match neither
+/// guard, so this is a no-op on the already-working path.
+String normalizeAppLog(String log) {
+  var out = stripLogcatPrefix(log);
+  if (out.contains('^[[')) out = out.replaceAll(_caretCsi, '\x1b[');
+  if (out.startsWith('flutter: ') || out.contains('\nflutter: ')) {
+    out = out.replaceAll(_flutterPrefix, '');
+  }
+  return out;
+}
+
+/// Caret-notation CSI introducer as delivered by Apple's unified logging: an
+/// optional escaping backslash, `^[` (caret-notation ESC), then the `[` CSI
+/// intro — e.g. `\^[[38;5;208m` or `^[[0m`. Rewritten to a real `\x1b[`.
+final _caretCsi = RegExp(r'\\?\^\[\[');
+
+/// Leading `flutter: ` prefix on any line (iOS/macOS/desktop `print` output).
+final _flutterPrefix = RegExp(r'^flutter: ', multiLine: true);
 
 /// Android logcat tags each line with e.g. `I/flutter ( 7225): `. Strip it
 /// so the transcript shows only the app's own log text.
