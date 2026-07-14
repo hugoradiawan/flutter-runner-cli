@@ -37,6 +37,7 @@ import 'src/presentation/di/dependencies.dart';
 import 'src/presentation/platform/windows_console.dart';
 import 'src/presentation/tui/clipboard.dart';
 import 'src/presentation/tui/frun_app.dart';
+import 'src/presentation/tui/synchronized_frame_sink.dart';
 
 export 'src/version.dart';
 
@@ -114,6 +115,19 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
 
   final program = Program(
     programOptions: [
+      // Coalesce each frame's many small renderer writes into one stdout
+      // write so repaints land atomically instead of painting line by line
+      // (dart_tui's renderer issues unbatched per-row writes and its
+      // sync-update probe sends the wrong sequence, $y instead of $p).
+      // FRUN_SYNC_UPDATES=1 additionally brackets each frame in DEC 2026 —
+      // off by default because ConPTY-hosted terminals were seen dropping
+      // static rows (the tab strip) when it was on.
+      withOutput(
+        SynchronizedFrameSink(
+          stdout,
+          syncUpdates: Platform.environment['FRUN_SYNC_UPDATES'] == '1',
+        ),
+      ),
       withAltScreen(),
       withHideCursor(),
       withMouseCellMotion(),
