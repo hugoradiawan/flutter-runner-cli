@@ -125,7 +125,9 @@ class MemCommand extends Command {
       return CommandResult.ok;
     }
     final out = StringBuffer('mem: full GC forced')
-      ..write('\n  ${''.padRight(11)} ${'before'.padLeft(9)} ${'after'.padLeft(11)} ${'Δ'.padLeft(11)}')
+      ..write(
+        '\n  ${''.padRight(11)} ${'before'.padLeft(9)} ${'after'.padLeft(11)} ${'Δ'.padLeft(11)}',
+      )
       ..write(_gcRow('rss', beforeRss, afterRss))
       ..write(_gcRow('heap used', before.heap.heapUsed, after.heap.heapUsed))
       ..write(
@@ -261,7 +263,12 @@ class MemCommand extends Command {
         '\n${''.padRight(indent)}${node.name.padRight(28 - (indent - 4))}'
         ' ${_mb(node.sizeBytes).padLeft(9)}',
       );
-      _renderTree(out, node.children, indent: indent + 2, depthLeft: depthLeft - 1);
+      _renderTree(
+        out,
+        node.children,
+        indent: indent + 2,
+        depthLeft: depthLeft - 1,
+      );
     }
   }
 

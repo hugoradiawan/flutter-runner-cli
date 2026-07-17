@@ -59,7 +59,9 @@ class MelosCommand extends Command {
 
     final picked = _resolve(args.first, commands);
     if (picked == null) {
-      state.visibleTranscript.error('No melos command matches "${args.first}".');
+      state.visibleTranscript.error(
+        'No melos command matches "${args.first}".',
+      );
       return CommandResult.ok;
     }
 

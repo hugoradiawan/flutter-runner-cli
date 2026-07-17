@@ -73,10 +73,7 @@ void main() {
         out.addAll(framer.addBytes(<int>[byte]));
       }
       expect(out, hasLength(2));
-      expect(
-        (out.last['params'] as Map?)?['uri'],
-        'file:///C:/b.dart',
-      );
+      expect((out.last['params'] as Map?)?['uri'], 'file:///C:/b.dart');
     });
 
     test('resyncs past a header without a Content-Length', () {

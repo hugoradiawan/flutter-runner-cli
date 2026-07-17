@@ -74,9 +74,7 @@ class OverlayListNav {
     }
 
     final plain =
-        ke.code == KeyCode.rune &&
-        ke.modifiers.isEmpty &&
-        ke.text.length == 1;
+        ke.code == KeyCode.rune && ke.modifiers.isEmpty && ke.text.length == 1;
     if (!plain) return null;
     final ch = ke.text;
 

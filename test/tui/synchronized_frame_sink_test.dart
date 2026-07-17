@@ -83,8 +83,11 @@ void main() {
     sink.write('\x1b[1;1Hrow one\x1b[K');
     sink.write('\x1b[2;1Hrow two\x1b[K');
     sink.writeln('tail');
-    expect(inner.writes, isEmpty,
-        reason: 'nothing should reach the terminal mid-burst');
+    expect(
+      inner.writes,
+      isEmpty,
+      reason: 'nothing should reach the terminal mid-burst',
+    );
 
     await null; // pump the microtask queue
 
@@ -119,21 +122,26 @@ void main() {
     ]);
   });
 
-  test('flush drains synchronously and the leftover microtask is a no-op',
-      () async {
-    sink.write('frame');
-    final pending = sink.flush();
+  test(
+    'flush drains synchronously and the leftover microtask is a no-op',
+    () async {
+      sink.write('frame');
+      final pending = sink.flush();
 
-    // Drained before the microtask queue was pumped.
-    expect(inner.writes, <String>['frame']);
+      // Drained before the microtask queue was pumped.
+      expect(inner.writes, <String>['frame']);
 
-    await pending;
-    await null; // scheduled microtask fires here
+      await pending;
+      await null; // scheduled microtask fires here
 
-    expect(inner.writes, hasLength(1),
-        reason: 'the leftover microtask must not emit a second write');
-    expect(inner.flushCount, 1);
-  });
+      expect(
+        inner.writes,
+        hasLength(1),
+        reason: 'the leftover microtask must not emit a second write',
+      );
+      expect(inner.flushCount, 1);
+    },
+  );
 
   test('flush with empty buffer only flushes downstream', () async {
     await sink.flush();
@@ -141,8 +149,7 @@ void main() {
     expect(inner.flushCount, 1);
   });
 
-  test('close drains and flushes but never closes the wrapped sink',
-      () async {
+  test('close drains and flushes but never closes the wrapped sink', () async {
     sink.write('bye');
     await sink.close();
 
@@ -152,8 +159,11 @@ void main() {
 
     sink.write('after close');
     await null;
-    expect(inner.writes, hasLength(1),
-        reason: 'writes after close are dropped');
+    expect(
+      inner.writes,
+      hasLength(1),
+      reason: 'writes after close are dropped',
+    );
   });
 
   test('add() drains buffered text first to preserve ordering', () {

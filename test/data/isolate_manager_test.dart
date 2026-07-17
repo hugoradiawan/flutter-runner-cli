@@ -65,14 +65,8 @@ void main() {
         ],
       );
 
-      final changesDone = expectLater(
-        manager.changes,
-        emitsThrough(emitsDone),
-      );
-      final extensionsDone = expectLater(
-        manager.extensionEvents,
-        emitsDone,
-      );
+      final changesDone = expectLater(manager.changes, emitsThrough(emitsDone));
+      final extensionsDone = expectLater(manager.extensionEvents, emitsDone);
 
       await manager.dispose();
 

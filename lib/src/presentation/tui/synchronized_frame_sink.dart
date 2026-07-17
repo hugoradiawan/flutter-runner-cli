@@ -28,7 +28,7 @@ import 'dart:io';
 /// write per frame already provides effective atomicity without it.
 final class SynchronizedFrameSink implements IOSink {
   SynchronizedFrameSink(this._inner, {bool syncUpdates = false})
-      : _syncUpdates = syncUpdates;
+    : _syncUpdates = syncUpdates;
 
   final IOSink _inner;
   final bool _syncUpdates;

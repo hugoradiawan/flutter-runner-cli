@@ -80,9 +80,8 @@ class MelosConfigReader {
       final value = entry.value;
       final String raw;
       if (value is Map) {
-        raw = value['description']?.toString() ??
-            value['run']?.toString() ??
-            '';
+        raw =
+            value['description']?.toString() ?? value['run']?.toString() ?? '';
       } else {
         raw = value?.toString() ?? '';
       }

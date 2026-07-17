@@ -49,9 +49,7 @@ class VimHelpCommand extends Command {
     ),
     (
       'Text objects',
-      [
-        'iw aw iW aW · i( i[ i{ i< ib iB · i" i\' i` · it at · ip ap · is as',
-      ],
+      ['iw aw iW aW · i( i[ i{ i< ib iB · i" i\' i` · it at · ip ap · is as'],
     ),
     (
       'Visual',

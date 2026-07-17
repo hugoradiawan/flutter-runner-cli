@@ -130,9 +130,7 @@ _Harness _harness({int width = 80, int height = 20}) {
       hasVsCodeFolder: false,
       hasZedFolder: false,
     ),
-    config: AppConfigEntity.defaults().copyWith(
-      editorMode: FrunEditorMode.vim,
-    ),
+    config: AppConfigEntity.defaults().copyWith(editorMode: FrunEditorMode.vim),
     deps: Dependencies(isolateManager: IsolateManager()),
   );
   final model = FrunModel(

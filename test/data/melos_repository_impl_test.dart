@@ -24,23 +24,30 @@ void main() {
   void writePubspec(String content) =>
       File(p.join(temp.path, 'pubspec.yaml')).writeAsStringSync(content);
 
-  test('discoverCommands returns builtins + scripts for a melos workspace', () async {
-    writePubspec('''
+  test(
+    'discoverCommands returns builtins + scripts for a melos workspace',
+    () async {
+      writePubspec('''
 name: workspace
 melos:
   scripts:
     analyze: dart analyze
 ''');
 
-    final repo = MelosRepositoryImpl(projectAt(temp.path));
-    final result = await repo.discoverCommands();
-    final commands = result.fold((f) => fail('unexpected failure: $f'), (c) => c);
+      final repo = MelosRepositoryImpl(projectAt(temp.path));
+      final result = await repo.discoverCommands();
+      final commands = result.fold(
+        (f) => fail('unexpected failure: $f'),
+        (c) => c,
+      );
 
-    final builtins =
-        commands.where((c) => c.kind == MelosCommandKind.builtin).toList();
-    expect(builtins.map((c) => c.name), containsAll(['bootstrap', 'clean']));
-    expect(commands.map((c) => c.name), contains('analyze'));
-  });
+      final builtins = commands
+          .where((c) => c.kind == MelosCommandKind.builtin)
+          .toList();
+      expect(builtins.map((c) => c.name), containsAll(['bootstrap', 'clean']));
+      expect(commands.map((c) => c.name), contains('analyze'));
+    },
+  );
 
   test('discoverCommands returns empty list for a non-melos project', () async {
     writePubspec('name: solo\n');

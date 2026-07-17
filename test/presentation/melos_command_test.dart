@@ -73,7 +73,10 @@ melos:
 
     expect(state.melosChoices, isNotEmpty);
     expect(state.hasActivePicker, isTrue);
-    expect(state.melosChoices.map((c) => c.name), containsAll(['bootstrap', 'clean', 'analyze']));
+    expect(
+      state.melosChoices.map((c) => c.name),
+      containsAll(['bootstrap', 'clean', 'analyze']),
+    );
   });
 
   test('warns and opens no picker in a non-melos project', () async {

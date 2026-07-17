@@ -143,9 +143,7 @@ class VimEngine {
           final cap = _state.replaceCapture;
           if (cap != null && cap.length > 0) {
             final s = cap.toString();
-            _state.replaceCapture = StringBuffer(
-              s.substring(0, s.length - 1),
-            );
+            _state.replaceCapture = StringBuffer(s.substring(0, s.length - 1));
           }
         } else if (buffer.cursor.col > 0) {
           // Past the session start vim just moves left.
@@ -189,9 +187,11 @@ class VimEngine {
         // skips rows shorter than the insert column, `A` pads them.
         _state.pendingBlockInsert = null;
         if (captured.isNotEmpty && !captured.contains('\n')) {
-          for (var r = block.startRow + 1;
-              r <= block.endRow && r < buffer.lineCount;
-              r++) {
+          for (
+            var r = block.startRow + 1;
+            r <= block.endRow && r < buffer.lineCount;
+            r++
+          ) {
             final len = buffer.rowLength(r);
             if (len < block.col) {
               if (!block.append) continue;
@@ -423,7 +423,11 @@ class VimEngine {
       buffer.insertAt(p, ch); // insertAt advances the cursor
       return;
     }
-    buffer.replaceRange(Range(p, p, RangeKind.charwise), ch, RangeKind.charwise);
+    buffer.replaceRange(
+      Range(p, p, RangeKind.charwise),
+      ch,
+      RangeKind.charwise,
+    );
     buffer.cursor = Pos(p.row, p.col + 1);
   }
 
@@ -479,11 +483,7 @@ class VimEngine {
         return;
       }
       buffer.pushUndo();
-      final range = Range(
-        c,
-        Pos(c.row, c.col + count - 1),
-        RangeKind.charwise,
-      );
+      final range = Range(c, Pos(c.row, c.col + count - 1), RangeKind.charwise);
       buffer.replaceRange(range, ch * count, RangeKind.charwise);
       buffer.cursor = Pos(c.row, c.col + count - 1);
       _state.lastAction
@@ -633,7 +633,10 @@ class VimEngine {
         _applyMotion(buffer, Motions.right(buffer, count));
       case KeyCode.up:
         _state.desiredCol ??= buffer.cursor.col;
-        _applyMotion(buffer, Motions.up(buffer, count, wantCol: _state.desiredCol));
+        _applyMotion(
+          buffer,
+          Motions.up(buffer, count, wantCol: _state.desiredCol),
+        );
       case KeyCode.down:
         _state.desiredCol ??= buffer.cursor.col;
         _applyMotion(
@@ -1144,13 +1147,37 @@ class VimEngine {
         final vp = _viewport(buffer);
         return Motions.viewportBottom(buffer, vp.top, vp.height, count);
       case 'f':
-        return Motions.findChar(buffer, findCh, count, forward: true, till: false);
+        return Motions.findChar(
+          buffer,
+          findCh,
+          count,
+          forward: true,
+          till: false,
+        );
       case 'F':
-        return Motions.findChar(buffer, findCh, count, forward: false, till: false);
+        return Motions.findChar(
+          buffer,
+          findCh,
+          count,
+          forward: false,
+          till: false,
+        );
       case 't':
-        return Motions.findChar(buffer, findCh, count, forward: true, till: true);
+        return Motions.findChar(
+          buffer,
+          findCh,
+          count,
+          forward: true,
+          till: true,
+        );
       case 'T':
-        return Motions.findChar(buffer, findCh, count, forward: false, till: true);
+        return Motions.findChar(
+          buffer,
+          findCh,
+          count,
+          forward: false,
+          till: true,
+        );
       case ';':
         final lf = _state.lastFind;
         if (lf == null) return null;

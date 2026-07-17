@@ -419,11 +419,14 @@ class Motions {
 
   /// `H` / `M` / `L` — screen-relative positions. Caller provides viewport.
   /// `{count}H` lands count-1 lines below the top; `{count}L` above bottom.
-  static MotionResult viewportTop(VimBuffer b, int viewportTop, [int count = 1]) =>
-      MotionResult(
-        Pos((viewportTop + count - 1).clamp(0, b.lineCount - 1), 0),
-        kind: RangeKind.linewise,
-      );
+  static MotionResult viewportTop(
+    VimBuffer b,
+    int viewportTop, [
+    int count = 1,
+  ]) => MotionResult(
+    Pos((viewportTop + count - 1).clamp(0, b.lineCount - 1), 0),
+    kind: RangeKind.linewise,
+  );
 
   static MotionResult viewportMiddle(
     VimBuffer b,
