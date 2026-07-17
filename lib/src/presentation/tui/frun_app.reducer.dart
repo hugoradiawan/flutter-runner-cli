@@ -194,6 +194,15 @@ mixin _ReducerMixin
     } else if (msg is CloseRunTargetPickerMsg) {
       state.pendingRunEntry = null;
       state.clearPickers();
+    } else if (msg is PickMelosMsg) {
+      final commands = state.melosChoices;
+      if (msg.index >= 0 && msg.index < commands.length) {
+        state.clearPickers();
+        _input.setText('melos ${msg.index}');
+        _submit();
+      }
+    } else if (msg is CloseMelosPickerMsg) {
+      state.clearPickers();
     } else if (msg is _CycleTabsForwardMsg) {
       if (state.runController.tabs.length >= 2) {
         state.runController.cycleActive(forward: true);

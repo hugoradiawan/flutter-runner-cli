@@ -60,6 +60,7 @@ class Dependencies {
   ConfigRepository? configRepository;
   DiagnosticsRepository? diagnosticsRepository;
   LaunchRepository? launchRepository;
+  MelosRepository? melosRepository;
 
   /// Owns every live `flutter run` session. Unlike the daemon-backed repos it
   /// needs no async boot, so it is non-nullable — as are its use cases.
@@ -154,6 +155,19 @@ class Dependencies {
       : (_discoverLaunchEntries ??= DiscoverLaunchEntriesUseCase(
           launchRepository!,
         ));
+
+  DiscoverMelosCommandsUseCase? _discoverMelosCommands;
+  DiscoverMelosCommandsUseCase? get discoverMelosCommandsUseCase =>
+      melosRepository == null
+      ? null
+      : (_discoverMelosCommands ??= DiscoverMelosCommandsUseCase(
+          melosRepository!,
+        ));
+
+  RunMelosCommandUseCase? _runMelosCommand;
+  RunMelosCommandUseCase? get runMelosCommandUseCase => melosRepository == null
+      ? null
+      : (_runMelosCommand ??= RunMelosCommandUseCase(melosRepository!));
 
   /// Tear down every service this container owns. Called once by the
   /// composition root after the TUI run loop exits.

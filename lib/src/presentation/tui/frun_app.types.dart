@@ -135,7 +135,7 @@ class _PickerChip {
   final String text;
 }
 
-enum _PickerKind { launch, emulator, bootMode, runTarget }
+enum _PickerKind { launch, emulator, bootMode, runTarget, melos }
 
 class _PickerSpec {
   const _PickerSpec({

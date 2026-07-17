@@ -95,6 +95,15 @@ final class CloseRunTargetPickerMsg extends Msg {
   const CloseRunTargetPickerMsg();
 }
 
+final class PickMelosMsg extends Msg {
+  const PickMelosMsg(this.index);
+  final int index;
+}
+
+final class CloseMelosPickerMsg extends Msg {
+  const CloseMelosPickerMsg();
+}
+
 final class _CycleTabsForwardMsg extends Msg {
   const _CycleTabsForwardMsg();
 }

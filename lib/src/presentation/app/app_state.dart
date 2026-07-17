@@ -116,6 +116,9 @@ class AppState {
   /// picker is open at a time; opening one clears the others.
   List<EmulatorEntity> emulatorChoices = const <EmulatorEntity>[];
 
+  /// Active `/melos` picker — built-in melos commands plus custom scripts.
+  List<MelosCommandEntity> melosChoices = const <MelosCommandEntity>[];
+
   /// Launch entry awaiting a run-target choice. Set when the user picks an
   /// entry in the `/run` launch picker; cleared once a target is chosen.
   LaunchEntryEntity? pendingRunEntry;
@@ -133,7 +136,8 @@ class AppState {
       launchChoices.isNotEmpty ||
       emulatorChoices.isNotEmpty ||
       bootModeChoices.isNotEmpty ||
-      runTargetChoices.isNotEmpty;
+      runTargetChoices.isNotEmpty ||
+      melosChoices.isNotEmpty;
 
   void clearPickers() {
     launchChoices = const <LaunchEntryEntity>[];
@@ -141,11 +145,17 @@ class AppState {
     bootModeChoices = const <String>[];
     pendingEmulatorId = null;
     runTargetChoices = const <RunTarget>[];
+    melosChoices = const <MelosCommandEntity>[];
   }
 
   void setLaunchPicker(List<LaunchEntryEntity> entries) {
     clearPickers();
     launchChoices = entries;
+  }
+
+  void setMelosPicker(List<MelosCommandEntity> commands) {
+    clearPickers();
+    melosChoices = commands;
   }
 
   void setEmulatorPicker(List<EmulatorEntity> emulators) {

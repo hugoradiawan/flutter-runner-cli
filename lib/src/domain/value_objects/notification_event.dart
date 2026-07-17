@@ -11,7 +11,10 @@ enum FrunNotifEvent {
   enteringInspect,
   inspectReady,
   launchingEmulator,
-  emulatorReady;
+  emulatorReady,
+  melosRunning,
+  melosDone,
+  melosFailed;
 
   String get defaultBody {
     switch (this) {
@@ -39,6 +42,12 @@ enum FrunNotifEvent {
         return 'Launching emulator…';
       case emulatorReady:
         return 'Emulator ready';
+      case melosRunning:
+        return 'Running melos…';
+      case melosDone:
+        return 'melos command finished';
+      case melosFailed:
+        return 'melos command failed';
     }
   }
 }

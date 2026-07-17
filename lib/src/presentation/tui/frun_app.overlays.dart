@@ -10,6 +10,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     if (state.emulatorChoices.isNotEmpty) return state.emulatorChoices.length;
     if (state.bootModeChoices.isNotEmpty) return state.bootModeChoices.length;
     if (state.runTargetChoices.isNotEmpty) return state.runTargetChoices.length;
+    if (state.melosChoices.isNotEmpty) return state.melosChoices.length;
     return 0;
   }
 
@@ -22,6 +23,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         return theme.pickerEmulatorChipSelectedStyle;
       case _PickerKind.runTarget:
         return theme.pickerDeviceChipSelectedStyle;
+      case _PickerKind.melos:
+        return theme.pickerChipSelectedStyle;
     }
   }
 
@@ -54,6 +57,13 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       unawaited(
         state.runController.launchOnTarget(state.runTargetChoices[idx]),
       );
+      return;
+    }
+    if (state.melosChoices.isNotEmpty) {
+      if (idx < 0 || idx >= state.melosChoices.length) return;
+      state.clearPickers();
+      _input.setText('melos $idx');
+      _submit();
       return;
     }
   }
@@ -92,6 +102,14 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         moreHintFormat: 'run <index|name>',
       );
     }
+    if (state.melosChoices.isNotEmpty) {
+      return _PickerSpec(
+        kind: _PickerKind.melos,
+        itemCount: state.melosChoices.length,
+        header: ' Melos: pick a command — click or press esc to close',
+        moreHintFormat: 'melos <index|name>',
+      );
+    }
     return null;
   }
 
@@ -104,6 +122,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         return theme.pickerEmulatorChipStyle;
       case _PickerKind.runTarget:
         return theme.pickerDeviceChipStyle;
+      case _PickerKind.melos:
+        return theme.pickerChipStyle;
     }
   }
 
@@ -117,6 +137,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         return PickBootModeMsg(index);
       case _PickerKind.runTarget:
         return PickRunTargetMsg(index);
+      case _PickerKind.melos:
+        return PickMelosMsg(index);
     }
   }
 
@@ -130,6 +152,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         return const CloseBootModePickerMsg();
       case _PickerKind.runTarget:
         return const CloseRunTargetPickerMsg();
+      case _PickerKind.melos:
+        return const CloseMelosPickerMsg();
     }
   }
 
@@ -161,6 +185,10 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
           t.needsBoot ? 'emulator (boot)' : 'device',
         ];
         return ' [$index] ${t.name}  ${tags.join(' · ')} ';
+      case _PickerKind.melos:
+        final c = state.melosChoices[index];
+        final desc = c.description.isEmpty ? '' : '  ${c.description}';
+        return ' [$index] ${c.name}$desc ';
     }
   }
 

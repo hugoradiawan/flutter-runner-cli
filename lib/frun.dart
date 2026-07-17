@@ -21,6 +21,7 @@ import 'src/presentation/app/commands/emulators_command.dart';
 import 'src/presentation/app/commands/help_command.dart';
 import 'src/presentation/app/commands/inspect_command.dart';
 import 'src/presentation/app/commands/isolates_command.dart';
+import 'src/presentation/app/commands/melos_command.dart';
 import 'src/presentation/app/commands/mem_command.dart';
 import 'src/presentation/app/commands/performance_overlay_command.dart';
 import 'src/presentation/app/commands/quit_command.dart';
@@ -85,7 +86,8 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   final deps = Dependencies()
     ..configRepository = configRepository
     ..diagnosticsRepository = diagnosticsRepository
-    ..launchRepository = LaunchRepositoryImpl(project);
+    ..launchRepository = LaunchRepositoryImpl(project)
+    ..melosRepository = MelosRepositoryImpl(project);
   final state = AppState(project: project, config: configEntity, deps: deps);
   _seedCachedDiagnostics(state, diagnosticsRepository);
 
@@ -99,6 +101,7 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     ..register(EmulatorsCommand())
     ..register(DevToolsCommand())
     ..register(RunCommand(state.runController))
+    ..register(MelosCommand())
     ..register(ReloadCommand())
     ..register(RestartCommand())
     ..register(StopCommand())
