@@ -42,11 +42,12 @@ class AppRunSession {
 
   Future<int> get exitCode => _process.exitCode;
 
-  /// Diagnostic line describing the most recent spawn (cwd + args). Populated
+  /// Diagnostic line describing this session's spawn (cwd + args). Populated
   /// by [start] so callers can surface it to the user when a build fails in a
   /// way that depends on path resolution (Gradle output discovery, pub
-  /// workspaces, etc.).
-  static String? lastSpawnDiagnostic;
+  /// workspaces, etc.). Per-instance so concurrent launches can't clobber
+  /// each other's diagnostic.
+  String? spawnDiagnostic;
 
   static Future<AppRunSession> start({
     required String projectRoot,
@@ -86,9 +87,6 @@ class AppRunSession {
       if (entry.args.isNotEmpty) ...['--', ...entry.args],
     ];
 
-    lastSpawnDiagnostic =
-        'spawn: cwd=$workingDir exe=$exe args=${args.join(' ')}';
-
     final process = await Process.start(
       exe,
       args,
@@ -96,7 +94,10 @@ class AppRunSession {
       environment: environment,
       runInShell: Platform.isWindows,
     );
-    final session = AppRunSession._(process)..deviceId = deviceId;
+    final session = AppRunSession._(process)
+      ..deviceId = deviceId
+      ..spawnDiagnostic =
+          'spawn: cwd=$workingDir exe=$exe args=${args.join(' ')}';
     session._listen();
     return session;
   }
@@ -120,6 +121,9 @@ class AppRunSession {
           );
         });
     unawaited(_process.exitCode.whenComplete(_close));
+    // A write to the stdin of a dead process surfaces its broken-pipe error on
+    // `stdin.done`; without a listener that error is uncaught and fatal.
+    unawaited(_process.stdin.done.catchError((_) {}));
   }
 
   void _handleStdout(String line) {
@@ -203,7 +207,12 @@ class AppRunSession {
         if (params.isNotEmpty) 'params': params,
       },
     ]);
-    _process.stdin.writeln(payload);
+    try {
+      _process.stdin.writeln(payload);
+    } catch (e) {
+      _pending.remove(id);
+      return Future.error(StateError('flutter run stdin write failed: $e'));
+    }
     return completer.future;
   }
 

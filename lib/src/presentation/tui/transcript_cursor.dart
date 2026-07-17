@@ -189,17 +189,22 @@ class TranscriptCursor extends VimBuffer {
       }
       return out.join('\n');
     }
+    // The rows list is live (rewrap on resize, scrollback eviction), so a
+    // selection made earlier can point past the current line lengths — every
+    // column below is clamped before substring to avoid RangeErrors.
     if (norm.kind == RangeKind.charwise) {
+      if (norm.start.row >= rows.length) return '';
       if (norm.start.row == norm.end.row) {
         final line = rows[norm.start.row];
-        final endExclusive = (norm.end.col + 1).clamp(0, line.length);
-        return line.substring(norm.start.col, endExclusive);
+        final startCol = norm.start.col.clamp(0, line.length);
+        final endExclusive = (norm.end.col + 1).clamp(startCol, line.length);
+        return line.substring(startCol, endExclusive);
       }
       final buf = StringBuffer();
       for (var i = norm.start.row; i <= norm.end.row && i < rows.length; i++) {
         final line = rows[i];
         if (i == norm.start.row) {
-          buf.write(line.substring(norm.start.col));
+          buf.write(line.substring(norm.start.col.clamp(0, line.length)));
         } else if (i == norm.end.row) {
           final endExclusive = (norm.end.col + 1).clamp(0, line.length);
           buf.write(line.substring(0, endExclusive));
@@ -219,7 +224,7 @@ class TranscriptCursor extends VimBuffer {
       if (left >= line.length) {
         out.add('');
       } else {
-        final endExclusive = (right + 1).clamp(0, line.length);
+        final endExclusive = (right + 1).clamp(left, line.length);
         out.add(line.substring(left, endExclusive));
       }
     }

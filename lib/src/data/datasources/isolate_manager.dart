@@ -73,15 +73,25 @@ class IsolateManager implements IsolateControl {
   Future<void> connect(String wsUri) async {
     await disconnect();
     _service = await vmServiceConnectUri(wsUri);
-    _isolateEvents = _service!.onIsolateEvent.listen(_onIsolateEvent);
-    _debugEvents = _service!.onDebugEvent.listen(_onDebugEvent);
-    _extensionEvents = _service!.onExtensionEvent.listen(_extensionStream.add);
-    await Future.wait<void>([
-      _service!.streamListen(vm.EventStreams.kIsolate),
-      _service!.streamListen(vm.EventStreams.kDebug),
-      _service!.streamListen(vm.EventStreams.kExtension),
-    ]);
-    await _refreshAll();
+    try {
+      _isolateEvents = _service!.onIsolateEvent.listen(_onIsolateEvent);
+      _debugEvents = _service!.onDebugEvent.listen(_onDebugEvent);
+      _extensionEvents = _service!.onExtensionEvent.listen(
+        _extensionStream.add,
+      );
+      await Future.wait<void>([
+        _service!.streamListen(vm.EventStreams.kIsolate),
+        _service!.streamListen(vm.EventStreams.kDebug),
+        _service!.streamListen(vm.EventStreams.kExtension),
+      ]);
+      await _refreshAll();
+    } catch (_) {
+      // Partial wiring must not linger: `isConnected` would report true while
+      // event subscriptions/streams are broken. Reset, then let the caller
+      // handle the original failure.
+      await disconnect();
+      rethrow;
+    }
   }
 
   Future<void> _refreshAll() async {

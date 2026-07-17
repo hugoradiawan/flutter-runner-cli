@@ -375,29 +375,31 @@ class InputController extends VimBuffer {
       return;
     }
     if (kind == RangeKind.charwise) {
+      if (norm.start.row >= _lines.length) return;
       if (norm.start.row == norm.end.row) {
         final row = norm.start.row;
         final line = _lines[row];
-        final endExclusive = (norm.end.col + 1).clamp(0, line.length);
+        final startCol = norm.start.col.clamp(0, line.length);
+        final endExclusive = (norm.end.col + 1).clamp(startCol, line.length);
         _lines[row] =
-            line.substring(0, norm.start.col) +
-            text +
-            line.substring(endExclusive);
-        _cursor = _clampPos(Pos(row, norm.start.col + text.length));
+            line.substring(0, startCol) + text + line.substring(endExclusive);
+        _cursor = _clampPos(Pos(row, startCol + text.length));
         return;
       }
+      final endRow = norm.end.row.clamp(0, _lines.length - 1);
       final startLine = _lines[norm.start.row];
-      final endLine = _lines[norm.end.row];
-      final head = startLine.substring(0, norm.start.col);
+      final endLine = _lines[endRow];
+      final startCol = norm.start.col.clamp(0, startLine.length);
+      final head = startLine.substring(0, startCol);
       final endExclusive = (norm.end.col + 1).clamp(0, endLine.length);
       final tail = endLine.substring(endExclusive);
       final replaced = (head + text + tail).split('\n');
-      _lines.removeRange(norm.start.row, norm.end.row + 1);
+      _lines.removeRange(norm.start.row, endRow + 1);
       for (var i = replaced.length - 1; i >= 0; i--) {
         _lines.insert(norm.start.row, replaced[i]);
       }
       if (_lines.isEmpty) _lines.add('');
-      _cursor = _clampPos(Pos(norm.start.row, norm.start.col + text.length));
+      _cursor = _clampPos(Pos(norm.start.row, startCol + text.length));
       return;
     }
     // Blockwise: stripe the rectangle.
@@ -438,11 +440,15 @@ class InputController extends VimBuffer {
       }
       return lines.join('\n');
     }
+    // Clamp every column before substring — a range built from stale marks or
+    // registers can point past the current line lengths.
     if (norm.kind == RangeKind.charwise) {
+      if (norm.start.row >= _lines.length) return '';
       if (norm.start.row == norm.end.row) {
         final line = _lines[norm.start.row];
-        final endExclusive = (norm.end.col + 1).clamp(0, line.length);
-        return line.substring(norm.start.col, endExclusive);
+        final startCol = norm.start.col.clamp(0, line.length);
+        final endExclusive = (norm.end.col + 1).clamp(startCol, line.length);
+        return line.substring(startCol, endExclusive);
       }
       final buf = StringBuffer();
       for (
@@ -452,7 +458,7 @@ class InputController extends VimBuffer {
       ) {
         final line = _lines[i];
         if (i == norm.start.row) {
-          buf.write(line.substring(norm.start.col));
+          buf.write(line.substring(norm.start.col.clamp(0, line.length)));
         } else if (i == norm.end.row) {
           final endExclusive = (norm.end.col + 1).clamp(0, line.length);
           buf.write(line.substring(0, endExclusive));
@@ -475,7 +481,7 @@ class InputController extends VimBuffer {
       if (left >= line.length) {
         out.add('');
       } else {
-        final endExclusive = (right + 1).clamp(0, line.length);
+        final endExclusive = (right + 1).clamp(left, line.length);
         out.add(line.substring(left, endExclusive));
       }
     }

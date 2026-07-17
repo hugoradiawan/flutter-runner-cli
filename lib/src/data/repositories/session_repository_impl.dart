@@ -54,7 +54,7 @@ class SessionRepositoryImpl implements SessionRepository {
     handle = _RunSessionHandle(
       id: params.sessionId,
       inner: inner,
-      spawnDiagnostic: AppRunSession.lastSpawnDiagnostic,
+      spawnDiagnostic: inner.spawnDiagnostic,
       onExit: () {
         // Only evict if this handle still owns the id — a rerun may have
         // registered a newer session under the same tab id.

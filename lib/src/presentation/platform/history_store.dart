@@ -38,17 +38,30 @@ class HistoryStore {
 
   static const int _maxHistory = 500;
 
+  /// Best-effort: history is a convenience, so IO failures (locked file,
+  /// permissions, full disk) must never crash startup or command submission.
   List<String> load() {
-    final file = File(path);
-    if (!file.existsSync()) return <String>[];
-    final all = file.readAsLinesSync().where((l) => l.isNotEmpty).toList();
-    if (all.length > _maxHistory) return all.sublist(all.length - _maxHistory);
-    return all;
+    try {
+      final file = File(path);
+      if (!file.existsSync()) return <String>[];
+      final all = file.readAsLinesSync().where((l) => l.isNotEmpty).toList();
+      if (all.length > _maxHistory) {
+        return all.sublist(all.length - _maxHistory);
+      }
+      return all;
+    } catch (_) {
+      return <String>[];
+    }
   }
 
+  /// Best-effort — see [load].
   void save(List<String> history) {
-    final file = File(path);
-    file.parent.createSync(recursive: true);
-    file.writeAsStringSync(history.join('\n'));
+    try {
+      final file = File(path);
+      file.parent.createSync(recursive: true);
+      file.writeAsStringSync(history.join('\n'));
+    } catch (_) {
+      /* ignore — in-memory history still works this session */
+    }
   }
 }

@@ -35,6 +35,9 @@ class FlutterDaemon {
   StreamSubscription<String>? _stdoutSub;
   StreamSubscription<String>? _stderrSub;
   bool _disposed = false;
+  // Set once the daemon process exits; new requests fail fast instead of
+  // registering a completer that can never be answered.
+  bool _processExited = false;
 
   /// Path of the `flutter` binary used to launch the daemon.
   String get executable => _executable;
@@ -79,7 +82,10 @@ class FlutterDaemon {
           if (_disposed || _stderrLines.isClosed) return;
           if (line.isNotEmpty) _stderrLines.add(line);
         });
-    unawaited(_process.exitCode.whenComplete(_failPending));
+    unawaited(_process.exitCode.then(_failPending));
+    // A write to the stdin of a dead process surfaces its broken-pipe error on
+    // `stdin.done`; without a listener that error is uncaught and fatal.
+    unawaited(_process.stdin.done.catchError((_) {}));
   }
 
   void _handleStdoutLine(String line) {
@@ -120,8 +126,9 @@ class FlutterDaemon {
     _stderrLines.add('daemon stdout error: $error');
   }
 
-  void _failPending() {
-    final ex = StateError('Flutter daemon exited (code ${_process.exitCode})');
+  void _failPending(int exitCode) {
+    _processExited = true;
+    final ex = StateError('Flutter daemon exited (code $exitCode)');
     for (final completer in _pending.values) {
       if (!completer.isCompleted) completer.completeError(ex);
     }
@@ -136,6 +143,9 @@ class FlutterDaemon {
     if (_disposed) {
       return Future.error(StateError('FlutterDaemon is disposed'));
     }
+    if (_processExited) {
+      return Future.error(StateError('Flutter daemon has exited'));
+    }
     final id = _nextId++;
     final completer = Completer<Object?>();
     _pending[id] = completer;
@@ -146,7 +156,12 @@ class FlutterDaemon {
         if (params.isNotEmpty) 'params': params,
       },
     ]);
-    _process.stdin.writeln(payload);
+    try {
+      _process.stdin.writeln(payload);
+    } catch (e) {
+      _pending.remove(id);
+      return Future.error(StateError('Flutter daemon stdin write failed: $e'));
+    }
     return completer.future;
   }
 

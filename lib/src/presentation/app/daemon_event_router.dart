@@ -8,13 +8,23 @@ import 'run_tab.dart';
 /// Routes a tab's [SessionEvent]s into its transcript, notifies the desktop
 /// notifier, and drives the shared [IsolateConnection] for the active tab.
 class DaemonEventRouter {
-  DaemonEventRouter(this._state, this._isolates, this.activeTab);
+  DaemonEventRouter(
+    this._state,
+    this._isolates,
+    this.activeTab, {
+    this.onSessionEnded,
+  });
 
   final AppState _state;
   final IsolateConnection _isolates;
 
   /// Reads the controller's currently-active tab on demand.
   final RunTab? Function() activeTab;
+
+  /// Invoked after a session ends on its own (natural process death), so the
+  /// controller can release shared resources like the file watcher that are
+  /// otherwise only torn down on explicit stop/detach.
+  final void Function()? onSessionEnded;
 
   void onEvent(RunTab tab, SessionEvent event) {
     switch (event) {
@@ -81,6 +91,7 @@ class DaemonEventRouter {
         if (tab == activeTab()) {
           unawaited(_isolates.disconnect());
         }
+        onSessionEnded?.call();
       case SessionUnknown(:final name, :final params):
         tab.transcript.debug('$name: $params');
     }

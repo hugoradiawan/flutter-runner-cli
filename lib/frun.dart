@@ -42,7 +42,18 @@ import 'src/presentation/tui/synchronized_frame_sink.dart';
 
 export 'src/version.dart';
 
+/// Transcript sink for uncaught async errors while the TUI is up. Set by
+/// [_runTui]; null before boot / after teardown, in which case errors fall
+/// back to stderr.
+AppState? _activeState;
+
 /// Boot the TUI. Returns the process exit code.
+///
+/// Everything (setup + event loop) runs inside a guarded zone: an uncaught
+/// async error from a process pipe, stream listener, or VM-service callback
+/// must not kill the isolate — that would skip terminal restoration and leave
+/// the shell in alt-screen with mouse reporting on, plus orphan `flutter`
+/// child processes.
 Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   if (!stdout.hasTerminal) {
     stderr.writeln(
@@ -57,6 +68,29 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
     );
     return 64;
   }
+  final completer = Completer<int>();
+  runZonedGuarded(
+    // The body's future is tracked through [completer]; awaiting it here is
+    // impossible (runZonedGuarded is synchronous).
+    () => unawaited(
+      _runTui(
+        cwd: cwd,
+        configStoreOverride: configStoreOverride,
+      ).then(completer.complete, onError: completer.completeError),
+    ),
+    (error, stack) {
+      final state = _activeState;
+      if (state != null) {
+        state.transcript.error('Internal error: $error');
+      } else {
+        stderr.writeln('frun: uncaught error: $error\n$stack');
+      }
+    },
+  );
+  return completer.future;
+}
+
+Future<int> _runTui({String? cwd, ConfigStore? configStoreOverride}) async {
   // Disable QuickEdit on the legacy console host so mouse events flow through.
   final restoreConsole = prepareWindowsConsoleForMouse();
   final workingDir = cwd ?? Directory.current.path;
@@ -157,14 +191,19 @@ Future<int> runFrun({String? cwd, ConfigStore? configStoreOverride}) async {
   if (state.config.diagnosticsOnBoot) {
     unawaited(_runBootDiagnostics(diagnosticsCommand, state));
   }
+  _activeState = state;
   try {
     await program.run(tuiApp);
   } finally {
+    // Restore the terminal first, then tear down children — even when the
+    // event loop threw, the user must get their shell back and no `flutter`
+    // processes may be left orphaned.
+    _activeState = null;
     restoreConsole();
+    await inspectorJumpsSub.cancel();
+    await state.runController.stopAll();
+    await state.deps.dispose();
   }
-  await inspectorJumpsSub.cancel();
-  await state.runController.stopAll();
-  await state.deps.dispose();
   return 0;
 }
 

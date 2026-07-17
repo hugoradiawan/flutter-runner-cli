@@ -35,6 +35,7 @@ void main() {
     exitCode = Completer<int>();
     when(() => inner.events).thenAnswer((_) => events.stream);
     when(() => inner.exitCode).thenAnswer((_) => exitCode.future);
+    when(() => inner.spawnDiagnostic).thenReturn(null);
     repo = SessionRepositoryImpl(
       starter:
           ({
@@ -178,6 +179,7 @@ void main() {
     addTearDown(secondEvents.close);
     when(() => second.events).thenAnswer((_) => secondEvents.stream);
     when(() => second.exitCode).thenAnswer((_) => Completer<int>().future);
+    when(() => second.spawnDiagnostic).thenReturn(null);
     when(() => second.hotReload()).thenAnswer((_) async {});
     repo = SessionRepositoryImpl(
       starter:

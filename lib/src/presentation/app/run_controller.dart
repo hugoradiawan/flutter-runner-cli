@@ -25,7 +25,12 @@ import 'run_tab.dart';
 class RunController {
   RunController(this.state) {
     _isolates = IsolateConnection(state, () => activeTab);
-    _events = DaemonEventRouter(state, _isolates, () => activeTab);
+    _events = DaemonEventRouter(
+      state,
+      _isolates,
+      () => activeTab,
+      onSessionEnded: () => unawaited(_disposeWatcherIfIdle()),
+    );
     _watcher = ReloadWatcher(
       state,
       anyRunning: () => tabs.any((t) => t.canHotReload),
@@ -200,14 +205,16 @@ class RunController {
   }
 
   Future<void> _disposeWatcherIfIdle() =>
-      _watcher.disposeIfIdle(idle: tabs.isEmpty);
+      _watcher.disposeIfIdle(idle: !tabs.any((t) => t.isRunning));
 
   Future<void> _disposeIsolatesIfIdle() async {
     if (tabs.isEmpty) await _isolates.disconnect();
   }
 
   Future<void> hotReloadAll() async {
-    for (final tab in tabs) {
+    // Snapshot: a tab can be stopped/closed while a reload is awaited, and
+    // mutating [tabs] mid-iteration would throw ConcurrentModificationError.
+    for (final tab in List<RunTab>.of(tabs)) {
       if (tab.canHotReload) await _reload(tab);
     }
   }
