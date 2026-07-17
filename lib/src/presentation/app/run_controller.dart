@@ -282,17 +282,24 @@ class RunController {
     if (index < 0 || index >= tabs.length) return;
     final tab = tabs[index];
     await _stopTab(tab);
-    final actualIndex = tabs.indexOf(tab);
-    if (actualIndex >= 0) tabs.removeAt(actualIndex);
+    _removeTabAndFixIndex(tab);
+    await _disposeWatcherIfIdle();
+    await _disposeIsolatesIfIdle();
+  }
+
+  /// Remove [tab] from [tabs] and fix up [_activeIndex]. When a tab before
+  /// the active one is removed, the active index shifts down so it keeps
+  /// pointing at the same tab.
+  void _removeTabAndFixIndex(RunTab tab) {
+    final removedIndex = tabs.indexOf(tab);
+    if (removedIndex >= 0) tabs.removeAt(removedIndex);
     if (tabs.isEmpty) {
       _activeIndex = -1;
     } else if (_activeIndex >= tabs.length) {
       _activeIndex = tabs.length - 1;
-    } else if (actualIndex >= 0 && _activeIndex > actualIndex) {
+    } else if (removedIndex >= 0 && _activeIndex > removedIndex) {
       _activeIndex--;
     }
-    await _disposeWatcherIfIdle();
-    await _disposeIsolatesIfIdle();
   }
 
   /// Re-launch a specific tab on the same device.
@@ -322,13 +329,7 @@ class RunController {
     final tab = activeTab;
     if (tab == null) return;
     await _stopTab(tab);
-    final removedIndex = tabs.indexOf(tab);
-    if (removedIndex >= 0) tabs.removeAt(removedIndex);
-    if (tabs.isEmpty) {
-      _activeIndex = -1;
-    } else if (_activeIndex >= tabs.length) {
-      _activeIndex = tabs.length - 1;
-    }
+    _removeTabAndFixIndex(tab);
     await _disposeWatcherIfIdle();
     await _disposeIsolatesIfIdle();
   }
@@ -337,13 +338,7 @@ class RunController {
     final tab = activeTab;
     if (tab == null) return;
     await _detachTab(tab);
-    final removedIndex = tabs.indexOf(tab);
-    if (removedIndex >= 0) tabs.removeAt(removedIndex);
-    if (tabs.isEmpty) {
-      _activeIndex = -1;
-    } else if (_activeIndex >= tabs.length) {
-      _activeIndex = tabs.length - 1;
-    }
+    _removeTabAndFixIndex(tab);
     await _disposeWatcherIfIdle();
   }
 
@@ -358,6 +353,11 @@ class RunController {
         (_) {},
       );
     }
+    await _teardownTabStreams(tab);
+  }
+
+  /// Cancel the tab's daemon event subscription and drop its session handle.
+  Future<void> _teardownTabStreams(RunTab tab) async {
     await tab.eventsSub?.cancel();
     tab.eventsSub = null;
     tab.session = null;
@@ -386,9 +386,7 @@ class RunController {
         (_) {},
       );
     }
-    await tab.eventsSub?.cancel();
-    tab.eventsSub = null;
-    tab.session = null;
+    await _teardownTabStreams(tab);
   }
 
   /// Cycle the active tab. No-op if there are fewer than two tabs.

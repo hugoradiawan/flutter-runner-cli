@@ -10,6 +10,8 @@ import 'command.dart';
 ///   melos               → open the melos command picker
 ///   melos `<index>`     → run the command at that index
 ///   melos `<name>`      → run the command by name (e.g. `melos bootstrap`)
+///   melos cancel        → cancel every in-flight melos run (shadows any
+///                         script literally named `cancel`)
 ///
 /// Output streams live into the transcript; a desktop notification fires when
 /// the command starts and when it finishes (success or failure).
@@ -23,10 +25,21 @@ class MelosCommand extends Command {
   String get summary => 'Run a melos command (bootstrap, clean, scripts)';
 
   @override
-  String get usage => 'melos [index|name]';
+  String get usage => 'melos [index|name|cancel]';
 
   @override
   Future<CommandResult> run(List<String> args, AppState state) async {
+    if (args.isNotEmpty && args.first == 'cancel') {
+      final count = state.melosRunSubs.length;
+      await state.cancelMelosRuns();
+      state.visibleTranscript.system(
+        count == 0
+            ? 'No melos command is running.'
+            : 'Cancelled $count melos ${count == 1 ? 'command' : 'commands'}.',
+      );
+      return CommandResult.ok;
+    }
+
     final commands = await _discover(state);
     if (commands == null) return CommandResult.ok; // failure already reported
 
@@ -97,7 +110,8 @@ class MelosCommand extends Command {
     );
     state.visibleTranscript.system('▶ ${command.commandLine}');
 
-    useCase.call(command).listen((event) {
+    late final StreamSubscription<MelosRunEvent> sub;
+    sub = useCase.call(command).listen((event) {
       switch (event) {
         case MelosRunLine(:final text, :final isError):
           if (text.isEmpty) return;
@@ -107,6 +121,7 @@ class MelosCommand extends Command {
             state.visibleTranscript.info(text);
           }
         case MelosRunExit(:final code, :final ok):
+          state.melosRunSubs.remove(sub);
           if (ok) {
             state.visibleTranscript.success('✓ ${command.commandLine} — done');
             state.deps.notifier.notify(
@@ -126,5 +141,6 @@ class MelosCommand extends Command {
           }
       }
     });
+    state.melosRunSubs.add(sub);
   }
 }

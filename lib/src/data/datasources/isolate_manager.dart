@@ -250,4 +250,12 @@ class IsolateManager implements IsolateControl {
     _isolates.clear();
     _emit();
   }
+
+  /// Full teardown: disconnect from the VM and close the broadcast
+  /// controllers. After this the manager must not be reused.
+  Future<void> dispose() async {
+    await disconnect();
+    await _changes.close();
+    await _extensionStream.close();
+  }
 }

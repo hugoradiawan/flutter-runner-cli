@@ -1,13 +1,38 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:frun/src/core/result.dart';
 import 'package:frun/src/data/repositories/melos_repository_impl.dart';
-import 'package:frun/src/domain/entities/app_config.dart';
-import 'package:frun/src/domain/entities/flutter_project.dart';
+import 'package:frun/src/domain/domain.dart';
 import 'package:frun/src/presentation/app/app_state.dart';
 import 'package:frun/src/presentation/app/commands/melos_command.dart';
 import 'package:frun/src/presentation/di/dependencies.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+
+/// Fake repository whose [run] stream is driven by the test; records whether
+/// the subscription was cancelled (which is what kills the melos process).
+class _FakeMelosRepository implements MelosRepository {
+  final controller = StreamController<MelosRunEvent>();
+  bool cancelled = false;
+
+  static const command = MelosCommandEntity(
+    name: 'bootstrap',
+    description: 'Install dependencies',
+    kind: MelosCommandKind.builtin,
+    melosArgs: ['bootstrap'],
+  );
+
+  @override
+  Future<Result<MelosFailure, List<MelosCommandEntity>>>
+  discoverCommands() async => Result.success(const [command]);
+
+  @override
+  Stream<MelosRunEvent> run(MelosCommandEntity command) {
+    controller.onCancel = () => cancelled = true;
+    return controller.stream;
+  }
+}
 
 void main() {
   late Directory temp;
@@ -80,5 +105,71 @@ melos:
       state.transcript.lines.map((l) => l.text).join('\n'),
       contains('No melos command matches'),
     );
+  });
+
+  group('run subscription lifecycle', () {
+    late _FakeMelosRepository repo;
+
+    AppState buildFakeState() {
+      repo = _FakeMelosRepository();
+      return AppState(
+        project: FlutterProjectEntity(
+          root: temp.path,
+          name: 'workspace',
+          workspaceRoot: temp.path,
+          watchRoot: temp.path,
+          hasVsCodeFolder: false,
+          hasZedFolder: false,
+        ),
+        config: AppConfigEntity.defaults(),
+        deps: Dependencies()..melosRepository = repo,
+      );
+    }
+
+    test('running a command registers a cancellable subscription', () async {
+      state = buildFakeState();
+
+      await MelosCommand().run(const ['bootstrap'], state);
+      await pumpEventQueue();
+
+      expect(state.melosRunSubs, hasLength(1));
+      expect(repo.cancelled, isFalse);
+    });
+
+    test('MelosRunExit deregisters the subscription', () async {
+      state = buildFakeState();
+
+      await MelosCommand().run(const ['bootstrap'], state);
+      repo.controller.add(const MelosRunExit(0));
+      await pumpEventQueue();
+
+      expect(state.melosRunSubs, isEmpty);
+    });
+
+    test('cancelMelosRuns cancels the stream (killing the process)', () async {
+      state = buildFakeState();
+
+      await MelosCommand().run(const ['bootstrap'], state);
+      await pumpEventQueue();
+      await state.cancelMelosRuns();
+
+      expect(repo.cancelled, isTrue);
+      expect(state.melosRunSubs, isEmpty);
+    });
+
+    test('melos cancel command cancels in-flight runs', () async {
+      state = buildFakeState();
+
+      await MelosCommand().run(const ['bootstrap'], state);
+      await pumpEventQueue();
+      await MelosCommand().run(const ['cancel'], state);
+
+      expect(repo.cancelled, isTrue);
+      expect(state.melosRunSubs, isEmpty);
+      expect(
+        state.transcript.lines.map((l) => l.text).join('\n'),
+        contains('Cancelled 1 melos command'),
+      );
+    });
   });
 }

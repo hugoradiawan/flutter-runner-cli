@@ -205,7 +205,9 @@ class InspectorBridge {
       try {
         final decoded = json.decode(value);
         if (decoded is Map) return decoded;
-      } catch (_) {}
+      } catch (_) {
+        // Not JSON — treat the value as absent.
+      }
     }
     return null;
   }

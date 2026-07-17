@@ -173,7 +173,7 @@ class Dependencies {
   /// composition root after the TUI run loop exits.
   Future<void> dispose() async {
     await selfMemoryInspector.dispose();
-    await isolateManager.disconnect();
+    await isolateManager.dispose();
     await liveDiagnostics?.dispose();
     await analysisServer?.shutdown();
     await daemon?.shutdown();

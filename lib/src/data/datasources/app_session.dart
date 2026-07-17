@@ -270,7 +270,9 @@ class AppRunSession {
     if (id != null) {
       try {
         await _request('app.detach', <String, Object?>{'appId': id});
-      } catch (_) {}
+      } catch (_) {
+        /* app may already be gone; detach is best-effort */
+      }
     }
     _closeWithoutKill();
   }

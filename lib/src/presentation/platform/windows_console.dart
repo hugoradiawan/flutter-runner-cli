@@ -69,7 +69,9 @@ void Function() prepareWindowsConsoleForMouse() {
       return () {
         try {
           setConsoleMode(hIn, originalMode);
-        } catch (_) {}
+        } catch (_) {
+          // Restore is best-effort — the console may already be gone at exit.
+        }
       };
     } finally {
       calloc.free(pMode);

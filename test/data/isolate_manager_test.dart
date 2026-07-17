@@ -53,5 +53,33 @@ void main() {
       expect(identical(before, after), isFalse);
       expect(after, isEmpty);
     });
+
+    test('dispose closes the changes and extension streams', () async {
+      final manager = IsolateManager(
+        isolates: [
+          IsolateInfoEntity(
+            id: 'a',
+            name: 'main',
+            status: IsolateStatus.running,
+          ),
+        ],
+      );
+
+      final changesDone = expectLater(
+        manager.changes,
+        emitsThrough(emitsDone),
+      );
+      final extensionsDone = expectLater(
+        manager.extensionEvents,
+        emitsDone,
+      );
+
+      await manager.dispose();
+
+      await changesDone;
+      await extensionsDone;
+      // A second disconnect after dispose must not throw (guards isClosed).
+      await manager.disconnect();
+    });
   });
 }

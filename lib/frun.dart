@@ -201,6 +201,7 @@ Future<int> _runTui({String? cwd, ConfigStore? configStoreOverride}) async {
     _activeState = null;
     restoreConsole();
     await inspectorJumpsSub.cancel();
+    await state.cancelMelosRuns();
     await state.runController.stopAll();
     await state.deps.dispose();
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../domain/domain.dart';
 import '../di/dependencies.dart';
 import 'run_controller.dart';
@@ -118,6 +120,21 @@ class AppState {
 
   /// Active `/melos` picker — built-in melos commands plus custom scripts.
   List<MelosCommandEntity> melosChoices = const <MelosCommandEntity>[];
+
+  /// Live `/melos` run subscriptions — cancelling one kills its melos child
+  /// process. A set because nothing prevents two concurrent runs.
+  final Set<StreamSubscription<MelosRunEvent>> melosRunSubs =
+      <StreamSubscription<MelosRunEvent>>{};
+
+  /// Cancel every in-flight `/melos` run so no melos child process outlives
+  /// the app. Called from the quit path before dependencies are disposed.
+  Future<void> cancelMelosRuns() async {
+    final subs = List.of(melosRunSubs);
+    melosRunSubs.clear();
+    for (final sub in subs) {
+      await sub.cancel();
+    }
+  }
 
   /// Launch entry awaiting a run-target choice. Set when the user picks an
   /// entry in the `/run` launch picker; cleared once a target is chosen.
