@@ -5,6 +5,7 @@ import 'package:frun/src/data/datasources/app_session.dart';
 import 'package:frun/src/data/models/daemon_messages.dart';
 import 'package:frun/src/data/repositories/session_repository_impl.dart';
 import 'package:frun/src/domain/entities/launch_entry.dart';
+import 'package:frun/src/domain/entities/run_session.dart';
 import 'package:frun/src/domain/entities/session_event.dart';
 import 'package:frun/src/domain/failures/session_failure.dart';
 import 'package:frun/src/domain/params/reload_params.dart';
@@ -166,7 +167,8 @@ void main() {
 
     final result = await failing.start(_params());
     expect(result.isFailure, isTrue);
-    expect((result as Failure).error.message, contains('flutter not on PATH'));
+    final failure = result as Failure<SessionFailure, RunSession>;
+    expect(failure.error.message, contains('flutter not on PATH'));
   });
 
   test('a rerun re-registers the same id for a new session', () async {

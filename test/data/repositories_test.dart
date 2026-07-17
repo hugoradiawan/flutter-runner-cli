@@ -24,6 +24,11 @@ import 'package:test/test.dart';
 
 // â”€â”€ Mocks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+/// Typed unwrap — keeps the value statically typed so member access on it
+/// isn't a dynamic call (`result as Success` without type args yields
+/// `Success<dynamic, dynamic>`).
+S successValue<F, S>(Result<F, S> result) => (result as Success<F, S>).value;
+
 class MockDeviceManager extends Mock implements DeviceManager {}
 
 class MockEmulatorManager extends Mock implements EmulatorManager {}
@@ -77,7 +82,7 @@ void main() {
       final result = await repo.getConfig();
 
       expect(result.isSuccess, isTrue);
-      final entity = (result as Success).value;
+      final entity = successValue(result);
       expect(entity.ide, FrunIde.vscode);
       expect(entity.hotReloadOnSave, isTrue);
       expect(entity.verboseErrors, isFalse);
@@ -94,7 +99,7 @@ void main() {
       );
 
       final result = await repo.getConfig();
-      final entity = (result as Success).value;
+      final entity = successValue(result);
 
       expect(entity.ide, FrunIde.zed);
       expect(entity.editorMode, FrunEditorMode.vim);
@@ -109,7 +114,7 @@ void main() {
       expect(setResult.isSuccess, isTrue);
 
       final getResult = await repo.getConfig();
-      expect((getResult as Success).value.ide, FrunIde.zed);
+      expect(successValue(getResult).ide, FrunIde.zed);
       expect(store.load().ide, FrunIde.zed);
     });
 
@@ -169,7 +174,7 @@ void main() {
       final result = await repo.listDevices();
 
       expect(result.isSuccess, isTrue);
-      final devices = (result as Success).value;
+      final devices = successValue(result);
       expect(devices.length, 1);
       expect(devices.first.id, _flutterDevice.id);
       expect(devices.first.name, _flutterDevice.name);
@@ -184,7 +189,7 @@ void main() {
 
         final result = await repo.listDevices();
         expect(result.isSuccess, isTrue);
-        expect((result as Success).value, isEmpty);
+        expect(successValue(result), isEmpty);
       },
     );
 
@@ -216,7 +221,7 @@ void main() {
         final result = await repo.listEmulators();
 
         expect(result.isSuccess, isTrue);
-        final emulators = (result as Success).value;
+        final emulators = successValue(result);
         expect(emulators.length, 1);
         expect(emulators.first.id, _flutterEmulator.id);
         expect(emulators.first.name, _flutterEmulator.name);
@@ -228,7 +233,7 @@ void main() {
 
       final result = await repo.listEmulators();
       expect(result.isSuccess, isTrue);
-      expect((result as Success).value, isEmpty);
+      expect(successValue(result), isEmpty);
     });
 
     test('listEmulators returns DeviceFailure when manager throws', () async {
@@ -254,7 +259,7 @@ void main() {
         final result = await repo.launchEmulator(params);
 
         expect(result.isSuccess, isTrue);
-        final device = (result as Success).value;
+        final device = successValue(result);
         expect(device.id, _flutterDevice.id);
         expect(device, isA<DeviceEntity>());
       },
