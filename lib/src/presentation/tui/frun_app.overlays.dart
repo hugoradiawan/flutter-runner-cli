@@ -272,12 +272,12 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
 
     // Scroll to keep selected chip in view.
     if (visibleCount > 0) {
-      if (_pickerSelectedIndex < _pickerScrollOffset) {
-        _pickerScrollOffset = _pickerSelectedIndex;
-      } else if (_pickerSelectedIndex >= _pickerScrollOffset + visibleCount) {
-        _pickerScrollOffset = _pickerSelectedIndex - visibleCount + 1;
+      if (_pickerSel.index < _pickerSel.scroll) {
+        _pickerSel.scroll = _pickerSel.index;
+      } else if (_pickerSel.index >= _pickerSel.scroll + visibleCount) {
+        _pickerSel.scroll = _pickerSel.index - visibleCount + 1;
       }
-      _pickerScrollOffset = _pickerScrollOffset.clamp(
+      _pickerSel.scroll = _pickerSel.scroll.clamp(
         0,
         math.max(0, chips.length - visibleCount),
       );
@@ -286,11 +286,11 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     final chipStyle = _pickerChipStyle(spec.kind, theme);
     final selectedStyle = _pickerSelectedChipStyle(spec.kind, theme);
     for (var i = 0; i < visibleCount; i++) {
-      final chipIdx = _pickerScrollOffset + i;
+      final chipIdx = _pickerSel.scroll + i;
       if (chipIdx >= chips.length) break;
       final rowY = innerStartY + i * 2;
       if (rowY > innerEndY) break;
-      final style = chipIdx == _pickerSelectedIndex ? selectedStyle : chipStyle;
+      final style = chipIdx == _pickerSel.index ? selectedStyle : chipStyle;
       canvas.paint(_pickerIndent, rowY, chips[chipIdx].text, style: style);
       _hits.add(
         x: _pickerIndent,
@@ -301,8 +301,8 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       );
     }
     final hidden =
-        math.max(0, chips.length - _pickerScrollOffset - visibleCount) +
-        _pickerScrollOffset;
+        math.max(0, chips.length - _pickerSel.scroll - visibleCount) +
+        _pickerSel.scroll;
     if (hidden > 0) {
       final rowY = innerStartY + visibleCount * 2;
       if (rowY <= innerEndY) {
@@ -520,23 +520,23 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     return rows;
   }
 
-  /// Snap [_diagSelectedIndex] onto a valid issue row.
+  /// Snap [_diagSel.index] onto a valid issue row.
   void _clampDiagSelection(List<_DiagRow> rows) {
     if (rows.isEmpty) {
-      _diagSelectedIndex = 0;
+      _diagSel.index = 0;
       return;
     }
-    _diagSelectedIndex = _diagSelectedIndex.clamp(0, rows.length - 1);
-    if (rows[_diagSelectedIndex].kind == _DiagRowKind.issue) return;
-    for (var i = _diagSelectedIndex; i < rows.length; i++) {
+    _diagSel.index = _diagSel.index.clamp(0, rows.length - 1);
+    if (rows[_diagSel.index].kind == _DiagRowKind.issue) return;
+    for (var i = _diagSel.index; i < rows.length; i++) {
       if (rows[i].kind == _DiagRowKind.issue) {
-        _diagSelectedIndex = i;
+        _diagSel.index = i;
         return;
       }
     }
-    for (var i = _diagSelectedIndex; i >= 0; i--) {
+    for (var i = _diagSel.index; i >= 0; i--) {
       if (rows[i].kind == _DiagRowKind.issue) {
-        _diagSelectedIndex = i;
+        _diagSel.index = i;
         return;
       }
     }
@@ -550,13 +550,13 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     _clampDiagSelection(rows);
     final step = delta >= 0 ? 1 : -1;
     var remaining = delta.abs().clamp(1, rows.length);
-    var i = _diagSelectedIndex;
+    var i = _diagSel.index;
     for (var n = 0; n < rows.length && remaining > 0; n++) {
       i += step;
       if (i < 0) i = rows.length - 1;
       if (i >= rows.length) i = 0;
       if (rows[i].kind == _DiagRowKind.issue) {
-        _diagSelectedIndex = i;
+        _diagSel.index = i;
         remaining--;
       }
     }
@@ -569,14 +569,14 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     if (first) {
       for (var i = 0; i < rows.length; i++) {
         if (rows[i].kind == _DiagRowKind.issue) {
-          _diagSelectedIndex = i;
+          _diagSel.index = i;
           return;
         }
       }
     } else {
       for (var i = rows.length - 1; i >= 0; i--) {
         if (rows[i].kind == _DiagRowKind.issue) {
-          _diagSelectedIndex = i;
+          _diagSel.index = i;
           return;
         }
       }
@@ -588,7 +588,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     final rows = _diagnosticRows();
     if (rows.isEmpty) return null;
     _clampDiagSelection(rows);
-    return rows[_diagSelectedIndex].diagnostic;
+    return rows[_diagSel.index].diagnostic;
   }
 
   int _computeDiagnosticsHeight() {
@@ -728,12 +728,12 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     final totalHidden = math.max(0, rows.length - maxVisible);
     final visibleCount = totalHidden > 0 ? maxVisible - 1 : rows.length;
     if (visibleCount > 0) {
-      if (_diagSelectedIndex < _diagScrollOffset) {
-        _diagScrollOffset = _diagSelectedIndex;
-      } else if (_diagSelectedIndex >= _diagScrollOffset + visibleCount) {
-        _diagScrollOffset = _diagSelectedIndex - visibleCount + 1;
+      if (_diagSel.index < _diagSel.scroll) {
+        _diagSel.scroll = _diagSel.index;
+      } else if (_diagSel.index >= _diagSel.scroll + visibleCount) {
+        _diagSel.scroll = _diagSel.index - visibleCount + 1;
       }
-      _diagScrollOffset = _diagScrollOffset.clamp(
+      _diagSel.scroll = _diagSel.scroll.clamp(
         0,
         math.max(0, rows.length - visibleCount),
       );
@@ -741,7 +741,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
 
     final maxText = width - 2;
     for (var r = 0; r < visibleCount; r++) {
-      final idx = _diagScrollOffset + r;
+      final idx = _diagSel.scroll + r;
       if (idx >= rows.length) break;
       final rowY = innerStartY + r;
       final row = rows[idx];
@@ -755,7 +755,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
         );
       } else {
         final d = row.diagnostic!;
-        final selected = idx == _diagSelectedIndex;
+        final selected = idx == _diagSel.index;
         final glyph = _categoryIcon(d.category);
         final code = d.code != null ? '  ${d.code}' : '';
         final text = '   $glyph Ln${d.line} Col${d.column}  ${d.message}$code';
@@ -782,7 +782,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       if (rowY <= innerEndY) {
         final hiddenBelow = math.max(
           0,
-          rows.length - _diagScrollOffset - visibleCount,
+          rows.length - _diagSel.scroll - visibleCount,
         );
         final keys = state.config.editorMode == FrunEditorMode.vim
             ? 'j/k move - gg/G ends - / filter - enter open'
@@ -866,32 +866,31 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
 
   void _clampIsolateSelection(List<IsolateInfoEntity> rows) {
     if (rows.isEmpty) {
-      _isolateSelectedIndex = 0;
-      _isolateScrollOffset = 0;
+      _isolateSel.index = 0;
+      _isolateSel.scroll = 0;
       return;
     }
-    _isolateSelectedIndex = _isolateSelectedIndex.clamp(0, rows.length - 1);
+    _isolateSel.index = _isolateSel.index.clamp(0, rows.length - 1);
   }
 
   void _moveIsolateSelection(int delta) {
     final rows = state.deps.isolateManager.isolates;
     if (rows.isEmpty) return;
-    _isolateSelectedIndex =
-        ((_isolateSelectedIndex + delta) % rows.length + rows.length) %
-        rows.length;
+    _isolateSel.index =
+        ((_isolateSel.index + delta) % rows.length + rows.length) % rows.length;
   }
 
   void _isolateSelectEdge({required bool first}) {
     final rows = state.deps.isolateManager.isolates;
     if (rows.isEmpty) return;
-    _isolateSelectedIndex = first ? 0 : rows.length - 1;
+    _isolateSel.index = first ? 0 : rows.length - 1;
   }
 
   IsolateInfoEntity? _selectedIsolate() {
     final rows = state.deps.isolateManager.isolates;
     if (rows.isEmpty) return null;
     _clampIsolateSelection(rows);
-    return rows[_isolateSelectedIndex];
+    return rows[_isolateSel.index];
   }
 
   void _scrollIsolatesByWheel({required bool up}) {
@@ -1137,23 +1136,23 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
     final totalHidden = math.max(0, rows.length - innerH);
     final visibleCount = totalHidden > 0 ? innerH - 1 : rows.length;
     if (visibleCount > 0) {
-      if (_isolateSelectedIndex < _isolateScrollOffset) {
-        _isolateScrollOffset = _isolateSelectedIndex;
-      } else if (_isolateSelectedIndex >= _isolateScrollOffset + visibleCount) {
-        _isolateScrollOffset = _isolateSelectedIndex - visibleCount + 1;
+      if (_isolateSel.index < _isolateSel.scroll) {
+        _isolateSel.scroll = _isolateSel.index;
+      } else if (_isolateSel.index >= _isolateSel.scroll + visibleCount) {
+        _isolateSel.scroll = _isolateSel.index - visibleCount + 1;
       }
-      _isolateScrollOffset = _isolateScrollOffset.clamp(
+      _isolateSel.scroll = _isolateSel.scroll.clamp(
         0,
         math.max(0, rows.length - visibleCount),
       );
     }
 
     for (var r = 0; r < visibleCount; r++) {
-      final idx = _isolateScrollOffset + r;
+      final idx = _isolateSel.scroll + r;
       if (idx >= rows.length) break;
       final rowY = innerStartY + r;
       final iso = rows[idx];
-      final selected = idx == _isolateSelectedIndex;
+      final selected = idx == _isolateSel.index;
       final actions = _isolateActionsFor(iso);
       final actionTexts = actions.map((a) => ' ${a.$1} ').toList();
       final actionWidth = actionTexts.fold<int>(
@@ -1206,7 +1205,7 @@ mixin _OverlayMixin on _FrunModelBase, _EngineMixin {
       if (rowY <= innerEndY) {
         final hiddenBelow = math.max(
           0,
-          rows.length - _isolateScrollOffset - visibleCount,
+          rows.length - _isolateSel.scroll - visibleCount,
         );
         final more =
             ' +$hiddenBelow more - j/k move - p pause - r resume - s step - k kill ';

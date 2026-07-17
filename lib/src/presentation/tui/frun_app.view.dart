@@ -178,10 +178,10 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
     sig[i++] = identityHashCode(_configDraft);
     sig[i++] = state.showDiagnosticsPanel ? 1 : 0;
     sig[i++] = state.showIsolatesPanel ? 1 : 0;
-    sig[i++] = _diagSelectedIndex;
-    sig[i++] = _diagScrollOffset;
-    sig[i++] = _isolateSelectedIndex;
-    sig[i++] = _isolateScrollOffset;
+    sig[i++] = _diagSel.index;
+    sig[i++] = _diagSel.scroll;
+    sig[i++] = _isolateSel.index;
+    sig[i++] = _isolateSel.scroll;
     sig[i++] = state.diagnosticsFilter?.index ?? -1;
     sig[i++] = state.diagnosticsSearch.hashCode;
     sig[i++] = _diagSearching ? 1 : 0;
@@ -189,8 +189,8 @@ mixin _ViewMixin on _FrunModelBase, _PaintMixin, _OverlayMixin {
     sig[i++] = identityHashCode(state.diagnostics);
     sig[i++] = state.diagnostics.length;
     sig[i++] = identityHashCode(_activePicker());
-    sig[i++] = _pickerSelectedIndex;
-    sig[i++] = _pickerScrollOffset;
+    sig[i++] = _pickerSel.index;
+    sig[i++] = _pickerSel.scroll;
     sig[i++] = _pickerWasActive ? 1 : 0;
     sig[i++] = identityHashCode(rc.session);
     sig[i++] = identityHashCode(rc.lastEntry);

@@ -80,21 +80,18 @@ abstract class _FrunModelBase extends TeaModel {
   int _transcriptScroll = 0;
   int _focusedLinkIndex = -1;
 
-  int _pickerSelectedIndex = 0;
-  int _pickerScrollOffset = 0;
+  final OverlaySelection _pickerSel = OverlaySelection();
   bool _pickerWasActive = false;
 
   // Diagnostics overlay selection (indexes into the flattened file-header +
   // issue row list) and its scroll offset.
-  int _diagSelectedIndex = 0;
-  int _diagScrollOffset = 0;
+  final OverlaySelection _diagSel = OverlaySelection();
   // Whether `/` search-typing is active (so bare letters feed the filter
   // instead of acting as motions).
   bool _diagSearching = false;
 
   // Isolate lifecycle panel selection and scroll offset.
-  int _isolateSelectedIndex = 0;
-  int _isolateScrollOffset = 0;
+  final OverlaySelection _isolateSel = OverlaySelection();
 
   // Shared vim-style list navigation interpreters, one per modal overlay
   // (each keeps its own pending count / gg latch).
@@ -316,7 +313,7 @@ final class FrunModel extends _FrunModelBase
   int get debugDisplayRowsBufferIdentity => identityHashCode(_rowsBuffer);
   int get debugDiagCountsBuilds => _debugDiagCountsBuilds;
   int get debugTranscriptScroll => _transcriptScroll;
-  int get debugIsolateSelectedIndex => _isolateSelectedIndex;
-  int get debugDiagSelectedIndex => _diagSelectedIndex;
+  int get debugIsolateSelectedIndex => _isolateSel.index;
+  int get debugDiagSelectedIndex => _diagSel.index;
   String get debugInputText => _input.text;
 }

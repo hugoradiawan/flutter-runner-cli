@@ -143,15 +143,15 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
         final isUp = ke.code == KeyCode.up || (plain && ke.text == 'k');
         final isDown = ke.code == KeyCode.down || (plain && ke.text == 'j');
         if (isUp) {
-          _pickerSelectedIndex = (_pickerSelectedIndex - 1 + count) % count;
+          _pickerSel.index = (_pickerSel.index - 1 + count) % count;
           return;
         }
         if (isDown) {
-          _pickerSelectedIndex = (_pickerSelectedIndex + 1) % count;
+          _pickerSel.index = (_pickerSel.index + 1) % count;
           return;
         }
         if (ke.code == KeyCode.enter) {
-          _pickFromActivePicker(_pickerSelectedIndex);
+          _pickFromActivePicker(_pickerSel.index);
           return;
         }
         if (plain && ke.text.length == 1) {
@@ -359,7 +359,7 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
     if (ke.code == KeyCode.enter) {
       if (vim && _diagSearching) {
         _diagSearching = false; // confirm search
-        _diagSelectedIndex = 0;
+        _diagSel.index = 0;
         return;
       }
       final d = _selectedDiagnostic();
@@ -377,7 +377,7 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
       final s = state.diagnosticsSearch;
       if (s.isNotEmpty) {
         state.diagnosticsSearch = s.substring(0, s.length - 1);
-        _diagSelectedIndex = 0;
+        _diagSel.index = 0;
       }
       return;
     }
@@ -401,7 +401,7 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
       case OverlayNavStartSearch():
         _diagSearching = true;
         state.diagnosticsSearch = '';
-        _diagSelectedIndex = 0;
+        _diagSel.index = 0;
         return;
       case OverlayNavConsumed():
         return;
@@ -427,12 +427,12 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
     // Normal mode (or vim search-typing): bare text is a live filter.
     if (ke.code == KeyCode.space) {
       state.diagnosticsSearch += ' ';
-      _diagSelectedIndex = 0;
+      _diagSel.index = 0;
       return;
     }
     if (plain) {
       state.diagnosticsSearch += ke.text;
-      _diagSelectedIndex = 0;
+      _diagSel.index = 0;
       return;
     }
     // Swallow anything else so it doesn't leak into the hidden input.
@@ -530,8 +530,8 @@ mixin _KeyMixin on _FrunModelBase, _EngineMixin, _MouseMixin, _OverlayMixin {
         ? (dir > 0 ? 0 : order.length - 1)
         : (cur + dir + order.length) % order.length;
     state.diagnosticsFilter = order[next];
-    _diagSelectedIndex = 0;
-    _diagScrollOffset = 0;
+    _diagSel.index = 0;
+    _diagSel.scroll = 0;
   }
 
   void _insertIntoActive(KeyMsg event) {

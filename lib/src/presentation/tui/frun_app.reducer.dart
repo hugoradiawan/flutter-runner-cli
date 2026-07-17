@@ -152,7 +152,7 @@ mixin _ReducerMixin
     } else if (msg is SelectIsolateMsg) {
       final rows = state.deps.isolateManager.isolates;
       if (msg.index >= 0 && msg.index < rows.length) {
-        _isolateSelectedIndex = msg.index;
+        _isolateSel.index = msg.index;
         _isolateNav.reset();
       }
     } else if (msg is IsolateActionMsg) {
@@ -218,8 +218,8 @@ mixin _ReducerMixin
         state.showDiagnosticsPanel = !state.showDiagnosticsPanel;
         if (state.showDiagnosticsPanel) {
           state.showIsolatesPanel = false;
-          _diagSelectedIndex = 0;
-          _diagScrollOffset = 0;
+          _diagSel.index = 0;
+          _diagSel.scroll = 0;
         }
       }
     } else if (msg is CloseDiagnosticsOverlayMsg) {
@@ -228,8 +228,8 @@ mixin _ReducerMixin
       _diagSearching = false;
     } else if (msg is SetDiagnosticsFilterMsg) {
       state.diagnosticsFilter = msg.level;
-      _diagSelectedIndex = 0;
-      _diagScrollOffset = 0;
+      _diagSel.index = 0;
+      _diagSel.scroll = 0;
     } else if (msg is JumpToDiagnosticMsg) {
       unawaited(_openDiagnostic(msg.diagnostic));
       state.showDiagnosticsPanel = false;
@@ -237,8 +237,8 @@ mixin _ReducerMixin
 
     final nowActive = state.hasActivePicker;
     if (nowActive && !_pickerWasActive) {
-      _pickerSelectedIndex = 0;
-      _pickerScrollOffset = 0;
+      _pickerSel.index = 0;
+      _pickerSel.scroll = 0;
     }
     _pickerWasActive = nowActive;
 

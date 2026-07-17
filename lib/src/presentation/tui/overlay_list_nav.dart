@@ -34,6 +34,18 @@ final class OverlayNavConsumed extends OverlayNavAction {
   const OverlayNavConsumed();
 }
 
+/// Mutable selection state for one modal overlay list: the selected row and
+/// the scroll offset that keeps it visible.
+class OverlaySelection {
+  int index = 0;
+  int scroll = 0;
+
+  void reset() {
+    index = 0;
+    scroll = 0;
+  }
+}
+
 /// Shared vim-style list navigation for the modal overlays (diagnostics,
 /// isolates, config editor): count-aware `j`/`k`, `gg`/`G`, `Ctrl-d`/`Ctrl-u`,
 /// `q` to close, `/` to search. Arrows work regardless of editor mode.
