@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.2.0 — 2026-07-17
+
 - Multi-device tabs: `/run` opens a new tab per launch+device combination,
   or focuses an existing one. Per-tab transcripts and sessions; file saves
   hot-reload every running tab. `/stop` stops the active tab, `/stop all`
@@ -22,6 +24,19 @@
   click source links to open in IDE.
 - CLI: optional positional path argument so `frun apps/client` works in
   monorepos; `--help` and `--version` flags.
+- `/melos cancel` aborts in-flight melos runs; melos child processes are
+  now killed when frun quits instead of being orphaned.
+- Internals: VimEngine split into part files by concern; overlay/picker
+  selection state extracted into `OverlaySelection` value objects;
+  IsolateManager now closes its event streams on dispose.
+- CI hardened: `dart format` gate, coverage artifact, `pub publish
+  --dry-run`, and an SDK-floor (3.9.2) test job. New lints:
+  `avoid_dynamic_calls`, `only_throw_errors`, `unnecessary_await_in_return`.
+- Architecture test now also checks `export` directives, conditional
+  import fallbacks, and `part`/`part of` placement.
+- New behavior tests for the flutter daemon / run-session JSON-RPC
+  clients, device and emulator managers, melos runner, and core
+  Result/failure types (475 → ~522 tests).
 
 ## 0.1.0
 

@@ -1,6 +1,6 @@
 name: frun
 description: A terminal UI for Flutter development — devices, hot reload, DevTools, isolates and widget inspector, all without leaving the shell.
-version: 0.1.0
+version: 0.2.0
 repository: https://github.com/hugoradiawan/flutter-runner-cli
 issue_tracker: https://github.com/hugoradiawan/flutter-runner-cli/issues
 

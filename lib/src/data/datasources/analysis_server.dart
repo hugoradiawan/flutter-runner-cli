@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 
+import '../../version.dart';
 import '../models/diagnostic.dart';
 
 /// Splits a raw LSP byte stream into decoded JSON-RPC messages.
@@ -293,7 +294,7 @@ class DartAnalysisServer {
         '--client-id',
         'frun',
         '--client-version',
-        '0.1.0',
+        frunVersion,
       ],
       workingDirectory: projectRoot,
       environment: environment,
@@ -384,7 +385,7 @@ class DartAnalysisServer {
     ).toString();
     _initializeId = _request('initialize', <String, Object?>{
       'processId': pid,
-      'clientInfo': <String, Object?>{'name': 'frun', 'version': '0.1.0'},
+      'clientInfo': <String, Object?>{'name': 'frun', 'version': frunVersion},
       'rootUri': rootUri,
       'capabilities': <String, Object?>{
         'textDocument': <String, Object?>{

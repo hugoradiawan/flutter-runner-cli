@@ -9,7 +9,7 @@ Think "the Flutter VS Code extension, but a TUI." No AI features.
 
 ```
 Starting flutter daemon…
-frun 0.1.0 — type help for commands.
+frun 0.2.0 — type help for commands.
 Project: my_app  (~/dev/my_app)
 Detected .vscode/ → launch configs available via run.
 Vim mode active — press i to type commands.

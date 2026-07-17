@@ -1,1 +1,1 @@
-const String frunVersion = '0.1.0';
+const String frunVersion = '0.2.0';
