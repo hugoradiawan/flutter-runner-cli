@@ -10,7 +10,23 @@ import '../../domain/entities/melos_run_event.dart';
 /// with the process exit code. `runInShell` lets the platform resolve `melos`
 /// from PATH (e.g. `melos.bat` on Windows, a pub-global shim elsewhere).
 class MelosRunner {
-  const MelosRunner();
+  const MelosRunner({
+    Future<Process> Function(
+      String executable,
+      List<String> args, {
+      String? workingDirectory,
+      bool runInShell,
+    })?
+    starter,
+  }) : _starter = starter ?? Process.start;
+
+  final Future<Process> Function(
+    String executable,
+    List<String> args, {
+    String? workingDirectory,
+    bool runInShell,
+  })
+  _starter;
 
   Stream<MelosRunEvent> run(String workDir, List<String> args) {
     late final StreamController<MelosRunEvent> controller;
@@ -18,7 +34,7 @@ class MelosRunner {
 
     Future<void> start() async {
       try {
-        process = await Process.start(
+        process = await _starter(
           'melos',
           args,
           workingDirectory: workDir,

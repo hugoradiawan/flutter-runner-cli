@@ -1,5 +1,5 @@
 /// Architecture ratchet: enforces the clean-architecture layer rules by
-/// scanning import directives under `lib/`.
+/// scanning import/export directives under `lib/`.
 ///
 /// Layer rules:
 ///   - domain   -> core only (no dart:io, no dart_tui, no data/presentation)
@@ -37,17 +37,43 @@ void main() {
       .toList();
 
   final imports = <String, List<String>>{}; // lib-relative -> targets
-  final importPattern = RegExp(r'''^import\s+['"]([^'"]+)['"]''');
+  final parts = <String, List<String>>{}; // owner -> resolved part targets
+  final partOfFiles = <String>{}; // files that declare `part of`
+  // `export` re-exposes types across a boundary just like `import` uses them,
+  // so both directives feed the same layer-rule edges.
+  final importPattern = RegExp(r'''^(?:import|export)\s+['"]([^'"]+)['"]''');
+  final partPattern = RegExp(r'''^part\s+['"]([^'"]+)['"]''');
+  final partOfPattern = RegExp(r'''^part\s+of\s''');
+  // Conditional imports (`import 'a.dart' if (dart.library.io) 'b.dart';`)
+  // hide the fallback URI from the line-based scan; catch it on raw content
+  // since the directive usually wraps across lines.
+  final conditionalPattern = RegExp(
+    r'''if\s*\(dart\.library\.\w+(?:\s*==\s*[^)]+)?\)\s*['"]([^'"]+)['"]''',
+  );
 
   for (final file in files) {
     final rel = p.posix.joinAll(p.split(p.relative(file.path, from: 'lib')));
     final targets = <String>[];
+    final ownedParts = <String>[];
     for (final line in file.readAsLinesSync()) {
-      final m = importPattern.firstMatch(line.trim());
-      if (m == null) continue;
+      final trimmed = line.trim();
+      final m = importPattern.firstMatch(trimmed);
+      if (m != null) {
+        targets.add(_resolve(m.group(1)!, rel));
+        continue;
+      }
+      if (partOfPattern.hasMatch(trimmed)) {
+        partOfFiles.add(rel);
+        continue;
+      }
+      final pm = partPattern.firstMatch(trimmed);
+      if (pm != null) ownedParts.add(_resolve(pm.group(1)!, rel));
+    }
+    for (final m in conditionalPattern.allMatches(file.readAsStringSync())) {
       targets.add(_resolve(m.group(1)!, rel));
     }
     imports[rel] = targets;
+    if (ownedParts.isNotEmpty) parts[rel] = ownedParts;
   }
 
   bool inLayer(String path, String layer) => path.startsWith('src/$layer/');
@@ -111,6 +137,38 @@ void main() {
           inLayer(t, 'presentation'),
     );
     expect(actual, isEmpty);
+  });
+
+  test('part files stay in their owning library\'s directory and layer', () {
+    // Parts bypass import analysis entirely (they can't have their own
+    // directives), so a library `part`-ing a file from another layer would
+    // smuggle code across the boundary invisibly. Pin parts to the owner's
+    // directory, which implies the same layer.
+    final actual = <String>{};
+    final claimed = <String, int>{};
+    parts.forEach((owner, targets) {
+      for (final t in targets) {
+        claimed[t] = (claimed[t] ?? 0) + 1;
+        if (!File(p.join('lib', t)).existsSync()) {
+          actual.add('$owner -> $t (missing on disk)');
+        } else if (p.posix.dirname(t) != p.posix.dirname(owner)) {
+          actual.add('$owner -> $t (outside owner directory)');
+        }
+      }
+    });
+    for (final f in partOfFiles) {
+      final count = claimed[f] ?? 0;
+      if (count != 1) {
+        actual.add('$f (part of, claimed by $count part directives)');
+      }
+    }
+    expect(
+      actual,
+      isEmpty,
+      reason:
+          'part/part-of placement violations:\n'
+          '${(actual.toList()..sort()).join('\n')}',
+    );
   });
 
   test('presentation (except di) reaches lower layers only via barrels', () {

@@ -17,6 +17,12 @@ import '../models/daemon_messages.dart';
 class AppRunSession {
   AppRunSession._(this._process);
 
+  /// Test seam: wrap an already-started (fake) [process] instead of spawning
+  /// `flutter run --machine`. Production code must use [start].
+  AppRunSession.forTesting(Process process) : _process = process {
+    _listen();
+  }
+
   final Process _process;
   int _nextId = 1;
   final Map<int, Completer<Object?>> _pending = <int, Completer<Object?>>{};

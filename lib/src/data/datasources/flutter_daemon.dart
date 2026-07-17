@@ -22,6 +22,14 @@ class FlutterDaemon {
     : _process = process,
       _executable = executable;
 
+  /// Test seam: wrap an already-started (fake) [process] instead of spawning
+  /// `flutter daemon`. Production code must use [start].
+  FlutterDaemon.forTesting(Process process, {String executable = 'flutter'})
+    : _process = process,
+      _executable = executable {
+    _listen();
+  }
+
   final Process _process;
   // The resolved `flutter` (or `flutter.bat`) path we launched. Useful for
   // diagnostics; kept on the instance so callers can read it via [executable].
