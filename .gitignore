@@ -10,3 +10,4 @@ doc/api/
 # Build artifacts produced by tool/install.dart
 bin/*.snapshot
 bin/frun.exe
+.DS_Store
