@@ -15,3 +15,4 @@ bin/frun.exe
 graphify-out/
 graphify.toml
 bin/frun.dart-3.9.2.snapshot
+.DS_Store
